@@ -58,6 +58,7 @@ begin
         w_mat <= input_b;
 
         computing <= '1';
+        done_i <= '1';
       elsif computing = '1' then
         for i in 0 to TILE_H - 1 loop
           accum(i) <= accum(i) + accum_val(i);
@@ -67,8 +68,9 @@ begin
         for i in 0 to TILE_H - 1 loop
           output_d((i + 1) * 32 - 1 downto i * 32) <= std_logic_vector(accum(i));
         end loop;
-        done_i <= '1';
+
         computing <= '0';
+        done_i <= '0';
       else
         done_i <= '0';
       end if;
