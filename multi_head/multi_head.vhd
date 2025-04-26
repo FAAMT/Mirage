@@ -21,28 +21,30 @@ entity multi_head is
         done  : out std_logic;
 
         -- BRAM Signals
-        bram_addr     : integer range 0 to 49400; -- 49151 + 191 + 255
-        bram_data_in  : std_logic_vector(7 downto 0);
-        bram_data_out : std_logic_vector(7 downto 0);
-        bram_wr       : std_logic;
+        bram_addr     : in integer range 0 to 49599; -- 49151 + 191 + 255
+        bram_data_in  : in std_logic_vector(7 downto 0);
+        bram_data_out : out std_logic_vector(7 downto 0);
+        bram_wr       : in std_logic;
 
         -- Matrix Mult Signals
         input_a : out signed_vector(0 to TILE_W - 1);
-        input_b : out mac_array(0 to TILE_H - 1, 0 to TILE_W - 1)
+        input_b : out mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
 
         start_mac : out std_logic;
-        done_mac  : in std_logic;
+        fetch_mac : out std_logic;
+        done_mac  : in std_logic
     );
 end entity;
 
-architecture behavioral of matrix_mult is
+architecture behavioral of multi_head is
+
     -- Type Declarations
     type state_type is (idle, compute_q, compute_k, compute_v, mac, softmax, result);
     type bram_qkv_type is array (0 to 49151) of std_logic_vector(7 downto 0); -- 48KB for W_Q/K/V
     type bram_bias_type is array (0 to 191) of std_logic_vector(7 downto 0); -- 192B for Biases
     type bram_token_type is array (0 to 255) of std_logic_vector(7 downto 0); -- 256B for Token Input
 
-    -- BRAM Signals
+    -- BRAM Storage
     signal bram_qkv : bram_qkv_type;
     signal bram_bias : bram_bias_type;
     signal bram_token : bram_token_type;
@@ -52,30 +54,30 @@ architecture behavioral of matrix_mult is
     signal prev_state : state_type := idle;
 
     -- Internal Signals
-    signal input_a_i : signed_vector(0 to TILE_W - 1) := (others => '0');
-    signal input_b_i : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => '0'));
-    signal base_addr_qkv : integer;
-    signal tile_w_pass : integer range 0 to 51 := 0; -- Sliding Tile Width Counter
-    signal tile_h_pass : integer range 0 to 5 := 0; -- Sliding Tile Height Counter
+    signal input_a_i : signed_vector(0 to TILE_W - 1) := (others => (others => '0'));
+    signal input_b_i : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => (others => '0')));
+    signal base_addr_qkv : integer := 0;
+    signal bram_data_out_i : std_logic_vector(7 downto 0);
+    signal tile_w_pass : integer := 0; -- Sliding Tile Width Counter
+    signal tile_h_pass : integer := 0; -- Sliding Tile Height Counter
+
 begin
     -- BRAM R/W Process
     process (clk)
     begin
         if rising_edge(clk) then
             if (bram_addr <= 49151) then
-                bram_data_out <= bram_qkv(bram_addr);
+                bram_data_out_i <= bram_qkv(bram_addr);
                 if bram_wr = '1' then
                     bram_qkv(bram_addr) <= bram_data_in;
                 end if;
-
-            elsif (bram_addr > 49151) and (bram_addr <= 49151 + 191) then
-                bram_data_out <= bram_bias(bram_addr - 49152);
+            elsif (bram_addr >= 49152) and (bram_addr <= 49343) then
+                bram_data_out_i <= bram_bias(bram_addr - 49152);
                 if bram_wr = '1' then
                     bram_bias(bram_addr - 49152) <= bram_data_in;
                 end if;
-
-            elsif (bram_addr > 49151 + 191) and (bram_addr <= 49151 + 191 + 255) then
-                bram_data_out <= bram_token(bram_addr - 49344);
+            elsif (bram_addr >= 49344) and (bram_addr <= 49599) then
+                bram_data_out_i <= bram_token(bram_addr - 49344);
                 if bram_wr = '1' then
                     bram_token(bram_addr - 49344) <= bram_data_in;
                 end if;
@@ -83,14 +85,17 @@ begin
         end if;
     end process;
 
-    -- QKV Dynamic Weight Assignment
+    -- QKV Dynamic Weight and Input Assignment
     process (tile_w_pass, tile_h_pass)
     begin
         base_addr_qkv <= 5 * tile_w_pass + 12 * 256 * tile_h_pass;
 
         for i in 0 to TILE_H - 1 loop
             for j in 0 to TILE_W - 1 loop
-                input_a_i(j) <= signed(bram_token(TILE_W * tile_w_pass + j));
+                if (TILE_W * tile_w_pass + j) <= 255 then
+                    input_a_i(j) <= signed(bram_token(TILE_W * tile_w_pass + j));
+                end if;
+
                 input_b_i(i, j) <= signed(bram_qkv(256 * i + j + base_addr_qkv));
             end loop;
         end loop;
@@ -103,6 +108,7 @@ begin
             state <= idle;
             tile_w_pass <= 0;
             tile_h_pass <= 0;
+            fetch_mac <= '0';
             done <= '0';
         elsif rising_edge(clk) then
             case state is
@@ -117,6 +123,12 @@ begin
 
                     if done_mac = '1' then
                         state <= prev_state;
+
+                        if tile_w_pass = 51 then
+                            fetch_mac <= '1';
+                        end if;
+                    else
+                        state <= mac; -- remain in mac state waiting
                     end if;
 
                 when compute_q =>
@@ -130,25 +142,22 @@ begin
                         end if;
                     else
                         tile_w_pass <= tile_w_pass + 1;
+                        state <= mac;
+                        start_mac <= '1';
+                        fetch_mac <= '0';
+                        prev_state <= compute_q;
                     end if;
-
-                    state <= mac;
-                    start_mac <= '1';
-                    prev_state <= compute_q;
-
                 when compute_k =>
-                    -- Same logic for K projection
-                    -- (Shift base address by offset for K block)
-                    -- TODO: Address K offset
+                    -- TODO: Implement K phase
                     state <= compute_v;
+                    fetch_mac <= '0';
 
                 when compute_v =>
-                    -- Same logic for V projection
-                    -- (Shift base address for V block)
-                    -- TODO: Address V offset
-                    state <= finish;
+                    -- TODO: Implement V phase
+                    state <= result;
+                    fetch_mac <= '0';
 
-                when finish =>
+                when result =>
                     done <= '1';
                     state <= idle;
 
@@ -161,5 +170,6 @@ begin
     -- Output Assignments
     input_a <= input_a_i;
     input_b <= input_b_i;
+    bram_data_out <= bram_data_out_i;
 
 end architecture behavioral;
