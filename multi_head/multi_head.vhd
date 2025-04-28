@@ -39,7 +39,7 @@ end entity;
 architecture behavioral of multi_head is
 
     -- Type Declarations
-    type state_type is (idle, compute_q, compute_k, compute_v, mac, softmax, result);
+    type state_type is (idle, compute_q, compute_k, compute_v, mac, tile_incr, softmax, result);
     type bram_qkv_type is array (0 to 49151) of std_logic_vector(7 downto 0); -- 48KB for W_Q/K/V
     type bram_bias_type is array (0 to 191) of std_logic_vector(7 downto 0); -- 192B for Biases
     type bram_token_type is array (0 to 255) of std_logic_vector(7 downto 0); -- 256B for Token Input
@@ -86,17 +86,28 @@ begin
     end process;
 
     -- QKV Dynamic Weight and Input Assignment
-    process (tile_w_pass, tile_h_pass)
+    process (state, tile_w_pass, tile_h_pass, bram_wr)
     begin
         base_addr_qkv <= 5 * tile_w_pass + 12 * 256 * tile_h_pass;
 
         for i in 0 to TILE_H - 1 loop
             for j in 0 to TILE_W - 1 loop
-                if (TILE_W * tile_w_pass + j) <= 255 then
-                    input_a_i(j) <= signed(bram_token(TILE_W * tile_w_pass + j));
-                end if;
+                if (state = tile_incr) or (tile_h_pass > 5 and i >= 4) then
+                    input_a_i(j) <= (others => '0');
+                    input_b_i(i, j) <= (others => '0');
 
-                input_b_i(i, j) <= signed(bram_qkv(256 * i + j + base_addr_qkv));
+                elsif (TILE_W * tile_w_pass + j) <= 255 then
+                    input_a_i(j) <= signed(bram_token(TILE_W * tile_w_pass + j));
+
+                    if tile_h_pass = 5 and i >= 4 then
+                        input_b_i(i, j) <= (others => '0');
+                    else
+                        input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
+                    end if;
+                else
+                    input_a_i(j) <= (others => '0');
+                    input_b_i(i, j) <= (others => '0');
+                end if;
             end loop;
         end loop;
     end process;
@@ -108,6 +119,7 @@ begin
             state <= idle;
             tile_w_pass <= 0;
             tile_h_pass <= 0;
+            start_mac <= '0';
             fetch_mac <= '0';
             done <= '0';
         elsif rising_edge(clk) then
@@ -116,46 +128,53 @@ begin
                     done <= '0';
                     if start = '1' then
                         state <= compute_q;
+                        start_mac <= '1';
                     end if;
 
                 when mac =>
-                    start_mac <= '0';
-
                     if done_mac = '1' then
-                        state <= prev_state;
-
                         if tile_w_pass = 51 then
+                            state <= tile_incr;
                             fetch_mac <= '1';
+                        else
+                            state <= prev_state;
+                            start_mac <= '1';
+
+                            tile_w_pass <= tile_w_pass + 1;
                         end if;
                     else
                         state <= mac; -- remain in mac state waiting
                     end if;
 
+                when tile_incr =>
+                    state <= prev_state;
+                    tile_w_pass <= 0;
+                    start_mac <= '1';
+                    fetch_mac <= '0';
+
+                    tile_h_pass <= tile_h_pass + 1;
+
                 when compute_q =>
-                    if tile_w_pass = 51 then
-                        tile_w_pass <= 0;
-                        if tile_h_pass = 5 then
-                            tile_h_pass <= 0;
-                            state <= compute_k;
-                        else
-                            tile_h_pass <= tile_h_pass + 1;
-                        end if;
+                    if tile_h_pass > 5 then
+                        tile_h_pass <= 0;
+                        state <= compute_k;
                     else
-                        tile_w_pass <= tile_w_pass + 1;
                         state <= mac;
-                        start_mac <= '1';
-                        fetch_mac <= '0';
-                        prev_state <= compute_q;
                     end if;
+
+                    start_mac <= '0';
+                    -- fetch_mac <= '0';
+                    prev_state <= compute_q;
+
                 when compute_k =>
                     -- TODO: Implement K phase
                     state <= compute_v;
-                    fetch_mac <= '0';
+                    -- fetch_mac <= '0';
 
                 when compute_v =>
                     -- TODO: Implement V phase
                     state <= result;
-                    fetch_mac <= '0';
+                    -- fetch_mac <= '0';
 
                 when result =>
                     done <= '1';
