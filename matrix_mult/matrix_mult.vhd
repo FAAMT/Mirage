@@ -16,6 +16,7 @@ entity matrix_mult is
     clk      : in std_logic;
     rst      : in std_logic;
     start    : in std_logic;
+    clear    : in std_logic;
     input_a  : in std_logic_vector(DATA_WIDTH * TILE_W - 1 downto 0); -- 5 INT8 inputs
     input_b  : in mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);        -- 12x5 INT8 weights
     output_d : out std_logic_vector(32 * TILE_H - 1 downto 0);        -- 12 INT32 outputs
@@ -39,34 +40,36 @@ begin
 
   done <= done_i;
 
+  -- Load Input & Weight Matrix
+  process (input_a, input_b)
+  begin
+    w_mat <= input_b;
+
+    for j in 0 to TILE_W - 1 loop
+      a_vec(j) <= signed(input_a((j + 1) * DATA_WIDTH - 1 downto j * DATA_WIDTH));
+    end loop;
+  end process;
+
   -- Matrix Mult Logic
   process (clk, rst)
   begin
     if rst = '1' then
       done_i <= '0';
       computing <= '0';
-      output_d <= (others => '0');
       accum <= (others => (others => '0'));
 
     elsif rising_edge(clk) then
-      if start = '1' and computing = '0' then
-        -- Load Input Matrix
-        for j in 0 to TILE_W - 1 loop
-          a_vec(j) <= signed(input_a((j + 1) * DATA_WIDTH - 1 downto j * DATA_WIDTH));
+      if clear = '1' then
+        for i in 0 to TILE_H - 1 loop
+          accum(i) <= (others => '0');
         end loop;
-
-        w_mat <= input_b;
-
+      elsif start = '1' and computing = '0' then
         computing <= '1';
         done_i <= '1';
+
       elsif computing = '1' then
         for i in 0 to TILE_H - 1 loop
           accum(i) <= accum(i) + accum_val(i);
-        end loop;
-
-        -- Output results
-        for i in 0 to TILE_H - 1 loop
-          output_d((i + 1) * 32 - 1 downto i * 32) <= std_logic_vector(accum(i));
         end loop;
 
         computing <= '0';
@@ -92,6 +95,14 @@ begin
         accum_val(i) <= tmp_val;
       end loop;
     end if;
+  end process;
+
+  -- Output Logic
+  output_proc : process (accum)
+  begin
+    for i in 0 to TILE_H - 1 loop
+      output_d((i + 1) * 32 - 1 downto i * 32) <= std_logic_vector(accum(i));
+    end loop;
   end process;
 
 end architecture;

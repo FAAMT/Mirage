@@ -1,6 +1,8 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
+use STD.TEXTIO.all;
+use IEEE.STD_LOGIC_TEXTIO.all;
 use work.types_pkg.all;
 
 entity multi_head_tb is
@@ -15,7 +17,7 @@ architecture behavior of multi_head_tb is
     constant clk_period : time := 5 ns;
 
     -- Declarations at top (inside architecture)
-    type mac_result_array is array (0 to 6, 0 to 11) of std_logic_vector(31 downto 0);
+    type mac_result_array is array (0 to 5, 0 to 11) of std_logic_vector(31 downto 0);
     signal mac_results : mac_result_array := (others => (others => (others => '0')));
     signal result_index : integer := 0;
 
@@ -78,6 +80,7 @@ begin
         clk => clk,
         rst => rst,
         start => start_mac,
+        clear => fetch_mac,
         input_a => std_logic_vector(flatten_signed_vector(input_a)),
         input_b => input_b,
         output_d => output_d, -- output not needed yet for this phase
@@ -98,6 +101,8 @@ begin
     -- Stimulus process
     stim_proc : process
         variable rand_val : integer;
+        variable line_buffer : line;
+        file output_file : text open write_mode is "q_output.txt";
     begin
         -- Reset
         rst <= '1';
@@ -106,7 +111,8 @@ begin
 
         -- Fill Token Vector (BRAM: 49344 to 49599)
         for i in 0 to 255 loop
-            rand_val := (i * 2 + 3) mod 128;
+            -- rand_val := (i * 2 + 3) mod 128;
+            rand_val := ((tile_index * 10) + (i * 2) + 3) mod 128;
             bram_addr <= 49344 + i;
             bram_data_in <= std_logic_vector(to_signed(rand_val, 8));
             bram_wr <= '1';
@@ -118,7 +124,7 @@ begin
         -- Fill Q Weights (BRAM: addresses 0 to 64*256-1 = 16383)
         -- Fill full 64x256 Q weight matrix
         for i in 0 to 16383 loop
-            rand_val := (i * 59 + 13) mod 128;
+            rand_val := ((i mod 256) * 59 + (i / 256) * 37 + 13) mod 256;
             bram_addr <= i;
             bram_data_in <= std_logic_vector(to_signed(rand_val, 8));
             bram_wr <= '1';
@@ -144,9 +150,18 @@ begin
             result_index <= result_index + 1;
         end loop;
 
-        -- Then wait for overall done
-        wait until done = '1';
-        report "Multi-Head Q Projection Test Completed";
+        wait for 10 * clk_period; -- small stabilization
+
+        -- Save MAC results to file
+        for tile_idx in 0 to 5 loop
+            for i in 0 to 11 loop
+                if tile_idx * 12 + i < 64 then
+                    line_buffer := null;
+                    write(line_buffer, integer'image(to_integer(signed(mac_results(tile_idx, i)))));
+                    writeline(output_file, line_buffer);
+                end if;
+            end loop;
+        end loop;
         wait;
     end process;
 
