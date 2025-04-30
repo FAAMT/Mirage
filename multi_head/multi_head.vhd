@@ -48,6 +48,7 @@ architecture behavioral of multi_head is
     signal bram_qkv : bram_qkv_type;
     signal bram_bias : bram_bias_type;
     signal bram_token : bram_token_type;
+    signal bram_wr_reg : std_logic;
 
     -- State Signals
     signal state : state_type := idle;
@@ -86,6 +87,10 @@ begin
     end process;
 
     -- QKV Dynamic Weight and Input Assignment
+    -- Q = base = 0
+    -- K = base = 256 * 64 = 16384
+    -- V = base = 2 * 256 * 64 = 32768
+    -- QKV Dynamic Weight and Input Assignment
     process (state, tile_w_pass, tile_h_pass, bram_wr)
     begin
         base_addr_qkv <= 5 * tile_w_pass + 12 * 256 * tile_h_pass;
@@ -102,7 +107,13 @@ begin
                     if tile_h_pass = 5 and i >= 4 then
                         input_b_i(i, j) <= (others => '0');
                     else
-                        input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
+                        if state = compute_q then
+                            input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
+                        elsif state = compute_k then
+                            input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 16384 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
+                        elsif state = compute_v then
+                            input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 32768 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
+                        end if;
                     end if;
                 else
                     input_a_i(j) <= (others => '0');
@@ -147,12 +158,24 @@ begin
                     end if;
 
                 when tile_incr =>
-                    state <= prev_state;
                     tile_w_pass <= 0;
                     start_mac <= '1';
                     fetch_mac <= '0';
+                    state <= prev_state;
 
-                    tile_h_pass <= tile_h_pass + 1;
+                    if tile_h_pass = 5 then
+                        tile_h_pass <= 0;
+
+                        if prev_state = compute_q then
+                            state <= compute_k;
+                        elsif prev_state = compute_k then
+                            state <= compute_v;
+                        elsif prev_state = compute_v then
+                            state <= result;
+                        end if;
+                    else
+                        tile_h_pass <= tile_h_pass + 1;
+                    end if;
 
                 when compute_q =>
                     if tile_h_pass > 5 then
@@ -160,21 +183,35 @@ begin
                         state <= compute_k;
                     else
                         state <= mac;
+                        start_mac <= '0';
+                        prev_state <= compute_q;
                     end if;
 
                     start_mac <= '0';
-                    -- fetch_mac <= '0';
                     prev_state <= compute_q;
 
                 when compute_k =>
-                    -- TODO: Implement K phase
-                    state <= compute_v;
-                    -- fetch_mac <= '0';
+                    if tile_h_pass > 5 then
+                        tile_h_pass <= 0;
+                        start_mac <= '1';
+                        state <= compute_v;
+                    else
+                        state <= mac;
+                    end if;
+
+                    start_mac <= '0';
+                    prev_state <= compute_k;
 
                 when compute_v =>
-                    -- TODO: Implement V phase
-                    state <= result;
-                    -- fetch_mac <= '0';
+                    if tile_h_pass > 5 then
+                        tile_h_pass <= 0;
+                        state <= result;
+                    else
+                        state <= mac;
+                    end if;
+
+                    start_mac <= '0';
+                    prev_state <= compute_v;
 
                 when result =>
                     done <= '1';

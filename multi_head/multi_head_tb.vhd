@@ -111,8 +111,7 @@ begin
 
         -- Fill Token Vector (BRAM: 49344 to 49599)
         for i in 0 to 255 loop
-            -- rand_val := (i * 2 + 3) mod 128;
-            rand_val := ((tile_index * 10) + (i * 2) + 3) mod 128;
+            rand_val := (i * 2 + 3) mod 128;
             bram_addr <= 49344 + i;
             bram_data_in <= std_logic_vector(to_signed(rand_val, 8));
             bram_wr <= '1';
@@ -131,21 +130,42 @@ begin
             wait for clk_period;
         end loop;
         bram_wr <= '0';
-        wait for clk_period;
+        wait for 2 * clk_period;
+
+        -- Fill K Weights
+        for i in 0 to 16383 loop
+            rand_val := ((i mod 256) * 59 + (i / 256) * 37 + 13) mod 256;
+            bram_addr <= i + 16383 + 1;
+            bram_data_in <= std_logic_vector(to_signed(rand_val, 8));
+            bram_wr <= '1';
+            wait for clk_period;
+        end loop;
+        bram_wr <= '0';
+        wait for 2 * clk_period;
+
+        -- Fill K Weights
+        for i in 0 to 16383 loop
+            rand_val := ((i mod 256) * 59 + (i / 256) * 37 + 13) mod 256;
+            bram_addr <= i + 16383 * 2 + 2;
+            bram_data_in <= std_logic_vector(to_signed(rand_val, 8));
+            bram_wr <= '1';
+            wait for clk_period;
+        end loop;
+        bram_wr <= '0';
+        wait for 2 * clk_period;
 
         -- Start the core
         start <= '1';
         wait for clk_period;
         start <= '0';
-
         -- Capture 6 fetch_mac outputs
-        for pass in 0 to 5 loop
+        for pass in 0 to 17 loop
             wait until fetch_mac = '1';
             wait for clk_period; -- small stabilization
 
             -- Save 12 MAC outputs
             for i in 0 to 11 loop
-                mac_results(result_index, i) <= output_d((i + 1) * 32 - 1 downto i * 32);
+                mac_results(result_index mod 6, i) <= output_d((i + 1) * 32 - 1 downto i * 32);
             end loop;
             result_index <= result_index + 1;
         end loop;

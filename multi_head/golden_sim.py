@@ -11,7 +11,6 @@ def to_signed8(val):
     else:
         return val
 
-# Precompute static Token Vector once
 # Static 256-entry token vector
 static_token_vector = [(i * 2 + 3) % 128 for i in range(256)]
 
