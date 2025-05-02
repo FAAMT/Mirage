@@ -41,44 +41,44 @@ architecture behavioral of multi_head is
     -- Type Declarations
     type state_type is (idle, compute_q, compute_k, compute_v, mac, tile_incr, softmax, result);
     type bram_qkv_type is array (0 to 49151) of std_logic_vector(7 downto 0); -- 48KB for W_Q/K/V
-    type bram_bias_type is array (0 to 191) of std_logic_vector(7 downto 0); -- 192B for Biases
+    type bram_bias_type is array (0 to 191) of std_logic_vector(7 downto 0);  -- 192B for Biases
     type bram_token_type is array (0 to 255) of std_logic_vector(7 downto 0); -- 256B for Token Input
 
     -- BRAM Storage
-    signal bram_qkv : bram_qkv_type;
-    signal bram_bias : bram_bias_type;
-    signal bram_token : bram_token_type;
+    signal bram_qkv    : bram_qkv_type;
+    signal bram_bias   : bram_bias_type;
+    signal bram_token  : bram_token_type;
     signal bram_wr_reg : std_logic;
 
     -- State Signals
-    signal state : state_type := idle;
+    signal state      : state_type := idle;
     signal prev_state : state_type := idle;
 
     -- Internal Signals
-    signal input_a_i : signed_vector(0 to TILE_W - 1) := (others => (others => '0'));
-    signal input_b_i : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => (others => '0')));
-    signal base_addr_qkv : integer := 0;
+    signal input_a_i       : signed_vector(0 to TILE_W - 1)              := (others => (others => '0'));
+    signal input_b_i       : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => (others => '0')));
+    signal base_addr_qkv   : integer                                     := 0;
     signal bram_data_out_i : std_logic_vector(7 downto 0);
-    signal tile_w_pass : integer := 0; -- Sliding Tile Width Counter
-    signal tile_h_pass : integer := 0; -- Sliding Tile Height Counter
+    signal tile_w_pass     : integer := 0; -- Sliding Tile Width Counter
+    signal tile_h_pass     : integer := 0; -- Sliding Tile Height Counter
 
 begin
     -- BRAM R/W Process
     process (clk)
     begin
         if rising_edge(clk) then
-            if (bram_addr <= 49151) then
+            if (bram_addr   <= 49151) then
                 bram_data_out_i <= bram_qkv(bram_addr);
                 if bram_wr = '1' then
                     bram_qkv(bram_addr) <= bram_data_in;
                 end if;
-            elsif (bram_addr >= 49152) and (bram_addr <= 49343) then
-                bram_data_out_i <= bram_bias(bram_addr - 49152);
+                elsif (bram_addr >= 49152) and (bram_addr <= 49343) then
+                bram_data_out_i                           <= bram_bias(bram_addr - 49152);
                 if bram_wr = '1' then
                     bram_bias(bram_addr - 49152) <= bram_data_in;
                 end if;
-            elsif (bram_addr >= 49344) and (bram_addr <= 49599) then
-                bram_data_out_i <= bram_token(bram_addr - 49344);
+                elsif (bram_addr >= 49344) and (bram_addr <= 49599) then
+                bram_data_out_i                           <= bram_token(bram_addr - 49344);
                 if bram_wr = '1' then
                     bram_token(bram_addr - 49344) <= bram_data_in;
                 end if;
@@ -98,25 +98,25 @@ begin
         for i in 0 to TILE_H - 1 loop
             for j in 0 to TILE_W - 1 loop
                 if (state = tile_incr) or (tile_h_pass > 5 and i >= 4) then
-                    input_a_i(j) <= (others => '0');
+                    input_a_i(j)    <= (others => '0');
                     input_b_i(i, j) <= (others => '0');
 
-                elsif (TILE_W * tile_w_pass + j) <= 255 then
-                    input_a_i(j) <= signed(bram_token(TILE_W * tile_w_pass + j));
+                    elsif (TILE_W * tile_w_pass + j) <= 255 then
+                    input_a_i(j)                     <= signed(bram_token(TILE_W * tile_w_pass + j));
 
                     if tile_h_pass = 5 and i >= 4 then
                         input_b_i(i, j) <= (others => '0');
-                    else
+                        else
                         if state = compute_q then
                             input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
-                        elsif state = compute_k then
+                            elsif state = compute_k then
                             input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 16384 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
-                        elsif state = compute_v then
+                            elsif state = compute_v then
                             input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 32768 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
                         end if;
                     end if;
-                else
-                    input_a_i(j) <= (others => '0');
+                    else
+                    input_a_i(j)    <= (others => '0');
                     input_b_i(i, j) <= (others => '0');
                 end if;
             end loop;
@@ -127,28 +127,28 @@ begin
     process (clk, rst)
     begin
         if rst = '1' then
-            state <= idle;
+            state       <= idle;
             tile_w_pass <= 0;
             tile_h_pass <= 0;
-            start_mac <= '0';
-            fetch_mac <= '0';
-            done <= '0';
-        elsif rising_edge(clk) then
+            start_mac   <= '0';
+            fetch_mac   <= '0';
+            done        <= '0';
+            elsif rising_edge(clk) then
             case state is
                 when idle =>
                     done <= '0';
                     if start = '1' then
-                        state <= compute_q;
+                        state     <= compute_q;
                         start_mac <= '1';
                     end if;
 
                 when mac =>
                     if done_mac = '1' then
                         if tile_w_pass = 51 then
-                            state <= tile_incr;
+                            state     <= tile_incr;
                             fetch_mac <= '1';
                         else
-                            state <= prev_state;
+                            state     <= prev_state;
                             start_mac <= '1';
 
                             tile_w_pass <= tile_w_pass + 1;
@@ -159,9 +159,9 @@ begin
 
                 when tile_incr =>
                     tile_w_pass <= 0;
-                    start_mac <= '1';
-                    fetch_mac <= '0';
-                    state <= prev_state;
+                    start_mac   <= '1';
+                    fetch_mac   <= '0';
+                    state       <= prev_state;
 
                     if tile_h_pass = 5 then
                         tile_h_pass <= 0;
@@ -180,41 +180,41 @@ begin
                 when compute_q =>
                     if tile_h_pass > 5 then
                         tile_h_pass <= 0;
-                        state <= compute_k;
+                        state       <= compute_k;
                     else
-                        state <= mac;
-                        start_mac <= '0';
+                        state      <= mac;
+                        start_mac  <= '0';
                         prev_state <= compute_q;
                     end if;
 
-                    start_mac <= '0';
+                    start_mac  <= '0';
                     prev_state <= compute_q;
 
                 when compute_k =>
                     if tile_h_pass > 5 then
                         tile_h_pass <= 0;
-                        start_mac <= '1';
-                        state <= compute_v;
+                        start_mac   <= '1';
+                        state       <= compute_v;
                     else
                         state <= mac;
                     end if;
 
-                    start_mac <= '0';
+                    start_mac  <= '0';
                     prev_state <= compute_k;
 
                 when compute_v =>
                     if tile_h_pass > 5 then
                         tile_h_pass <= 0;
-                        state <= result;
+                        state       <= result;
                     else
                         state <= mac;
                     end if;
 
-                    start_mac <= '0';
+                    start_mac  <= '0';
                     prev_state <= compute_v;
 
                 when result =>
-                    done <= '1';
+                    done  <= '1';
                     state <= idle;
 
                 when others =>
@@ -224,8 +224,8 @@ begin
     end process;
 
     -- Output Assignments
-    input_a <= input_a_i;
-    input_b <= input_b_i;
+    input_a       <= input_a_i;
+    input_b       <= input_b_i;
     bram_data_out <= bram_data_out_i;
 
 end architecture behavioral;
