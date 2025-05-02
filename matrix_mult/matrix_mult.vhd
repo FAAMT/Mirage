@@ -29,12 +29,12 @@ architecture rtl of matrix_mult is
   type accum_array is array(0 to TILE_H - 1) of signed(31 downto 0);
   type signed_vector is array (natural range <>) of signed(DATA_WIDTH - 1 downto 0);
 
-  signal a_vec : signed_vector(0 to TILE_W - 1);
-  signal w_mat : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
-  signal accum : accum_array := (others => (others => '0'));
+  signal a_vec     : signed_vector(0 to TILE_W - 1);
+  signal w_mat     : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
+  signal accum     : accum_array := (others => (others => '0'));
   signal accum_val : accum_array := (others => (others => '0'));
-  signal computing : std_logic := '0';
-  signal done_i : std_logic := '0';
+  signal computing : std_logic   := '0';
+  signal done_i    : std_logic   := '0';
 
 begin
 
@@ -54,27 +54,27 @@ begin
   process (clk, rst)
   begin
     if rst = '1' then
-      done_i <= '0';
+      done_i    <= '0';
       computing <= '0';
-      accum <= (others => (others => '0'));
+      accum     <= (others => (others => '0'));
 
-    elsif rising_edge(clk) then
+      elsif rising_edge(clk) then
       if clear = '1' then
         for i in 0 to TILE_H - 1 loop
           accum(i) <= (others => '0');
         end loop;
-      elsif start = '1' and computing = '0' then
+        elsif start = '1' and computing = '0' then
         computing <= '1';
-        done_i <= '1';
+        done_i    <= '1';
 
-      elsif computing = '1' then
+        elsif computing = '1' then
         for i in 0 to TILE_H - 1 loop
           accum(i) <= accum(i) + accum_val(i);
         end loop;
 
         computing <= '0';
-        done_i <= '0';
-      else
+        done_i    <= '0';
+        else
         done_i <= '0';
       end if;
     end if;

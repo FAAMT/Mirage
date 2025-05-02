@@ -10,17 +10,17 @@ end matrix_mult_tb;
 architecture behavior of matrix_mult_tb is
 
     constant DATA_WIDTH : integer := 8;
-    constant TILE_H : integer := 12;
-    constant TILE_W : integer := 5;
-    constant clk_period : time := 5 ns;
+    constant TILE_H     : integer := 12;
+    constant TILE_W     : integer := 5;
+    constant clk_period : time    := 5 ns;
 
-    signal clk : std_logic := '0';
-    signal rst : std_logic := '0';
+    signal clk   : std_logic := '0';
+    signal rst   : std_logic := '0';
     signal start : std_logic := '0';
-    signal done : std_logic := '0';
+    signal done  : std_logic := '0';
 
-    signal input_a : std_logic_vector(DATA_WIDTH * TILE_W - 1 downto 0);
-    signal input_b : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
+    signal input_a  : std_logic_vector(DATA_WIDTH * TILE_W - 1 downto 0);
+    signal input_b  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
     signal output_d : std_logic_vector(32 * TILE_H - 1 downto 0);
 begin
 
@@ -29,8 +29,8 @@ begin
         generic
         map(
         DATA_WIDTH => DATA_WIDTH,
-        TILE_H => TILE_H,
-        TILE_W => TILE_W
+        TILE_H     => TILE_H,
+        TILE_W     => TILE_W
         )
         port map
         (
@@ -57,8 +57,8 @@ begin
 
     stim_proc : process
         variable rand_val : integer;
-        variable a_vals : signed(7 downto 0);
-        variable b_vals : signed(7 downto 0);
+        variable a_vals   : signed(7 downto 0);
+        variable b_vals   : signed(7 downto 0);
     begin
         -- Reset system
         rst <= '1';
@@ -71,7 +71,7 @@ begin
             -- Randomize input vector (5 elements)
             for i in 0 to TILE_W - 1 loop
                 rand_val := (i * 2 + tile_index * 7 + 3) mod 128;
-                a_vals := to_signed(rand_val, 8);
+                a_vals   := to_signed(rand_val, 8);
                 input_a((i + 1) * DATA_WIDTH - 1 downto i * DATA_WIDTH) <= std_logic_vector(a_vals);
             end loop;
 
