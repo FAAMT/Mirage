@@ -24,7 +24,7 @@ ghdl -e --std=08 $TOP_ENTITY || { echo "[ERROR] Elaboration failed"; exit 1; }
 
 # Run simulation
 echo "[INFO] Running simulation..."
-ghdl -r --std=08 $TOP_ENTITY --wave="$WAVE" --stop-time=20us || { echo "[ERROR] Simulation failed"; exit 1; }
+ghdl -r --std=08 $TOP_ENTITY --wave="$WAVE" --stop-time=100us || { echo "[ERROR] Simulation failed"; exit 1; }
 
 # Launch GTKWave
 pkill gtkwave 2>/dev/null
