@@ -142,6 +142,62 @@ begin
             wait for 0.75 us;
         end loop;
 
+        wait for 5 us;
+
+        start <= '1';
+        wait for 5 ns;
+        start <= '0';
+
+        mac_in       <= (others => '0');
+        mac_addr_off <= 0;
+
+        wait for 50 ns;
+
+        -- Fetch MAC Values
+        for i in 0 to 17 loop
+            fetch_mac <= '1';
+
+            for j in 0 to 11 loop
+                -- Quantize MAC Outputs 32 bit -> 16 bit
+                if (i = 5) then
+                    if j < 4 then
+                        mac_q(12 * i + j + mac_addr_off)                           <= mac_q(12 * i + j + mac_addr_off);
+                        mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <= std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off), DATA_WIDTH));
+                    end if;
+
+                    elsif (i = 11) then
+                    if j < 4 then
+                        mac_q(12 * i + j + mac_addr_off)                           <= mac_q(12 * i + j + mac_addr_off);
+                        mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <= std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off), DATA_WIDTH));
+                    end if;
+
+                    elsif (i = 17) then
+                    if j < 4 then
+                        mac_q(12 * i + j + mac_addr_off)                           <= mac_q(12 * i + j + mac_addr_off);
+                        mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <= std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off), DATA_WIDTH));
+                    end if;
+                    else
+                    mac_q(12 * i + j + mac_addr_off)                           <= mac_q(12 * i + j + mac_addr_off);
+                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <= std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off), DATA_WIDTH));
+                end if;
+
+                -- MAC Addr Offset Logic
+                if ((12 * i + j + mac_addr_off) > 127) then
+                    mac_addr_off <= - 16;
+                    elsif ((12 * i + j + mac_addr_off) > 63) then
+                    mac_addr_off <= - 8;
+                    else
+                    mac_addr_off <= 0;
+                end if;
+            end loop;
+
+            wait for 5 ns;
+            fetch_mac <= '0';
+            -- wait for 5 ns;
+
+            wait for 0.75 us;
+        end loop;
+
         wait;
     end process;
 
