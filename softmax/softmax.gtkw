@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Fri May  2 11:23:50 2025
+[*] Sat May  3 21:01:27 2025
 [*]
 [dumpfile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/softmax/softmax.ghw"
-[dumpfile_mtime] "Fri May  2 11:23:32 2025"
-[dumpfile_size] 348046
+[dumpfile_mtime] "Sat May  3 21:00:56 2025"
+[dumpfile_size] 674320
 [savefile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/softmax/softmax.gtkw"
 [timestart] 0
-[size] 1728 1005
-[pos] -1 -1
-*-34.096275 13480000000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[size] 1920 1080
+[pos] 2158 1424
+*-32.162010 5700000000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -42,7 +42,7 @@
 [sst_width] 255
 [signals_width] 364
 [sst_expanded] 1
-[sst_vpaned_height] 327
+[sst_vpaned_height] 356
 @800200
 -CLK & RST
 @28
@@ -789,9 +789,9 @@ top.softmax_tb.uut.data_out[0]
 #{top.softmax_tb.uut.bram_qkv[127][15:0]} top.softmax_tb.uut.bram_qkv[127][15] top.softmax_tb.uut.bram_qkv[127][14] top.softmax_tb.uut.bram_qkv[127][13] top.softmax_tb.uut.bram_qkv[127][12] top.softmax_tb.uut.bram_qkv[127][11] top.softmax_tb.uut.bram_qkv[127][10] top.softmax_tb.uut.bram_qkv[127][9] top.softmax_tb.uut.bram_qkv[127][8] top.softmax_tb.uut.bram_qkv[127][7] top.softmax_tb.uut.bram_qkv[127][6] top.softmax_tb.uut.bram_qkv[127][5] top.softmax_tb.uut.bram_qkv[127][4] top.softmax_tb.uut.bram_qkv[127][3] top.softmax_tb.uut.bram_qkv[127][2] top.softmax_tb.uut.bram_qkv[127][1] top.softmax_tb.uut.bram_qkv[127][0]
 @1401200
 -K Values
-@c00201
+@c00200
 -V Values
-@421
+@420
 [color] 2
 #{top.softmax_tb.uut.bram_qkv[128][15:0]} top.softmax_tb.uut.bram_qkv[128][15] top.softmax_tb.uut.bram_qkv[128][14] top.softmax_tb.uut.bram_qkv[128][13] top.softmax_tb.uut.bram_qkv[128][12] top.softmax_tb.uut.bram_qkv[128][11] top.softmax_tb.uut.bram_qkv[128][10] top.softmax_tb.uut.bram_qkv[128][9] top.softmax_tb.uut.bram_qkv[128][8] top.softmax_tb.uut.bram_qkv[128][7] top.softmax_tb.uut.bram_qkv[128][6] top.softmax_tb.uut.bram_qkv[128][5] top.softmax_tb.uut.bram_qkv[128][4] top.softmax_tb.uut.bram_qkv[128][3] top.softmax_tb.uut.bram_qkv[128][2] top.softmax_tb.uut.bram_qkv[128][1] top.softmax_tb.uut.bram_qkv[128][0]
 [color] 3
@@ -920,11 +920,11 @@ top.softmax_tb.uut.data_out[0]
 #{top.softmax_tb.uut.bram_qkv[190][15:0]} top.softmax_tb.uut.bram_qkv[190][15] top.softmax_tb.uut.bram_qkv[190][14] top.softmax_tb.uut.bram_qkv[190][13] top.softmax_tb.uut.bram_qkv[190][12] top.softmax_tb.uut.bram_qkv[190][11] top.softmax_tb.uut.bram_qkv[190][10] top.softmax_tb.uut.bram_qkv[190][9] top.softmax_tb.uut.bram_qkv[190][8] top.softmax_tb.uut.bram_qkv[190][7] top.softmax_tb.uut.bram_qkv[190][6] top.softmax_tb.uut.bram_qkv[190][5] top.softmax_tb.uut.bram_qkv[190][4] top.softmax_tb.uut.bram_qkv[190][3] top.softmax_tb.uut.bram_qkv[190][2] top.softmax_tb.uut.bram_qkv[190][1] top.softmax_tb.uut.bram_qkv[190][0]
 [color] 2
 #{top.softmax_tb.uut.bram_qkv[191][15:0]} top.softmax_tb.uut.bram_qkv[191][15] top.softmax_tb.uut.bram_qkv[191][14] top.softmax_tb.uut.bram_qkv[191][13] top.softmax_tb.uut.bram_qkv[191][12] top.softmax_tb.uut.bram_qkv[191][11] top.softmax_tb.uut.bram_qkv[191][10] top.softmax_tb.uut.bram_qkv[191][9] top.softmax_tb.uut.bram_qkv[191][8] top.softmax_tb.uut.bram_qkv[191][7] top.softmax_tb.uut.bram_qkv[191][6] top.softmax_tb.uut.bram_qkv[191][5] top.softmax_tb.uut.bram_qkv[191][4] top.softmax_tb.uut.bram_qkv[191][3] top.softmax_tb.uut.bram_qkv[191][2] top.softmax_tb.uut.bram_qkv[191][1] top.softmax_tb.uut.bram_qkv[191][0]
-@1401201
+@1401200
 -V Values
-@800200
+@800201
 -Max Finder Signals
-@420
+@421
 [color] 1
 top.softmax_tb.uut.start_max
 [color] 1
@@ -945,7 +945,64 @@ top.softmax_tb.uut.max_ctr
 #{top.softmax_tb.uut.max_lut[1][15:0]} top.softmax_tb.uut.max_lut[1][15] top.softmax_tb.uut.max_lut[1][14] top.softmax_tb.uut.max_lut[1][13] top.softmax_tb.uut.max_lut[1][12] top.softmax_tb.uut.max_lut[1][11] top.softmax_tb.uut.max_lut[1][10] top.softmax_tb.uut.max_lut[1][9] top.softmax_tb.uut.max_lut[1][8] top.softmax_tb.uut.max_lut[1][7] top.softmax_tb.uut.max_lut[1][6] top.softmax_tb.uut.max_lut[1][5] top.softmax_tb.uut.max_lut[1][4] top.softmax_tb.uut.max_lut[1][3] top.softmax_tb.uut.max_lut[1][2] top.softmax_tb.uut.max_lut[1][1] top.softmax_tb.uut.max_lut[1][0]
 [color] 1
 #{top.softmax_tb.uut.max_lut[2][15:0]} top.softmax_tb.uut.max_lut[2][15] top.softmax_tb.uut.max_lut[2][14] top.softmax_tb.uut.max_lut[2][13] top.softmax_tb.uut.max_lut[2][12] top.softmax_tb.uut.max_lut[2][11] top.softmax_tb.uut.max_lut[2][10] top.softmax_tb.uut.max_lut[2][9] top.softmax_tb.uut.max_lut[2][8] top.softmax_tb.uut.max_lut[2][7] top.softmax_tb.uut.max_lut[2][6] top.softmax_tb.uut.max_lut[2][5] top.softmax_tb.uut.max_lut[2][4] top.softmax_tb.uut.max_lut[2][3] top.softmax_tb.uut.max_lut[2][2] top.softmax_tb.uut.max_lut[2][1] top.softmax_tb.uut.max_lut[2][0]
-@1000200
+@1000201
 -Max Finder Signals
+@800200
+-Taylor Approx Signals
+@420
+[color] 2
+#{top.softmax_tb.uut.z_diff[15:0]} top.softmax_tb.uut.z_diff[15] top.softmax_tb.uut.z_diff[14] top.softmax_tb.uut.z_diff[13] top.softmax_tb.uut.z_diff[12] top.softmax_tb.uut.z_diff[11] top.softmax_tb.uut.z_diff[10] top.softmax_tb.uut.z_diff[9] top.softmax_tb.uut.z_diff[8] top.softmax_tb.uut.z_diff[7] top.softmax_tb.uut.z_diff[6] top.softmax_tb.uut.z_diff[5] top.softmax_tb.uut.z_diff[4] top.softmax_tb.uut.z_diff[3] top.softmax_tb.uut.z_diff[2] top.softmax_tb.uut.z_diff[1] top.softmax_tb.uut.z_diff[0]
+@c00420
+[color] 3
+#{top.softmax_tb.uut.z_diff_sq[31:0]} top.softmax_tb.uut.z_diff_sq[31] top.softmax_tb.uut.z_diff_sq[30] top.softmax_tb.uut.z_diff_sq[29] top.softmax_tb.uut.z_diff_sq[28] top.softmax_tb.uut.z_diff_sq[27] top.softmax_tb.uut.z_diff_sq[26] top.softmax_tb.uut.z_diff_sq[25] top.softmax_tb.uut.z_diff_sq[24] top.softmax_tb.uut.z_diff_sq[23] top.softmax_tb.uut.z_diff_sq[22] top.softmax_tb.uut.z_diff_sq[21] top.softmax_tb.uut.z_diff_sq[20] top.softmax_tb.uut.z_diff_sq[19] top.softmax_tb.uut.z_diff_sq[18] top.softmax_tb.uut.z_diff_sq[17] top.softmax_tb.uut.z_diff_sq[16] top.softmax_tb.uut.z_diff_sq[15] top.softmax_tb.uut.z_diff_sq[14] top.softmax_tb.uut.z_diff_sq[13] top.softmax_tb.uut.z_diff_sq[12] top.softmax_tb.uut.z_diff_sq[11] top.softmax_tb.uut.z_diff_sq[10] top.softmax_tb.uut.z_diff_sq[9] top.softmax_tb.uut.z_diff_sq[8] top.softmax_tb.uut.z_diff_sq[7] top.softmax_tb.uut.z_diff_sq[6] top.softmax_tb.uut.z_diff_sq[5] top.softmax_tb.uut.z_diff_sq[4] top.softmax_tb.uut.z_diff_sq[3] top.softmax_tb.uut.z_diff_sq[2] top.softmax_tb.uut.z_diff_sq[1] top.softmax_tb.uut.z_diff_sq[0]
+@28
+top.softmax_tb.uut.z_diff_sq[31]
+top.softmax_tb.uut.z_diff_sq[30]
+top.softmax_tb.uut.z_diff_sq[29]
+top.softmax_tb.uut.z_diff_sq[28]
+top.softmax_tb.uut.z_diff_sq[27]
+top.softmax_tb.uut.z_diff_sq[26]
+top.softmax_tb.uut.z_diff_sq[25]
+top.softmax_tb.uut.z_diff_sq[24]
+top.softmax_tb.uut.z_diff_sq[23]
+top.softmax_tb.uut.z_diff_sq[22]
+top.softmax_tb.uut.z_diff_sq[21]
+top.softmax_tb.uut.z_diff_sq[20]
+top.softmax_tb.uut.z_diff_sq[19]
+top.softmax_tb.uut.z_diff_sq[18]
+top.softmax_tb.uut.z_diff_sq[17]
+top.softmax_tb.uut.z_diff_sq[16]
+top.softmax_tb.uut.z_diff_sq[15]
+top.softmax_tb.uut.z_diff_sq[14]
+top.softmax_tb.uut.z_diff_sq[13]
+top.softmax_tb.uut.z_diff_sq[12]
+top.softmax_tb.uut.z_diff_sq[11]
+top.softmax_tb.uut.z_diff_sq[10]
+top.softmax_tb.uut.z_diff_sq[9]
+top.softmax_tb.uut.z_diff_sq[8]
+top.softmax_tb.uut.z_diff_sq[7]
+top.softmax_tb.uut.z_diff_sq[6]
+top.softmax_tb.uut.z_diff_sq[5]
+top.softmax_tb.uut.z_diff_sq[4]
+top.softmax_tb.uut.z_diff_sq[3]
+top.softmax_tb.uut.z_diff_sq[2]
+top.softmax_tb.uut.z_diff_sq[1]
+top.softmax_tb.uut.z_diff_sq[0]
+@1401200
+-group_end
+@420
+[color] 5
+#{top.softmax_tb.uut.z_diff_cu[47:0]} top.softmax_tb.uut.z_diff_cu[47] top.softmax_tb.uut.z_diff_cu[46] top.softmax_tb.uut.z_diff_cu[45] top.softmax_tb.uut.z_diff_cu[44] top.softmax_tb.uut.z_diff_cu[43] top.softmax_tb.uut.z_diff_cu[42] top.softmax_tb.uut.z_diff_cu[41] top.softmax_tb.uut.z_diff_cu[40] top.softmax_tb.uut.z_diff_cu[39] top.softmax_tb.uut.z_diff_cu[38] top.softmax_tb.uut.z_diff_cu[37] top.softmax_tb.uut.z_diff_cu[36] top.softmax_tb.uut.z_diff_cu[35] top.softmax_tb.uut.z_diff_cu[34] top.softmax_tb.uut.z_diff_cu[33] top.softmax_tb.uut.z_diff_cu[32] top.softmax_tb.uut.z_diff_cu[31] top.softmax_tb.uut.z_diff_cu[30] top.softmax_tb.uut.z_diff_cu[29] top.softmax_tb.uut.z_diff_cu[28] top.softmax_tb.uut.z_diff_cu[27] top.softmax_tb.uut.z_diff_cu[26] top.softmax_tb.uut.z_diff_cu[25] top.softmax_tb.uut.z_diff_cu[24] top.softmax_tb.uut.z_diff_cu[23] top.softmax_tb.uut.z_diff_cu[22] top.softmax_tb.uut.z_diff_cu[21] top.softmax_tb.uut.z_diff_cu[20] top.softmax_tb.uut.z_diff_cu[19] top.softmax_tb.uut.z_diff_cu[18] top.softmax_tb.uut.z_diff_cu[17] top.softmax_tb.uut.z_diff_cu[16] top.softmax_tb.uut.z_diff_cu[15] top.softmax_tb.uut.z_diff_cu[14] top.softmax_tb.uut.z_diff_cu[13] top.softmax_tb.uut.z_diff_cu[12] top.softmax_tb.uut.z_diff_cu[11] top.softmax_tb.uut.z_diff_cu[10] top.softmax_tb.uut.z_diff_cu[9] top.softmax_tb.uut.z_diff_cu[8] top.softmax_tb.uut.z_diff_cu[7] top.softmax_tb.uut.z_diff_cu[6] top.softmax_tb.uut.z_diff_cu[5] top.softmax_tb.uut.z_diff_cu[4] top.softmax_tb.uut.z_diff_cu[3] top.softmax_tb.uut.z_diff_cu[2] top.softmax_tb.uut.z_diff_cu[1] top.softmax_tb.uut.z_diff_cu[0]
+[color] 6
+#{top.softmax_tb.uut.term1[63:0]} top.softmax_tb.uut.term1[63] top.softmax_tb.uut.term1[62] top.softmax_tb.uut.term1[61] top.softmax_tb.uut.term1[60] top.softmax_tb.uut.term1[59] top.softmax_tb.uut.term1[58] top.softmax_tb.uut.term1[57] top.softmax_tb.uut.term1[56] top.softmax_tb.uut.term1[55] top.softmax_tb.uut.term1[54] top.softmax_tb.uut.term1[53] top.softmax_tb.uut.term1[52] top.softmax_tb.uut.term1[51] top.softmax_tb.uut.term1[50] top.softmax_tb.uut.term1[49] top.softmax_tb.uut.term1[48] top.softmax_tb.uut.term1[47] top.softmax_tb.uut.term1[46] top.softmax_tb.uut.term1[45] top.softmax_tb.uut.term1[44] top.softmax_tb.uut.term1[43] top.softmax_tb.uut.term1[42] top.softmax_tb.uut.term1[41] top.softmax_tb.uut.term1[40] top.softmax_tb.uut.term1[39] top.softmax_tb.uut.term1[38] top.softmax_tb.uut.term1[37] top.softmax_tb.uut.term1[36] top.softmax_tb.uut.term1[35] top.softmax_tb.uut.term1[34] top.softmax_tb.uut.term1[33] top.softmax_tb.uut.term1[32] top.softmax_tb.uut.term1[31] top.softmax_tb.uut.term1[30] top.softmax_tb.uut.term1[29] top.softmax_tb.uut.term1[28] top.softmax_tb.uut.term1[27] top.softmax_tb.uut.term1[26] top.softmax_tb.uut.term1[25] top.softmax_tb.uut.term1[24] top.softmax_tb.uut.term1[23] top.softmax_tb.uut.term1[22] top.softmax_tb.uut.term1[21] top.softmax_tb.uut.term1[20] top.softmax_tb.uut.term1[19] top.softmax_tb.uut.term1[18] top.softmax_tb.uut.term1[17] top.softmax_tb.uut.term1[16] top.softmax_tb.uut.term1[15] top.softmax_tb.uut.term1[14] top.softmax_tb.uut.term1[13] top.softmax_tb.uut.term1[12] top.softmax_tb.uut.term1[11] top.softmax_tb.uut.term1[10] top.softmax_tb.uut.term1[9] top.softmax_tb.uut.term1[8] top.softmax_tb.uut.term1[7] top.softmax_tb.uut.term1[6] top.softmax_tb.uut.term1[5] top.softmax_tb.uut.term1[4] top.softmax_tb.uut.term1[3] top.softmax_tb.uut.term1[2] top.softmax_tb.uut.term1[1] top.softmax_tb.uut.term1[0]
+[color] 7
+#{top.softmax_tb.uut.term2[63:0]} top.softmax_tb.uut.term2[63] top.softmax_tb.uut.term2[62] top.softmax_tb.uut.term2[61] top.softmax_tb.uut.term2[60] top.softmax_tb.uut.term2[59] top.softmax_tb.uut.term2[58] top.softmax_tb.uut.term2[57] top.softmax_tb.uut.term2[56] top.softmax_tb.uut.term2[55] top.softmax_tb.uut.term2[54] top.softmax_tb.uut.term2[53] top.softmax_tb.uut.term2[52] top.softmax_tb.uut.term2[51] top.softmax_tb.uut.term2[50] top.softmax_tb.uut.term2[49] top.softmax_tb.uut.term2[48] top.softmax_tb.uut.term2[47] top.softmax_tb.uut.term2[46] top.softmax_tb.uut.term2[45] top.softmax_tb.uut.term2[44] top.softmax_tb.uut.term2[43] top.softmax_tb.uut.term2[42] top.softmax_tb.uut.term2[41] top.softmax_tb.uut.term2[40] top.softmax_tb.uut.term2[39] top.softmax_tb.uut.term2[38] top.softmax_tb.uut.term2[37] top.softmax_tb.uut.term2[36] top.softmax_tb.uut.term2[35] top.softmax_tb.uut.term2[34] top.softmax_tb.uut.term2[33] top.softmax_tb.uut.term2[32] top.softmax_tb.uut.term2[31] top.softmax_tb.uut.term2[30] top.softmax_tb.uut.term2[29] top.softmax_tb.uut.term2[28] top.softmax_tb.uut.term2[27] top.softmax_tb.uut.term2[26] top.softmax_tb.uut.term2[25] top.softmax_tb.uut.term2[24] top.softmax_tb.uut.term2[23] top.softmax_tb.uut.term2[22] top.softmax_tb.uut.term2[21] top.softmax_tb.uut.term2[20] top.softmax_tb.uut.term2[19] top.softmax_tb.uut.term2[18] top.softmax_tb.uut.term2[17] top.softmax_tb.uut.term2[16] top.softmax_tb.uut.term2[15] top.softmax_tb.uut.term2[14] top.softmax_tb.uut.term2[13] top.softmax_tb.uut.term2[12] top.softmax_tb.uut.term2[11] top.softmax_tb.uut.term2[10] top.softmax_tb.uut.term2[9] top.softmax_tb.uut.term2[8] top.softmax_tb.uut.term2[7] top.softmax_tb.uut.term2[6] top.softmax_tb.uut.term2[5] top.softmax_tb.uut.term2[4] top.softmax_tb.uut.term2[3] top.softmax_tb.uut.term2[2] top.softmax_tb.uut.term2[1] top.softmax_tb.uut.term2[0]
+[color] 1
+#{top.softmax_tb.uut.term3[63:0]} top.softmax_tb.uut.term3[63] top.softmax_tb.uut.term3[62] top.softmax_tb.uut.term3[61] top.softmax_tb.uut.term3[60] top.softmax_tb.uut.term3[59] top.softmax_tb.uut.term3[58] top.softmax_tb.uut.term3[57] top.softmax_tb.uut.term3[56] top.softmax_tb.uut.term3[55] top.softmax_tb.uut.term3[54] top.softmax_tb.uut.term3[53] top.softmax_tb.uut.term3[52] top.softmax_tb.uut.term3[51] top.softmax_tb.uut.term3[50] top.softmax_tb.uut.term3[49] top.softmax_tb.uut.term3[48] top.softmax_tb.uut.term3[47] top.softmax_tb.uut.term3[46] top.softmax_tb.uut.term3[45] top.softmax_tb.uut.term3[44] top.softmax_tb.uut.term3[43] top.softmax_tb.uut.term3[42] top.softmax_tb.uut.term3[41] top.softmax_tb.uut.term3[40] top.softmax_tb.uut.term3[39] top.softmax_tb.uut.term3[38] top.softmax_tb.uut.term3[37] top.softmax_tb.uut.term3[36] top.softmax_tb.uut.term3[35] top.softmax_tb.uut.term3[34] top.softmax_tb.uut.term3[33] top.softmax_tb.uut.term3[32] top.softmax_tb.uut.term3[31] top.softmax_tb.uut.term3[30] top.softmax_tb.uut.term3[29] top.softmax_tb.uut.term3[28] top.softmax_tb.uut.term3[27] top.softmax_tb.uut.term3[26] top.softmax_tb.uut.term3[25] top.softmax_tb.uut.term3[24] top.softmax_tb.uut.term3[23] top.softmax_tb.uut.term3[22] top.softmax_tb.uut.term3[21] top.softmax_tb.uut.term3[20] top.softmax_tb.uut.term3[19] top.softmax_tb.uut.term3[18] top.softmax_tb.uut.term3[17] top.softmax_tb.uut.term3[16] top.softmax_tb.uut.term3[15] top.softmax_tb.uut.term3[14] top.softmax_tb.uut.term3[13] top.softmax_tb.uut.term3[12] top.softmax_tb.uut.term3[11] top.softmax_tb.uut.term3[10] top.softmax_tb.uut.term3[9] top.softmax_tb.uut.term3[8] top.softmax_tb.uut.term3[7] top.softmax_tb.uut.term3[6] top.softmax_tb.uut.term3[5] top.softmax_tb.uut.term3[4] top.softmax_tb.uut.term3[3] top.softmax_tb.uut.term3[2] top.softmax_tb.uut.term3[1] top.softmax_tb.uut.term3[0]
+@22
+[color] 2
+#{top.softmax_tb.uut.taylor_approx[63:0]} top.softmax_tb.uut.taylor_approx[63] top.softmax_tb.uut.taylor_approx[62] top.softmax_tb.uut.taylor_approx[61] top.softmax_tb.uut.taylor_approx[60] top.softmax_tb.uut.taylor_approx[59] top.softmax_tb.uut.taylor_approx[58] top.softmax_tb.uut.taylor_approx[57] top.softmax_tb.uut.taylor_approx[56] top.softmax_tb.uut.taylor_approx[55] top.softmax_tb.uut.taylor_approx[54] top.softmax_tb.uut.taylor_approx[53] top.softmax_tb.uut.taylor_approx[52] top.softmax_tb.uut.taylor_approx[51] top.softmax_tb.uut.taylor_approx[50] top.softmax_tb.uut.taylor_approx[49] top.softmax_tb.uut.taylor_approx[48] top.softmax_tb.uut.taylor_approx[47] top.softmax_tb.uut.taylor_approx[46] top.softmax_tb.uut.taylor_approx[45] top.softmax_tb.uut.taylor_approx[44] top.softmax_tb.uut.taylor_approx[43] top.softmax_tb.uut.taylor_approx[42] top.softmax_tb.uut.taylor_approx[41] top.softmax_tb.uut.taylor_approx[40] top.softmax_tb.uut.taylor_approx[39] top.softmax_tb.uut.taylor_approx[38] top.softmax_tb.uut.taylor_approx[37] top.softmax_tb.uut.taylor_approx[36] top.softmax_tb.uut.taylor_approx[35] top.softmax_tb.uut.taylor_approx[34] top.softmax_tb.uut.taylor_approx[33] top.softmax_tb.uut.taylor_approx[32] top.softmax_tb.uut.taylor_approx[31] top.softmax_tb.uut.taylor_approx[30] top.softmax_tb.uut.taylor_approx[29] top.softmax_tb.uut.taylor_approx[28] top.softmax_tb.uut.taylor_approx[27] top.softmax_tb.uut.taylor_approx[26] top.softmax_tb.uut.taylor_approx[25] top.softmax_tb.uut.taylor_approx[24] top.softmax_tb.uut.taylor_approx[23] top.softmax_tb.uut.taylor_approx[22] top.softmax_tb.uut.taylor_approx[21] top.softmax_tb.uut.taylor_approx[20] top.softmax_tb.uut.taylor_approx[19] top.softmax_tb.uut.taylor_approx[18] top.softmax_tb.uut.taylor_approx[17] top.softmax_tb.uut.taylor_approx[16] top.softmax_tb.uut.taylor_approx[15] top.softmax_tb.uut.taylor_approx[14] top.softmax_tb.uut.taylor_approx[13] top.softmax_tb.uut.taylor_approx[12] top.softmax_tb.uut.taylor_approx[11] top.softmax_tb.uut.taylor_approx[10] top.softmax_tb.uut.taylor_approx[9] top.softmax_tb.uut.taylor_approx[8] top.softmax_tb.uut.taylor_approx[7] top.softmax_tb.uut.taylor_approx[6] top.softmax_tb.uut.taylor_approx[5] top.softmax_tb.uut.taylor_approx[4] top.softmax_tb.uut.taylor_approx[3] top.softmax_tb.uut.taylor_approx[2] top.softmax_tb.uut.taylor_approx[1] top.softmax_tb.uut.taylor_approx[0]
+@1000200
+-Taylor Approx Signals
 [pattern_trace] 1
 [pattern_trace] 0

@@ -15,9 +15,11 @@ entity softmax is
         start : in std_logic;
         done  : out std_logic;
 
-        fetch_qkv : in std_logic;
-        data_in   : in std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
-        data_out  : out std_logic_vector(12 * DATA_WIDTH - 1 downto 0)
+        fetch_qkv     : in std_logic;
+        data_in       : in std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
+        data_out      : out std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
+        taylor_approx : out signed(63 downto 0)
+
     );
 end entity;
 
@@ -52,6 +54,16 @@ architecture rtl of softmax is
     signal index       : integer range 0 to 63;
     signal processing  : std_logic;
     signal find_max    : std_logic;
+
+    -- Taylor Series Approximation Signals
+    signal z_diff            : signed(15 downto 0); -- Q1.15
+    signal z_diff_sq         : signed(31 downto 0); -- Q2.30
+    signal z_diff_cu         : signed(47 downto 0); -- Q3.45
+    signal term1             : signed(63 downto 0); -- Q1.45
+    signal term2             : signed(63 downto 0); -- Q2.45
+    signal term3             : signed(63 downto 0); -- already Q3.45
+    signal taylor_approx_val : signed(63 downto 0); -- Q*.45
+
 begin
 
     -- FSM
@@ -122,7 +134,7 @@ begin
         end if;
     end process;
 
-    -- Max computation
+    -- Max Computation Logic
     process (clk, rst)
     begin
         if rst = '1' then
@@ -142,13 +154,9 @@ begin
                 find_max    <= '0';
                 processing  <= '1';
 
-                if max_ctr = 3 then
-                    max_ctr <= 0;
-                end if;
-
                 elsif processing = '1' then
-                if signed(bram_qkv(index)) > current_max then
-                    current_max <= signed(bram_qkv(index));
+                if signed(bram_qkv(index + 64 * max_ctr)) > current_max then
+                    current_max <= signed(bram_qkv(index + 64 * max_ctr));
                     else
                     max_val <= current_max;
                 end if;
@@ -162,10 +170,45 @@ begin
 
                 elsif find_max = '1' then
                 max_lut(max_ctr) <= max_val;
-                max_ctr          <= max_ctr + 1;
-                find_max         <= '0';
+
+                if max_ctr = 2 then
+                    max_ctr <= 0;
+                    else
+                    max_ctr <= max_ctr + 1;
+                end if;
+                find_max <= '0';
             end if;
         end if;
     end process;
 
+    -- Taylor Series Approximation (3rd)
+    process (clk, rst)
+    begin
+        if rst = '1' then
+            z_diff        <= (others => '0');
+            z_diff_sq     <= (others => '0');
+            z_diff_cu     <= (others => '0');
+            term1         <= (others => '0');
+            term2         <= (others => '0');
+            term3         <= (others => '0');
+            taylor_approx <= (others => '0');
+
+            elsif rising_edge(clk) then
+            if find_max = '1' then
+                z_diff <= max_val;
+            end if;
+
+            -- Compute powers
+            z_diff_sq <= z_diff * z_diff;    -- Q2.30
+            z_diff_cu <= z_diff_sq * z_diff; -- Q3.45
+
+            -- Align terms to Q3.45
+            term1 <= shift_left(resize(z_diff, 64), 30);                       -- Q1.15 → Q1.45
+            term2 <= shift_left(resize(z_diff_sq / to_signed(2, 30), 64), 15); -- Q2.30 → Q2.45
+            term3 <= resize(z_diff_cu / to_signed(6, 48), 64);                 -- Q3.45
+
+            -- Final Result
+            taylor_approx <= (to_signed(1, 64) sll 45) + term1 + term2 + term3;
+        end if;
+    end process;
 end architecture;
