@@ -2,7 +2,7 @@
 
 # Configuration
 TOP_ENTITY="softmax_tb"
-SRC="../softmax/softmax.vhd"
+SRC="../types_pkg.vhd ../types_pkg_body.vhd ../matrix_mult/matrix_mult.vhd ../softmax/softmax.vhd"
 TB="../softmax/softmax_tb.vhd"
 WAVE="softmax.ghw"
 GTKW="softmax.gtkw"

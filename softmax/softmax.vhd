@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
+use work.types_pkg.all;
 
 entity softmax is
     generic
@@ -15,9 +16,17 @@ entity softmax is
         start : in std_logic;
         done  : out std_logic;
 
-        fetch_qkv     : in std_logic;
-        data_in       : in std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
-        data_out      : out std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
+        fetch_qkv : in std_logic;
+        data_in   : in std_logic_vector(12 * 16 - 1 downto 0);
+        data_out  : out std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
+
+        -- Matrix Mult Interface
+        start_mac : out std_logic;
+        done_mac  : in std_logic;
+        input_a   : out mac_array(0 to TILE_H - 1, 0 to TILE_W - 1); -- 12x5 INT8 inputs
+        input_b   : out mac_array(0 to TILE_H - 1, 0 to TILE_W - 1); -- 12x5 INT8 weights
+        output_d  : in std_logic_vector(32 * TILE_H - 1 downto 0);   -- 12 INT32 outputs
+
         taylor_approx : out signed(63 downto 0)
 
     );
@@ -26,10 +35,8 @@ end entity;
 architecture rtl of softmax is
     -- Type Declarations
     type state_type is (idle, fetch, load, compute, result);
-    type bram_qkv_type is array (0 to 191) of std_logic_vector(DATA_WIDTH - 1 downto 0); -- 1.53KB for QKV projections
-    type lut_max_type is array (0 to 2) of signed(DATA_WIDTH - 1 downto 0);              -- 3-Bytes for Max Value
-
-    type input_array is array (0 to 11) of signed(DATA_WIDTH - 1 downto 0);
+    type bram_qkv_type is array (0 to 767) of std_logic_vector(16 - 1 downto 0); -- 1.53KB for QKV projections
+    type lut_max_type is array (0 to 2) of signed(DATA_WIDTH - 1 downto 0);      -- 3-Bytes for Max Value
     type max_array is array (0 to 63) of signed(DATA_WIDTH - 1 downto 0);
 
     -- State Signals
@@ -39,11 +46,12 @@ architecture rtl of softmax is
     -- Control Signals
     signal fetch_ctr : integer range 0 to 5 := 0;
     signal start_max : std_logic;
+    signal q_iter    : integer;
 
     -- BRAM Storage
     signal bram_qkv  : bram_qkv_type;
-    signal bram_addr : integer range 0 to 191 := 0;
-    signal bram_off  : integer                := DATA_WIDTH;
+    signal bram_addr : integer range 0 to 767 := 0;
+    signal bram_off  : integer                := 16;
     signal offset    : integer                := 0;
 
     -- Max 64 Process Signals
@@ -68,6 +76,8 @@ begin
 
     -- FSM
     process (clk, rst)
+        variable k_idx : integer := 0;
+        variable k_row : integer := 0;
     begin
         if rst = '1' then
             state     <= idle;
@@ -76,6 +86,8 @@ begin
             bram_addr <= 0;
             offset    <= 0;
             start_max <= '0';
+            start_mac <= '0';
+            q_iter    <= 0;
             bram_qkv  <= (others => (others => '0'));
 
             elsif rising_edge(clk) then
@@ -97,37 +109,82 @@ begin
                     end if;
 
                 when load =>
+                    -- Update state and address outside loop
+                    if bram_addr = 71 then
+                        state     <= compute;
+                        bram_addr <= 0;
+                    else
+                        state <= prev_state;
+                    end if;
+
+                    bram_addr <= bram_addr + 1;
+
                     for i in 0 to 11 loop
                         -- Determine offset based on bram_addr
-                        if bram_addr = 5 and i < 4 then
-                            offset    <= - 8;
-                            start_max <= '1';
-                        elsif bram_addr = 11 and i < 4 then
-                            offset    <= - 16;
-                            start_max <= '1';
+                        if i < 4 then
+                            case bram_addr is
+                                when 5 =>
+                                    offset <= - 8;
+                                when 11 =>
+                                    offset <= - 16;
+                                when 17 =>
+                                    offset <= - 24;
+                                when 23 =>
+                                    offset <= - 32;
+                                when 29 =>
+                                    offset <= - 40;
+                                when 35 =>
+                                    offset <= - 48;
+                                when 41 =>
+                                    offset <= - 56;
+                                when 47 =>
+                                    offset <= - 64;
+                                when 53 =>
+                                    offset <= - 72;
+                                when 59 =>
+                                    offset <= - 80;
+                                when 64 =>
+                                    offset <= - 88;
+                                when others => null;
+                            end case;
                         end if;
 
                         -- Assign data if within valid range
-                        if (bram_addr = 5 or bram_addr = 11) and i < 4 then
+                        if (bram_addr = 5 or bram_addr = 11 or bram_addr = 17 or bram_addr = 23 or bram_addr = 29 or bram_addr = 35 or bram_addr = 41 or bram_addr = 47 or bram_addr = 53 or bram_addr = 59 or bram_addr = 65 or bram_addr = 71) and i < 4 then
                             bram_qkv(12 * bram_addr + i + offset) <= data_in((bram_off * (i + 1) - 1) downto (bram_off * i));
-                        elsif bram_addr = 17 and i < 4 then
-                            bram_qkv(12 * bram_addr + i + offset) <= data_in((bram_off * (i + 1) - 1) downto (bram_off * i));
-                        elsif bram_addr /= 5 and bram_addr /= 11 and bram_addr /= 17 then
+                        elsif (bram_addr /= 5 and bram_addr /= 11 and bram_addr /= 17 and bram_addr /= 23 and bram_addr /= 29 and bram_addr /= 35 and bram_addr /= 41 and bram_addr /= 47 and bram_addr /= 53 and bram_addr /= 59 and bram_addr /= 65 and bram_addr /= 71) then
                             bram_qkv(12 * bram_addr + i + offset) <= data_in((bram_off * (i + 1) - 1) downto (bram_off * i));
                         end if;
                     end loop;
 
-                    -- Update state and address outside loop
-                    if bram_addr = 17 then
-                        state     <= compute;
-                        start_max <= '1';
-                    else
-                        state <= prev_state;
-                    end if;
-                    bram_addr <= bram_addr + 1;
                 when compute =>
-                    start_max <= '0';
-                    state     <= idle;
+                    if q_iter < 4 then
+                        if start_mac = '0' and done_mac = '1' then
+                            q_iter <= q_iter + 1;
+                        elsif start_mac = '0' and done_mac = '0' then
+                            start_mac <= '1';
+                        else
+                            start_mac <= '0';
+                        end if;
+                    else
+                        state     <= idle;
+                        start_mac <= '0';
+                        q_iter    <= 0;
+                    end if;
+
+                    for row in 0 to 11 loop
+                        for col in 0 to 4 loop
+                            k_idx := row / 3;
+                            k_row := row mod 3;
+
+                            -- Q vector input: assume each Q_n is 12×5, stored row-major
+                            input_a(row, col) <= resize(shift_right(signed(bram_qkv(5 * k_row + col + 15 * q_iter)), 8), 8); -- 192 spaces within BRAM
+
+                            -- K vector input: break rows into 3-row blocks for K0..K3
+                            input_b(row, col) <= resize(shift_right(signed(bram_qkv(64 + 5 * k_row + col + 192 * k_idx + 15 * q_iter)), 8), 8);
+                        end loop;
+                    end loop;
+
                 when others =>
                     state <= idle;
             end case;
@@ -135,80 +192,80 @@ begin
     end process;
 
     -- Max Computation Logic
-    process (clk, rst)
-    begin
-        if rst = '1' then
-            max_lut     <= (others => (others => '0'));
-            max_val     <= (others => '0');
-            current_max <= (others => '0');
+    -- process (clk, rst)
+    -- begin
+    --     if rst = '1' then
+    --         max_lut     <= (others => (others => '0'));
+    --         max_val     <= (others => '0');
+    --         current_max <= (others => '0');
 
-            index      <= 0;
-            find_max   <= '0';
-            processing <= '0';
-            max_ctr    <= 0;
+    --         index      <= 0;
+    --         find_max   <= '0';
+    --         processing <= '0';
+    --         max_ctr    <= 0;
 
-            elsif rising_edge(clk) then
-            if start_max = '1' then
-                current_max <= signed(bram_qkv(0));
-                index       <= 1;
-                find_max    <= '0';
-                processing  <= '1';
+    --         elsif rising_edge(clk) then
+    --         if start_max = '1' then
+    --             current_max <= signed(bram_qkv(0));
+    --             index       <= 1;
+    --             find_max    <= '0';
+    --             processing  <= '1';
 
-                elsif processing = '1' then
-                if signed(bram_qkv(index + 64 * max_ctr)) > current_max then
-                    current_max <= signed(bram_qkv(index + 64 * max_ctr));
-                    else
-                    max_val <= current_max;
-                end if;
+    --             elsif processing = '1' then
+    --             if signed(bram_qkv(index + 64 * max_ctr)) > current_max then
+    --                 current_max <= signed(bram_qkv(index + 64 * max_ctr));
+    --                 else
+    --                 max_val <= current_max;
+    --             end if;
 
-                if index < 63 then
-                    index <= index + 1;
-                    else
-                    find_max   <= '1';
-                    processing <= '0';
-                end if;
+    --             if index < 63 then
+    --                 index <= index + 1;
+    --                 else
+    --                 find_max   <= '1';
+    --                 processing <= '0';
+    --             end if;
 
-                elsif find_max = '1' then
-                max_lut(max_ctr) <= max_val;
+    --             elsif find_max = '1' then
+    --             max_lut(max_ctr) <= max_val;
 
-                if max_ctr = 2 then
-                    max_ctr <= 0;
-                    else
-                    max_ctr <= max_ctr + 1;
-                end if;
-                find_max <= '0';
-            end if;
-        end if;
-    end process;
+    --             if max_ctr = 2 then
+    --                 max_ctr <= 0;
+    --                 else
+    --                 max_ctr <= max_ctr + 1;
+    --             end if;
+    --             find_max <= '0';
+    --         end if;
+    --     end if;
+    -- end process;
 
     -- Taylor Series Approximation (3rd)
-    process (clk, rst)
-    begin
-        if rst = '1' then
-            z_diff        <= (others => '0');
-            z_diff_sq     <= (others => '0');
-            z_diff_cu     <= (others => '0');
-            term1         <= (others => '0');
-            term2         <= (others => '0');
-            term3         <= (others => '0');
-            taylor_approx <= (others => '0');
+    -- process (clk, rst)
+    -- begin
+    --     if rst = '1' then
+    --         z_diff        <= (others => '0');
+    --         z_diff_sq     <= (others => '0');
+    --         z_diff_cu     <= (others => '0');
+    --         term1         <= (others => '0');
+    --         term2         <= (others => '0');
+    --         term3         <= (others => '0');
+    --         taylor_approx <= (others => '0');
 
-            elsif rising_edge(clk) then
-            if find_max = '1' then
-                z_diff <= max_val;
-            end if;
+    --         elsif rising_edge(clk) then
+    --         if find_max = '1' then
+    --             z_diff <= max_val;
+    --         end if;
 
-            -- Compute powers
-            z_diff_sq <= z_diff * z_diff;    -- Q2.30
-            z_diff_cu <= z_diff_sq * z_diff; -- Q3.45
+    --         -- Compute powers
+    --         z_diff_sq <= z_diff * z_diff;    -- Q2.30
+    --         z_diff_cu <= z_diff_sq * z_diff; -- Q3.45
 
-            -- Align terms to Q3.45
-            term1 <= shift_left(resize(z_diff, 64), 30);                       -- Q1.15 → Q1.45
-            term2 <= shift_left(resize(z_diff_sq / to_signed(2, 30), 64), 15); -- Q2.30 → Q2.45
-            term3 <= resize(z_diff_cu / to_signed(6, 48), 64);                 -- Q3.45
+    --         -- Align terms to Q3.45
+    --         term1 <= shift_left(resize(z_diff, 64), 30);                       -- Q1.15 → Q1.45
+    --         term2 <= shift_left(resize(z_diff_sq / to_signed(2, 30), 64), 15); -- Q2.30 → Q2.45
+    --         term3 <= resize(z_diff_cu / to_signed(6, 48), 64);                 -- Q3.45
 
-            -- Final Result
-            taylor_approx <= (to_signed(1, 64) sll 45) + term1 + term2 + term3;
-        end if;
-    end process;
+    --         -- Final Result
+    --         taylor_approx <= (to_signed(1, 64) sll 45) + term1 + term2 + term3;
+    --     end if;
+    -- end process;
 end architecture;

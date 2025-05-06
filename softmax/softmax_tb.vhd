@@ -3,15 +3,17 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use STD.TEXTIO.all;
 use IEEE.STD_LOGIC_TEXTIO.all;
+use work.types_pkg.all;
 
 entity softmax_tb is
 end entity;
 
 architecture tb of softmax_tb is
+    -- Constant & Type Declarations
     constant DATA_WIDTH : integer := 16;
 
-    type mac_array is array (0 to 191) of integer;
-    signal mac_q : mac_array := (
+    type fetch_mac_array is array (0 to 191) of integer;
+    signal mac_q : fetch_mac_array := (
         3200, -25216, 9344, -24192, 5248, -160, -9088, 12672,
         - 33664, 15744, -35712, 0, 4096, -8192, 8192, -16384,
         12288, -20480, 16384, -24576, 20480, -28672, 24576, -32768,
@@ -41,17 +43,30 @@ architecture tb of softmax_tb is
         others => 0
     );
 
+    -- CLK % RST
     signal clk : std_logic := '0';
     signal rst : std_logic := '1';
 
-    signal start     : std_logic := '0';
-    signal done      : std_logic;
-    signal fetch_mac : std_logic := '0';
-    signal find_max  : std_logic := '0';
+    -- Control Logic
+    signal start    : std_logic := '0';
+    signal clear    : std_logic := '0';
+    signal done     : std_logic;
+    signal find_max : std_logic := '0';
 
-    signal mac_in       : std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
+    -- MAC Signals
+    signal start_mac : std_logic := '0';
+    signal fetch_mac : std_logic := '0';
+    signal done_mac  : std_logic;
+
+    signal input_a  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => to_signed(0, 8)));
+    signal input_b  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => to_signed(0, 8)));
+    signal output_d : std_logic_vector(32 * TILE_H - 1 downto 0); -- 12x INT32 outputs
+
+    signal mac_q_init   : fetch_mac_array := mac_q;
+    signal mac_in       : std_logic_vector(12 * 16 - 1 downto 0);
     signal mac_addr_off : integer := 0;
 
+    -- Text Output Signals
     file output_file         : text open write_mode is "exp_output.txt";
     signal taylor_approx_val : signed(63 downto 0) := (others => '0');
 
@@ -74,7 +89,34 @@ begin
             fetch_qkv     => fetch_mac,
             taylor_approx => taylor_approx_val,
             data_in       => mac_in,
-            data_out      => open
+            data_out      => open,
+
+            -- Matrix Mult Interface
+            start_mac => start_mac,
+            done_mac  => done_mac,
+            input_a   => input_a,
+            input_b   => input_b,
+            output_d  => output_d
+        );
+
+    -- Instantiate Matrix Multiply Core (MAC Array)
+    mac_core : entity work.matrix_mult
+        generic
+        map (
+        DATA_WIDTH => 8,
+        TILE_H     => TILE_H,
+        TILE_W     => TILE_W
+        )
+        port
+        map (
+        clk      => clk,
+        rst      => rst,
+        start    => start_mac,
+        clear    => clear,
+        input_a  => input_a,
+        input_b  => input_b,
+        output_d => output_d, -- output not needed yet for this phase
+        done     => done_mac
         );
 
     -- Clock process
@@ -106,148 +148,76 @@ begin
         wait for 50 ns;
 
         -- Fetch MAC Values
-        for i in 0 to 17 loop
-            fetch_mac <= '1';
+        for proj_iter in 0 to 3 loop
+            mac_addr_off <= 0;
+            mac_q        <= mac_q_init;
+            wait for 5 ns;
 
-            for j in 0 to 11 loop
-                -- Quantize MAC Outputs 32 bit -> 16 bit
-                if (i < 5) then
-                    mac_q(12 * i + j + mac_addr_off) <=
-                    mac_q(12 * i + j + mac_addr_off) / 4;
+            for i in 0 to 17 loop
+                fetch_mac <= '1';
 
-                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                    std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 4, DATA_WIDTH));
-                    elsif (i = 5) then
-                    if j < 4 then
+                for j in 0 to 11 loop
+                    -- Quantize MAC Outputs 32 bit -> 16 bit
+                    if (i < 5) then
                         mac_q(12 * i + j + mac_addr_off) <=
                         mac_q(12 * i + j + mac_addr_off) / 4;
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
                         std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 4, DATA_WIDTH));
-                    end if;
-                    elsif (i < 11) then
-                    mac_q(12 * i + j + mac_addr_off) <=
-                    mac_q(12 * i + j + mac_addr_off) / 8;
+                        elsif (i = 5) then
+                        if j < 4 then
+                            mac_q(12 * i + j + mac_addr_off) <=
+                            mac_q(12 * i + j + mac_addr_off) / 4;
 
-                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                    std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-                    elsif (i = 11) then
-                    if j < 4 then
+                            mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
+                            std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 4, DATA_WIDTH));
+                        end if;
+                        elsif (i < 11) then
                         mac_q(12 * i + j + mac_addr_off) <=
                         mac_q(12 * i + j + mac_addr_off) / 8;
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
+                        std_logic_vector(to_signed(5 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
+                        elsif (i = 11) then
+                        if j < 4 then
+                            mac_q(12 * i + j + mac_addr_off) <=
+                            mac_q(12 * i + j + mac_addr_off) / 8;
 
-                    end if;
-                    elsif (i < 17) then
-                    mac_q(12 * i + j + mac_addr_off) <=
-                    mac_q(12 * i + j + mac_addr_off) / 16;
+                            mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
+                            std_logic_vector(to_signed(5 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
 
-                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                    std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
-                    elsif (i = 17) then
-                    if j < 4 then
+                        end if;
+                        elsif (i < 17) then
                         mac_q(12 * i + j + mac_addr_off) <=
                         mac_q(12 * i + j + mac_addr_off) / 16;
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
                         std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
+                        elsif (i = 17) then
+                        if j < 4 then
+                            mac_q(12 * i + j + mac_addr_off) <=
+                            mac_q(12 * i + j + mac_addr_off) / 16;
 
+                            mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
+                            std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
+
+                        end if;
                     end if;
-                end if;
 
-                -- MAC Addr Offset Logic
-                if ((12 * i + j + mac_addr_off) > 127) then
-                    mac_addr_off <= - 16;
-                    elsif ((12 * i + j + mac_addr_off) > 63) then
-                    mac_addr_off <= - 8;
-                    else
-                    mac_addr_off <= 0;
-                end if;
+                    -- MAC Addr Offset Logic
+                    if ((12 * i + j + mac_addr_off) > 127) then
+                        mac_addr_off <= - 16;
+                        elsif ((12 * i + j + mac_addr_off) > 63) then
+                        mac_addr_off <= - 8;
+                        else
+                        mac_addr_off <= 0;
+                    end if;
+                end loop;
+
+                wait for 5 ns;
+                fetch_mac <= '0';
+                wait for 0.75 us;
             end loop;
-
-            wait for 5 ns;
-            fetch_mac <= '0';
-            wait for 0.75 us;
-        end loop;
-
-        wait for 5 us;
-
-        start <= '1';
-        wait for 5 ns;
-        start <= '0';
-
-        mac_in       <= (others => '0');
-        mac_addr_off <= 0;
-
-        wait for 50 ns;
-
-        -- Fetch MAC Values
-        for i in 0 to 17 loop
-            fetch_mac <= '1';
-
-            for j in 0 to 11 loop
-                -- Quantize MAC Outputs 32 bit -> 16 bit
-                if (i < 5) then
-                    mac_q(12 * i + j + mac_addr_off) <=
-                    mac_q(12 * i + j + mac_addr_off) / 8;
-
-                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                    std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-                    elsif (i = 5) then
-                    if j < 4 then
-                        mac_q(12 * i + j + mac_addr_off) <=
-                        mac_q(12 * i + j + mac_addr_off) / 8;
-
-                        mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-                    end if;
-                    elsif (i < 11) then
-                    mac_q(12 * i + j + mac_addr_off) <=
-                    mac_q(12 * i + j + mac_addr_off) / 8;
-
-                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                    std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-                    elsif (i = 11) then
-                    if j < 4 then
-                        mac_q(12 * i + j + mac_addr_off) <=
-                        mac_q(12 * i + j + mac_addr_off) / 8;
-
-                        mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-
-                    end if;
-                    elsif (i < 17) then
-                    mac_q(12 * i + j + mac_addr_off) <=
-                    mac_q(12 * i + j + mac_addr_off) / 8;
-
-                    mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                    std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-                    elsif (i = 17) then
-                    if j < 4 then
-                        mac_q(12 * i + j + mac_addr_off) <=
-                        mac_q(12 * i + j + mac_addr_off) / 8;
-
-                        mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
-
-                    end if;
-                end if;
-
-                -- MAC Addr Offset Logic
-                if ((12 * i + j + mac_addr_off) > 127) then
-                    mac_addr_off <= - 16;
-                    elsif ((12 * i + j + mac_addr_off) > 63) then
-                    mac_addr_off <= - 8;
-                    else
-                    mac_addr_off <= 0;
-                end if;
-            end loop;
-
-            wait for 5 ns;
-            fetch_mac <= '0';
-            wait for 0.75 us;
         end loop;
         wait;
     end process;

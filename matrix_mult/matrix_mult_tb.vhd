@@ -17,9 +17,10 @@ architecture behavior of matrix_mult_tb is
     signal clk   : std_logic := '0';
     signal rst   : std_logic := '0';
     signal start : std_logic := '0';
+    signal clear : std_logic := '0';
     signal done  : std_logic := '0';
 
-    signal input_a  : std_logic_vector(DATA_WIDTH * TILE_W - 1 downto 0);
+    signal input_a  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
     signal input_b  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
     signal output_d : std_logic_vector(32 * TILE_H - 1 downto 0);
 begin
@@ -37,6 +38,7 @@ begin
             clk      => clk,
             rst      => rst,
             start    => start,
+            clear    => clear,
             input_a  => input_a,
             input_b  => input_b,
             output_d => output_d,
@@ -69,10 +71,12 @@ begin
         for tile_index in 0 to 51 loop
 
             -- Randomize input vector (5 elements)
-            for i in 0 to TILE_W - 1 loop
-                rand_val := (i * 2 + tile_index * 7 + 3) mod 128;
-                a_vals   := to_signed(rand_val, 8);
-                input_a((i + 1) * DATA_WIDTH - 1 downto i * DATA_WIDTH) <= std_logic_vector(a_vals);
+            for i in 0 to TILE_H - 1 loop
+                for j in 0 to TILE_W - 1 loop
+                    rand_val := (j * 2 + tile_index * 7 + 3) mod 128;
+                    a_vals   := to_signed(rand_val, 8);
+                    input_a(i, j) <= signed(a_vals);
+                end loop;
             end loop;
 
             -- Randomize weight matrix input_b (structured mac_array)
@@ -84,13 +88,11 @@ begin
             end loop;
 
             -- Trigger computation
-            wait for 1 ns;
             start <= '1';
-            wait for clk_period;
+            wait until done = '1';
             start <= '0';
 
             -- Wait until computation is complete
-            wait until done = '1';
             wait for clk_period;
 
             report "Tile completed: " & integer'image(tile_index + 1);

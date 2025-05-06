@@ -14,7 +14,7 @@ rm -f *.o *.cf work-obj* work-*.cf "$WAVE"
 # Compile source and testbench
 echo "[INFO] Compiling source..."
 
-ghdl -a --std=08 ../types_pkg.vhd || { echo "[ERROR] Failed to compile types_pkg.vhd"; exit 1; }
+ghdl -a --std=08 ../types_pkg.vhd  ../types_pkg_body.vhd|| { echo "[ERROR] Failed to compile types_pkg.vhd"; exit 1; }
 
 ghdl -a --std=08 "$SRC" || { echo "[ERROR] Failed to compile $SRC"; exit 1; }
 

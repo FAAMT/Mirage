@@ -27,7 +27,7 @@ entity multi_head is
         bram_wr       : in std_logic;
 
         -- Matrix Mult Signals
-        input_a : out signed_vector(0 to TILE_W - 1);
+        input_a : out mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
         input_b : out mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
 
         start_mac : out std_logic;
@@ -55,7 +55,7 @@ architecture behavioral of multi_head is
     signal prev_state : state_type := idle;
 
     -- Internal Signals
-    signal input_a_i       : signed_vector(0 to TILE_W - 1)              := (others => (others => '0'));
+    signal input_a_i       : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => (others => '0')));
     signal input_b_i       : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => (others => '0')));
     signal base_addr_qkv   : integer                                     := 0;
     signal bram_data_out_i : std_logic_vector(7 downto 0);
@@ -98,11 +98,11 @@ begin
         for i in 0 to TILE_H - 1 loop
             for j in 0 to TILE_W - 1 loop
                 if (state = tile_incr) or (tile_h_pass > 5 and i >= 4) then
-                    input_a_i(j)    <= (others => '0');
+                    input_a_i(i, j) <= (others => '0');
                     input_b_i(i, j) <= (others => '0');
 
                     elsif (TILE_W * tile_w_pass + j) <= 255 then
-                    input_a_i(j)                     <= signed(bram_token(TILE_W * tile_w_pass + j));
+                    input_a_i(i, j)                  <= signed(bram_token(TILE_W * tile_w_pass + j));
 
                     if tile_h_pass = 5 and i >= 4 then
                         input_b_i(i, j) <= (others => '0');
@@ -116,7 +116,7 @@ begin
                         end if;
                     end if;
                     else
-                    input_a_i(j)    <= (others => '0');
+                    input_a_i(i, j) <= (others => '0');
                     input_b_i(i, j) <= (others => '0');
                 end if;
             end loop;

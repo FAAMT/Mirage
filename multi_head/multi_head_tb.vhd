@@ -32,7 +32,7 @@ architecture behavior of multi_head_tb is
     signal bram_data_out : std_logic_vector(7 downto 0);
     signal bram_wr       : std_logic := '0';
 
-    signal input_a  : signed_vector(0 to TILE_W - 1);
+    signal input_a  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
     signal input_b  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
     signal output_d : std_logic_vector(32 * TILE_H - 1 downto 0); -- 12x INT32 outputs
 
@@ -81,7 +81,7 @@ begin
         rst      => rst,
         start    => start_mac,
         clear    => fetch_mac,
-        input_a  => std_logic_vector(flatten_signed_vector(input_a)),
+        input_a  => input_a,
         input_b  => input_b,
         output_d => output_d, -- output not needed yet for this phase
         done     => done_mac
