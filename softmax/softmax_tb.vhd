@@ -55,6 +55,7 @@ architecture tb of softmax_tb is
 
     -- MAC Signals
     signal start_mac : std_logic := '0';
+    signal clear_mac : std_logic := '0';
     signal fetch_mac : std_logic := '0';
     signal done_mac  : std_logic;
 
@@ -67,9 +68,7 @@ architecture tb of softmax_tb is
     signal mac_addr_off : integer := 0;
 
     -- Text Output Signals
-    file output_file         : text open write_mode is "exp_output.txt";
-    signal taylor_approx_val : signed(63 downto 0) := (others => '0');
-
+    file output_file : text open write_mode is "exp_output.txt";
 begin
     -- Instantiate the softmax core
     uut : entity work.softmax
@@ -86,13 +85,13 @@ begin
             start => start,
             done  => done,
 
-            fetch_qkv     => fetch_mac,
-            taylor_approx => taylor_approx_val,
-            data_in       => mac_in,
-            data_out      => open,
+            fetch_qkv => fetch_mac,
+            data_in   => mac_in,
+            data_out  => open,
 
             -- Matrix Mult Interface
             start_mac => start_mac,
+            clear_mac => clear_mac,
             done_mac  => done_mac,
             input_a   => input_a,
             input_b   => input_b,
@@ -112,7 +111,7 @@ begin
         clk      => clk,
         rst      => rst,
         start    => start_mac,
-        clear    => clear,
+        clear    => clear_mac,
         input_a  => input_a,
         input_b  => input_b,
         output_d => output_d, -- output not needed yet for this phase
@@ -163,28 +162,28 @@ begin
                         mac_q(12 * i + j + mac_addr_off) / 4;
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 4, DATA_WIDTH));
+                        std_logic_vector(to_signed(((mac_q(12 * i + j + mac_addr_off)) / 4) + 1000 * proj_iter, DATA_WIDTH));
                         elsif (i = 5) then
                         if j < 4 then
                             mac_q(12 * i + j + mac_addr_off) <=
                             mac_q(12 * i + j + mac_addr_off) / 4;
 
                             mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                            std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 4, DATA_WIDTH));
+                            std_logic_vector(to_signed(((mac_q(12 * i + j + mac_addr_off)) / 4) + 1000 * proj_iter, DATA_WIDTH));
                         end if;
                         elsif (i < 11) then
                         mac_q(12 * i + j + mac_addr_off) <=
                         mac_q(12 * i + j + mac_addr_off) / 8;
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(5 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
+                        std_logic_vector(to_signed(100 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
                         elsif (i = 11) then
                         if j < 4 then
                             mac_q(12 * i + j + mac_addr_off) <=
                             mac_q(12 * i + j + mac_addr_off) / 8;
 
                             mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                            std_logic_vector(to_signed(5 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
+                            std_logic_vector(to_signed(100 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
 
                         end if;
                         elsif (i < 17) then
@@ -222,22 +221,22 @@ begin
         wait;
     end process;
 
-    process
-        variable line_out : line;
-        variable slv      : std_logic_vector(63 downto 0);
+    -- process
+    --     variable line_out : line;
+    --     variable slv      : std_logic_vector(63 downto 0);
 
-    begin
-        for i in 0 to 1 loop
-            wait until (start = '1');
+    -- begin
+    --     for i in 0 to 1 loop
+    --         wait until (start = '1');
 
-            for j in 0 to 2 loop
-                wait for 5 us;
-                slv := std_logic_vector(taylor_approx_val);
-                write(line_out, to_hstring(slv));
-                writeline(output_file, line_out);
-            end loop;
-        end loop;
-        wait;
-    end process;
+    --         for j in 0 to 2 loop
+    --             wait for 5 us;
+    --             slv := std_logic_vector(taylor_approx_val);
+    --             write(line_out, to_hstring(slv));
+    --             writeline(output_file, line_out);
+    --         end loop;
+    --     end loop;
+    --     wait;
+    -- end process;
 
 end architecture;
