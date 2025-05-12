@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Fri May  9 10:49:45 2025
+[*] Sun May 11 15:18:52 2025
 [*]
 [dumpfile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/softmax/softmax.ghw"
-[dumpfile_mtime] "Fri May  9 10:45:33 2025"
-[dumpfile_size] 808618
+[dumpfile_mtime] "Sun May 11 15:17:39 2025"
+[dumpfile_size] 843488
 [savefile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/softmax/softmax.gtkw"
-[timestart] 0
+[timestart] 54234200000
 [size] 1728 1005
 [pos] 0 64
-*-35.112263 54180300000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+*-25.812262 54425200000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -40,9 +40,9 @@
 [treeopen] top.softmax_tb.
 [treeopen] top.softmax_tb.mac_core.
 [treeopen] top.softmax_tb.uut.
-[sst_width] 255
+[sst_width] 40
 [signals_width] 376
-[sst_expanded] 1
+[sst_expanded] 0
 [sst_vpaned_height] 356
 @800200
 -CLK & RST
@@ -1283,7 +1283,9 @@ top.softmax_tb.mac_core.computing
 @420
 top.softmax_tb.uut.q_ext_iter
 top.softmax_tb.uut.q_int_iter
-@c00200
+top.softmax_tb.uut.v_ext_iter
+top.softmax_tb.uut.v_int_iter
+@800200
 -IN_A SIgnals
 @c00420
 [color] 1
@@ -1435,9 +1437,9 @@ top.softmax_tb.uut.input_a[0,0][0]
 #{top.softmax_tb.uut.input_a[11,3][15:0]} top.softmax_tb.uut.input_a[11,3][7] top.softmax_tb.uut.input_a[11,3][6] top.softmax_tb.uut.input_a[11,3][5] top.softmax_tb.uut.input_a[11,3][4] top.softmax_tb.uut.input_a[11,3][3] top.softmax_tb.uut.input_a[11,3][2] top.softmax_tb.uut.input_a[11,3][1] top.softmax_tb.uut.input_a[11,3][0]
 [color] 4
 #{top.softmax_tb.uut.input_a[11,4][15:0]} top.softmax_tb.uut.input_a[11,4][7] top.softmax_tb.uut.input_a[11,4][6] top.softmax_tb.uut.input_a[11,4][5] top.softmax_tb.uut.input_a[11,4][4] top.softmax_tb.uut.input_a[11,4][3] top.softmax_tb.uut.input_a[11,4][2] top.softmax_tb.uut.input_a[11,4][1] top.softmax_tb.uut.input_a[11,4][0]
-@1401200
+@1000200
 -IN_A SIgnals
-@c00200
+@800200
 -IN_B Signals\
 @c00420
 [color] 1
@@ -1621,11 +1623,11 @@ top.softmax_tb.uut.input_b[8,4][0]
 #{top.softmax_tb.uut.input_b[11,3][15:0]} top.softmax_tb.uut.input_b[11,3][7] top.softmax_tb.uut.input_b[11,3][6] top.softmax_tb.uut.input_b[11,3][5] top.softmax_tb.uut.input_b[11,3][4] top.softmax_tb.uut.input_b[11,3][3] top.softmax_tb.uut.input_b[11,3][2] top.softmax_tb.uut.input_b[11,3][1] top.softmax_tb.uut.input_b[11,3][0]
 [color] 5
 #{top.softmax_tb.uut.input_b[11,4][15:0]} top.softmax_tb.uut.input_b[11,4][7] top.softmax_tb.uut.input_b[11,4][6] top.softmax_tb.uut.input_b[11,4][5] top.softmax_tb.uut.input_b[11,4][4] top.softmax_tb.uut.input_b[11,4][3] top.softmax_tb.uut.input_b[11,4][2] top.softmax_tb.uut.input_b[11,4][1] top.softmax_tb.uut.input_b[11,4][0]
-@1401200
+@1000200
 -IN_B Signals\
-@c00200
+@800201
 -Accum Signals
-@420
+@421
 [color] 1
 #{top.softmax_tb.mac_core.accum[0][31:0]} top.softmax_tb.mac_core.accum[0][31] top.softmax_tb.mac_core.accum[0][30] top.softmax_tb.mac_core.accum[0][29] top.softmax_tb.mac_core.accum[0][28] top.softmax_tb.mac_core.accum[0][27] top.softmax_tb.mac_core.accum[0][26] top.softmax_tb.mac_core.accum[0][25] top.softmax_tb.mac_core.accum[0][24] top.softmax_tb.mac_core.accum[0][23] top.softmax_tb.mac_core.accum[0][22] top.softmax_tb.mac_core.accum[0][21] top.softmax_tb.mac_core.accum[0][20] top.softmax_tb.mac_core.accum[0][19] top.softmax_tb.mac_core.accum[0][18] top.softmax_tb.mac_core.accum[0][17] top.softmax_tb.mac_core.accum[0][16] top.softmax_tb.mac_core.accum[0][15] top.softmax_tb.mac_core.accum[0][14] top.softmax_tb.mac_core.accum[0][13] top.softmax_tb.mac_core.accum[0][12] top.softmax_tb.mac_core.accum[0][11] top.softmax_tb.mac_core.accum[0][10] top.softmax_tb.mac_core.accum[0][9] top.softmax_tb.mac_core.accum[0][8] top.softmax_tb.mac_core.accum[0][7] top.softmax_tb.mac_core.accum[0][6] top.softmax_tb.mac_core.accum[0][5] top.softmax_tb.mac_core.accum[0][4] top.softmax_tb.mac_core.accum[0][3] top.softmax_tb.mac_core.accum[0][2] top.softmax_tb.mac_core.accum[0][1] top.softmax_tb.mac_core.accum[0][0]
 [color] 2
@@ -1650,9 +1652,9 @@ top.softmax_tb.uut.input_b[8,4][0]
 #{top.softmax_tb.mac_core.accum[10][31:0]} top.softmax_tb.mac_core.accum[10][31] top.softmax_tb.mac_core.accum[10][30] top.softmax_tb.mac_core.accum[10][29] top.softmax_tb.mac_core.accum[10][28] top.softmax_tb.mac_core.accum[10][27] top.softmax_tb.mac_core.accum[10][26] top.softmax_tb.mac_core.accum[10][25] top.softmax_tb.mac_core.accum[10][24] top.softmax_tb.mac_core.accum[10][23] top.softmax_tb.mac_core.accum[10][22] top.softmax_tb.mac_core.accum[10][21] top.softmax_tb.mac_core.accum[10][20] top.softmax_tb.mac_core.accum[10][19] top.softmax_tb.mac_core.accum[10][18] top.softmax_tb.mac_core.accum[10][17] top.softmax_tb.mac_core.accum[10][16] top.softmax_tb.mac_core.accum[10][15] top.softmax_tb.mac_core.accum[10][14] top.softmax_tb.mac_core.accum[10][13] top.softmax_tb.mac_core.accum[10][12] top.softmax_tb.mac_core.accum[10][11] top.softmax_tb.mac_core.accum[10][10] top.softmax_tb.mac_core.accum[10][9] top.softmax_tb.mac_core.accum[10][8] top.softmax_tb.mac_core.accum[10][7] top.softmax_tb.mac_core.accum[10][6] top.softmax_tb.mac_core.accum[10][5] top.softmax_tb.mac_core.accum[10][4] top.softmax_tb.mac_core.accum[10][3] top.softmax_tb.mac_core.accum[10][2] top.softmax_tb.mac_core.accum[10][1] top.softmax_tb.mac_core.accum[10][0]
 [color] 5
 #{top.softmax_tb.mac_core.accum[11][31:0]} top.softmax_tb.mac_core.accum[11][31] top.softmax_tb.mac_core.accum[11][30] top.softmax_tb.mac_core.accum[11][29] top.softmax_tb.mac_core.accum[11][28] top.softmax_tb.mac_core.accum[11][27] top.softmax_tb.mac_core.accum[11][26] top.softmax_tb.mac_core.accum[11][25] top.softmax_tb.mac_core.accum[11][24] top.softmax_tb.mac_core.accum[11][23] top.softmax_tb.mac_core.accum[11][22] top.softmax_tb.mac_core.accum[11][21] top.softmax_tb.mac_core.accum[11][20] top.softmax_tb.mac_core.accum[11][19] top.softmax_tb.mac_core.accum[11][18] top.softmax_tb.mac_core.accum[11][17] top.softmax_tb.mac_core.accum[11][16] top.softmax_tb.mac_core.accum[11][15] top.softmax_tb.mac_core.accum[11][14] top.softmax_tb.mac_core.accum[11][13] top.softmax_tb.mac_core.accum[11][12] top.softmax_tb.mac_core.accum[11][11] top.softmax_tb.mac_core.accum[11][10] top.softmax_tb.mac_core.accum[11][9] top.softmax_tb.mac_core.accum[11][8] top.softmax_tb.mac_core.accum[11][7] top.softmax_tb.mac_core.accum[11][6] top.softmax_tb.mac_core.accum[11][5] top.softmax_tb.mac_core.accum[11][4] top.softmax_tb.mac_core.accum[11][3] top.softmax_tb.mac_core.accum[11][2] top.softmax_tb.mac_core.accum[11][1] top.softmax_tb.mac_core.accum[11][0]
-@1401200
+@1000201
 -Accum Signals
-@800200
+@c00200
 -Max Finder Signals
 @420
 [color] 5
@@ -1679,9 +1681,9 @@ top.softmax_tb.uut.max_index
 #{top.softmax_tb.uut.max_lut[2][17:0]} top.softmax_tb.uut.max_lut[2][17] top.softmax_tb.uut.max_lut[2][16] top.softmax_tb.uut.max_lut[2][15] top.softmax_tb.uut.max_lut[2][14] top.softmax_tb.uut.max_lut[2][13] top.softmax_tb.uut.max_lut[2][12] top.softmax_tb.uut.max_lut[2][11] top.softmax_tb.uut.max_lut[2][10] top.softmax_tb.uut.max_lut[2][9] top.softmax_tb.uut.max_lut[2][8] top.softmax_tb.uut.max_lut[2][7] top.softmax_tb.uut.max_lut[2][6] top.softmax_tb.uut.max_lut[2][5] top.softmax_tb.uut.max_lut[2][4] top.softmax_tb.uut.max_lut[2][3] top.softmax_tb.uut.max_lut[2][2] top.softmax_tb.uut.max_lut[2][1] top.softmax_tb.uut.max_lut[2][0]
 [color] 5
 #{top.softmax_tb.uut.max_lut[3][17:0]} top.softmax_tb.uut.max_lut[3][17] top.softmax_tb.uut.max_lut[3][16] top.softmax_tb.uut.max_lut[3][15] top.softmax_tb.uut.max_lut[3][14] top.softmax_tb.uut.max_lut[3][13] top.softmax_tb.uut.max_lut[3][12] top.softmax_tb.uut.max_lut[3][11] top.softmax_tb.uut.max_lut[3][10] top.softmax_tb.uut.max_lut[3][9] top.softmax_tb.uut.max_lut[3][8] top.softmax_tb.uut.max_lut[3][7] top.softmax_tb.uut.max_lut[3][6] top.softmax_tb.uut.max_lut[3][5] top.softmax_tb.uut.max_lut[3][4] top.softmax_tb.uut.max_lut[3][3] top.softmax_tb.uut.max_lut[3][2] top.softmax_tb.uut.max_lut[3][1] top.softmax_tb.uut.max_lut[3][0]
-@1000200
+@1401200
 -Max Finder Signals
-@800200
+@c00200
 -Taylor Approx Signals
 @420
 [color] 3
@@ -2045,11 +2047,11 @@ top.softmax_tb.uut.taylor_sum[3]
 top.softmax_tb.uut.taylor_sum[2]
 top.softmax_tb.uut.taylor_sum[1]
 top.softmax_tb.uut.taylor_sum[0]
-@1401600
+@1401200
 -group_end
 @200
 -
-@29
+@28
 [color] 2
 top.softmax_tb.uut.softmax_ready
 @420
@@ -2061,9 +2063,9 @@ top.softmax_tb.uut.softmax_ready
 #{top.softmax_tb.uut.softmax_out[2][63:0]} top.softmax_tb.uut.softmax_out[2][63] top.softmax_tb.uut.softmax_out[2][62] top.softmax_tb.uut.softmax_out[2][61] top.softmax_tb.uut.softmax_out[2][60] top.softmax_tb.uut.softmax_out[2][59] top.softmax_tb.uut.softmax_out[2][58] top.softmax_tb.uut.softmax_out[2][57] top.softmax_tb.uut.softmax_out[2][56] top.softmax_tb.uut.softmax_out[2][55] top.softmax_tb.uut.softmax_out[2][54] top.softmax_tb.uut.softmax_out[2][53] top.softmax_tb.uut.softmax_out[2][52] top.softmax_tb.uut.softmax_out[2][51] top.softmax_tb.uut.softmax_out[2][50] top.softmax_tb.uut.softmax_out[2][49] top.softmax_tb.uut.softmax_out[2][48] top.softmax_tb.uut.softmax_out[2][47] top.softmax_tb.uut.softmax_out[2][46] top.softmax_tb.uut.softmax_out[2][45] top.softmax_tb.uut.softmax_out[2][44] top.softmax_tb.uut.softmax_out[2][43] top.softmax_tb.uut.softmax_out[2][42] top.softmax_tb.uut.softmax_out[2][41] top.softmax_tb.uut.softmax_out[2][40] top.softmax_tb.uut.softmax_out[2][39] top.softmax_tb.uut.softmax_out[2][38] top.softmax_tb.uut.softmax_out[2][37] top.softmax_tb.uut.softmax_out[2][36] top.softmax_tb.uut.softmax_out[2][35] top.softmax_tb.uut.softmax_out[2][34] top.softmax_tb.uut.softmax_out[2][33] top.softmax_tb.uut.softmax_out[2][32] top.softmax_tb.uut.softmax_out[2][31] top.softmax_tb.uut.softmax_out[2][30] top.softmax_tb.uut.softmax_out[2][29] top.softmax_tb.uut.softmax_out[2][28] top.softmax_tb.uut.softmax_out[2][27] top.softmax_tb.uut.softmax_out[2][26] top.softmax_tb.uut.softmax_out[2][25] top.softmax_tb.uut.softmax_out[2][24] top.softmax_tb.uut.softmax_out[2][23] top.softmax_tb.uut.softmax_out[2][22] top.softmax_tb.uut.softmax_out[2][21] top.softmax_tb.uut.softmax_out[2][20] top.softmax_tb.uut.softmax_out[2][19] top.softmax_tb.uut.softmax_out[2][18] top.softmax_tb.uut.softmax_out[2][17] top.softmax_tb.uut.softmax_out[2][16] top.softmax_tb.uut.softmax_out[2][15] top.softmax_tb.uut.softmax_out[2][14] top.softmax_tb.uut.softmax_out[2][13] top.softmax_tb.uut.softmax_out[2][12] top.softmax_tb.uut.softmax_out[2][11] top.softmax_tb.uut.softmax_out[2][10] top.softmax_tb.uut.softmax_out[2][9] top.softmax_tb.uut.softmax_out[2][8] top.softmax_tb.uut.softmax_out[2][7] top.softmax_tb.uut.softmax_out[2][6] top.softmax_tb.uut.softmax_out[2][5] top.softmax_tb.uut.softmax_out[2][4] top.softmax_tb.uut.softmax_out[2][3] top.softmax_tb.uut.softmax_out[2][2] top.softmax_tb.uut.softmax_out[2][1] top.softmax_tb.uut.softmax_out[2][0]
 [color] 3
 #{top.softmax_tb.uut.softmax_out[3][63:0]} top.softmax_tb.uut.softmax_out[3][63] top.softmax_tb.uut.softmax_out[3][62] top.softmax_tb.uut.softmax_out[3][61] top.softmax_tb.uut.softmax_out[3][60] top.softmax_tb.uut.softmax_out[3][59] top.softmax_tb.uut.softmax_out[3][58] top.softmax_tb.uut.softmax_out[3][57] top.softmax_tb.uut.softmax_out[3][56] top.softmax_tb.uut.softmax_out[3][55] top.softmax_tb.uut.softmax_out[3][54] top.softmax_tb.uut.softmax_out[3][53] top.softmax_tb.uut.softmax_out[3][52] top.softmax_tb.uut.softmax_out[3][51] top.softmax_tb.uut.softmax_out[3][50] top.softmax_tb.uut.softmax_out[3][49] top.softmax_tb.uut.softmax_out[3][48] top.softmax_tb.uut.softmax_out[3][47] top.softmax_tb.uut.softmax_out[3][46] top.softmax_tb.uut.softmax_out[3][45] top.softmax_tb.uut.softmax_out[3][44] top.softmax_tb.uut.softmax_out[3][43] top.softmax_tb.uut.softmax_out[3][42] top.softmax_tb.uut.softmax_out[3][41] top.softmax_tb.uut.softmax_out[3][40] top.softmax_tb.uut.softmax_out[3][39] top.softmax_tb.uut.softmax_out[3][38] top.softmax_tb.uut.softmax_out[3][37] top.softmax_tb.uut.softmax_out[3][36] top.softmax_tb.uut.softmax_out[3][35] top.softmax_tb.uut.softmax_out[3][34] top.softmax_tb.uut.softmax_out[3][33] top.softmax_tb.uut.softmax_out[3][32] top.softmax_tb.uut.softmax_out[3][31] top.softmax_tb.uut.softmax_out[3][30] top.softmax_tb.uut.softmax_out[3][29] top.softmax_tb.uut.softmax_out[3][28] top.softmax_tb.uut.softmax_out[3][27] top.softmax_tb.uut.softmax_out[3][26] top.softmax_tb.uut.softmax_out[3][25] top.softmax_tb.uut.softmax_out[3][24] top.softmax_tb.uut.softmax_out[3][23] top.softmax_tb.uut.softmax_out[3][22] top.softmax_tb.uut.softmax_out[3][21] top.softmax_tb.uut.softmax_out[3][20] top.softmax_tb.uut.softmax_out[3][19] top.softmax_tb.uut.softmax_out[3][18] top.softmax_tb.uut.softmax_out[3][17] top.softmax_tb.uut.softmax_out[3][16] top.softmax_tb.uut.softmax_out[3][15] top.softmax_tb.uut.softmax_out[3][14] top.softmax_tb.uut.softmax_out[3][13] top.softmax_tb.uut.softmax_out[3][12] top.softmax_tb.uut.softmax_out[3][11] top.softmax_tb.uut.softmax_out[3][10] top.softmax_tb.uut.softmax_out[3][9] top.softmax_tb.uut.softmax_out[3][8] top.softmax_tb.uut.softmax_out[3][7] top.softmax_tb.uut.softmax_out[3][6] top.softmax_tb.uut.softmax_out[3][5] top.softmax_tb.uut.softmax_out[3][4] top.softmax_tb.uut.softmax_out[3][3] top.softmax_tb.uut.softmax_out[3][2] top.softmax_tb.uut.softmax_out[3][1] top.softmax_tb.uut.softmax_out[3][0]
-@1000200
+@1401200
 -Taylor Approx Signals
-@800200
+@c00200
 -BRAM Scores
 @420
 [color] 1
@@ -2098,7 +2100,7 @@ top.softmax_tb.uut.softmax_ready
 #{top.softmax_tb.uut.bram_scores[14][17:0]} top.softmax_tb.uut.bram_scores[14][17] top.softmax_tb.uut.bram_scores[14][16] top.softmax_tb.uut.bram_scores[14][15] top.softmax_tb.uut.bram_scores[14][14] top.softmax_tb.uut.bram_scores[14][13] top.softmax_tb.uut.bram_scores[14][12] top.softmax_tb.uut.bram_scores[14][11] top.softmax_tb.uut.bram_scores[14][10] top.softmax_tb.uut.bram_scores[14][9] top.softmax_tb.uut.bram_scores[14][8] top.softmax_tb.uut.bram_scores[14][7] top.softmax_tb.uut.bram_scores[14][6] top.softmax_tb.uut.bram_scores[14][5] top.softmax_tb.uut.bram_scores[14][4] top.softmax_tb.uut.bram_scores[14][3] top.softmax_tb.uut.bram_scores[14][2] top.softmax_tb.uut.bram_scores[14][1] top.softmax_tb.uut.bram_scores[14][0]
 [color] 2
 #{top.softmax_tb.uut.bram_scores[15][17:0]} top.softmax_tb.uut.bram_scores[15][17] top.softmax_tb.uut.bram_scores[15][16] top.softmax_tb.uut.bram_scores[15][15] top.softmax_tb.uut.bram_scores[15][14] top.softmax_tb.uut.bram_scores[15][13] top.softmax_tb.uut.bram_scores[15][12] top.softmax_tb.uut.bram_scores[15][11] top.softmax_tb.uut.bram_scores[15][10] top.softmax_tb.uut.bram_scores[15][9] top.softmax_tb.uut.bram_scores[15][8] top.softmax_tb.uut.bram_scores[15][7] top.softmax_tb.uut.bram_scores[15][6] top.softmax_tb.uut.bram_scores[15][5] top.softmax_tb.uut.bram_scores[15][4] top.softmax_tb.uut.bram_scores[15][3] top.softmax_tb.uut.bram_scores[15][2] top.softmax_tb.uut.bram_scores[15][1] top.softmax_tb.uut.bram_scores[15][0]
-@1000200
+@1401200
 -BRAM Scores
 @c00200
 -Q_0 Values
