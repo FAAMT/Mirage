@@ -173,17 +173,17 @@ begin
                         end if;
                         elsif (i < 11) then
                         mac_q(12 * i + j + mac_addr_off) <=
-                        mac_q(12 * i + j + mac_addr_off) / 8;
+                        (mac_q(12 * i + j + mac_addr_off) / 8);
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(100 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
+                        std_logic_vector(to_signed(100 * proj_iter + (mac_q(12 * i + j + mac_addr_off) / 8), DATA_WIDTH));
                         elsif (i = 11) then
                         if j < 4 then
                             mac_q(12 * i + j + mac_addr_off) <=
-                            mac_q(12 * i + j + mac_addr_off) / 8;
+                            (mac_q(12 * i + j + mac_addr_off) / 8);
 
                             mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                            std_logic_vector(to_signed(100 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 8, DATA_WIDTH));
+                            std_logic_vector(to_signed(100 * proj_iter + (mac_q(12 * i + j + mac_addr_off) / 8), DATA_WIDTH));
 
                         end if;
                         elsif (i < 17) then
@@ -191,14 +191,14 @@ begin
                         mac_q(12 * i + j + mac_addr_off) / 16;
 
                         mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                        std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
+                        std_logic_vector(to_signed(0 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
                         elsif (i = 17) then
                         if j < 4 then
                             mac_q(12 * i + j + mac_addr_off) <=
                             mac_q(12 * i + j + mac_addr_off) / 16;
 
                             mac_in((DATA_WIDTH * (j + 1) - 1) downto (DATA_WIDTH * j)) <=
-                            std_logic_vector(to_signed(mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
+                            std_logic_vector(to_signed(0 * proj_iter + mac_q(12 * i + j + mac_addr_off) / 16, DATA_WIDTH));
 
                         end if;
                     end if;
@@ -206,6 +206,7 @@ begin
                     -- MAC Addr Offset Logic
                     if ((12 * i + j + mac_addr_off) > 127) then
                         mac_addr_off <= - 16;
+
                         elsif ((12 * i + j + mac_addr_off) > 63) then
                         mac_addr_off <= - 8;
                         else

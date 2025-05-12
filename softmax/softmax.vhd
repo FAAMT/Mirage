@@ -34,7 +34,7 @@ end entity;
 
 architecture rtl of softmax is
     -- Type Declarations
-    type state_type is (idle, fetch, load, compute_scores, softmax_calc, result);
+    type state_type is (idle, fetch, load, compute_scores, compute_softmax, compute_attention, result);
     type bram_qkv_type is array (0 to 767) of std_logic_vector(16 - 1 downto 0); -- 1.53KB for QKV projections
     type bram_scores_type is array (0 to 15) of signed(18 - 1 downto 0);         -- 1.53KB for QKV projections
     type lut_max_type is array (0 to 3) of signed(18 - 1 downto 0);              -- 3-Bytes for Max Value
@@ -56,6 +56,8 @@ architecture rtl of softmax is
     signal start_max  : std_logic;
     signal q_ext_iter : integer;
     signal q_int_iter : integer;
+    signal v_ext_iter : integer;
+    signal v_int_iter : integer;
 
     -- BRAM Storage
     signal bram_qkv      : bram_qkv_type;
@@ -102,8 +104,9 @@ begin
 
     -- FSM
     process (clk, rst)
-        variable k_idx : integer := 0;
-        variable k_row : integer := 0;
+        variable k_idx    : integer := 0;
+        variable k_row    : integer := 0;
+        variable k_row_s3 : integer := 0;
     begin
         if rst = '1' then
             -- State & Control Signals
@@ -127,6 +130,8 @@ begin
             -- QK Loop Signals
             q_ext_iter <= 0;
             q_int_iter <= 0;
+            v_ext_iter <= 0;
+            v_int_iter <= 0;
 
             -- Output Signals
             data_out <= (others => '0');
@@ -201,7 +206,7 @@ begin
 
                 when compute_scores =>
                     if q_ext_iter < 4 then
-                        if q_int_iter < 4 then
+                        if q_int_iter < 5 then
                             if start_mac = '0' and done_mac = '1' then
                                 q_int_iter <= q_int_iter + 1;
                             elsif start_mac = '0' and done_mac = '0' then
@@ -225,7 +230,7 @@ begin
 
                         end if;
                     else
-                        state      <= softmax_calc;
+                        state      <= compute_softmax;
                         start_mac  <= '0';
                         clear_mac  <= '0';
                         q_ext_iter <= 0;
@@ -238,16 +243,30 @@ begin
                             k_row := row mod 3;
 
                             if q_ext_iter < 4 then
-                                -- Q vector input: assume each Q_n is 12×5, stored row-major
-                                input_a(row, col) <= resize(shift_right(signed(bram_qkv(192 * q_ext_iter + 5 * k_row + col + 15 * q_int_iter)), 8), 8); -- 192 spaces within BRAM
+                                if q_int_iter < 4 then
+                                    -- Q vector input: assume each Q_n is 12×5, stored row-major
+                                    input_a(row, col) <= resize(shift_right(signed(bram_qkv(192 * q_ext_iter + 5 * k_row + col + 15 * q_int_iter)), 8), 8); -- 192 spaces within BRAM
 
-                                -- K vector input: break rows into 3-row blocks for K0..K3
-                                input_b(row, col) <= resize(shift_right(signed(bram_qkv(64 + 5 * k_row + col + 192 * k_idx + 15 * q_int_iter)), 8), 8);
+                                    -- K vector input: break rows into 3-row blocks for K0..K3
+                                    input_b(row, col) <= resize(shift_right(signed(bram_qkv(64 + 5 * k_row + col + 192 * k_idx + 15 * q_int_iter)), 8), 8);
+                                elsif q_int_iter = 4 then
+                                    -- Final pass: map last 4 Q·Kᵀ elements to row 0, cols 0–3
+                                    if (row = 0 or row = 3 or row = 6 or row = 9) and col < 4 then
+                                        input_a(row, col) <= resize(shift_right(
+                                        signed(bram_qkv(192 * q_ext_iter + 15 * q_int_iter + col)), 8), 8); -- Q[15 * q_int_iter + col]
+
+                                        input_b(row, col) <= resize(shift_right(
+                                        signed(bram_qkv(64 + 15 * q_int_iter + col)), 8), 8); -- K[15 * q_int_iter + col]
+                                    else
+                                        input_a(row, col) <= (others => '0');
+                                        input_b(row, col) <= (others => '0');
+                                    end if;
+                                end if;
                             end if;
                         end loop;
                     end loop;
 
-                when softmax_calc =>
+                when compute_softmax =>
                     if max_ctr < 5 then
                         -- Max Finder Logic
                         if find_max = '1' then
@@ -267,8 +286,9 @@ begin
                                 taylor_done <= '1';
 
                                 if max_ctr = 4 then
-                                    max_ctr <= 0;
-                                    state   <= idle;
+                                    max_ctr   <= 0;
+                                    clear_mac <= '1';
+                                    state     <= compute_attention;
                                 end if;
                             else
                                 delay_ctr   <= delay_ctr + 1;
@@ -279,6 +299,56 @@ begin
                         end if;
                     end if;
 
+                when compute_attention =>
+                    if v_ext_iter <= 18 then
+                        if start_mac = '0' and done_mac = '1' then
+                            v_ext_iter <= v_ext_iter + 1;
+                        elsif start_mac = '0' and done_mac = '0' then
+                            start_mac <= '1';
+                        else
+                            start_mac <= '0';
+                        end if;
+
+                        clear_mac <= '0';
+
+                        for row in 0 to 11 loop
+                            for col in 0 to 4 loop
+                                k_idx    := row / 3;
+                                k_row    := row mod 4;
+                                k_row_s3 := row mod 3;
+
+                                if v_ext_iter < 12 then
+                                    input_a(row, col) <= resize(signed(bram_scores(row)), 8);
+                                    input_b(row, col) <= resize(shift_right(signed(bram_qkv(128 + 192 * k_row + col + 5 * v_ext_iter)), 7), 8);
+                                elsif v_ext_iter = 13 then
+                                    -- Final pass: map last 4 Softmav·V elements to only cols 0–3
+                                    if col < 4 then
+                                        input_a(row, col) <= resize(signed(bram_scores(row)), 8);
+                                        input_b(row, col) <= resize(shift_right(signed(bram_qkv(128 + 192 * k_row + col + 60)), 7), 8);
+                                    else
+                                        input_a(row, col) <= (others => '0');
+                                        input_b(row, col) <= (others => '0');
+                                    end if;
+                                else
+                                    if v_ext_iter < 18 and v_ext_iter > 12 then
+                                        input_a(row, col) <= resize(signed(bram_scores(k_idx + 12)), 8);
+                                        input_b(row, col) <= resize(shift_right(signed(bram_qkv(128 + 192 * k_idx + col + 5 * k_row_s3 + (15 * (v_ext_iter - 14)))), 7), 8);
+                                    elsif v_ext_iter = 18 then
+                                        -- Final pass: map last 4 Softmav·V elements to only cols 0–3
+                                        if (row = 0 or row = 3 or row = 6 or row = 9) and col < 4 then
+                                            input_a(row, col) <= resize(signed(bram_scores(k_idx + 12)), 8);
+                                            input_b(row, col) <= resize(shift_right(signed(bram_qkv(128 + 192 * k_idx + col + 60)), 7), 8);
+                                        else
+                                            input_a(row, col) <= (others => '0');
+                                            input_b(row, col) <= (others => '0');
+                                        end if;
+                                    end if;
+                                end if;
+                            end loop;
+                        end loop;
+                    else
+                        state <= idle;
+                    end if;
                 when others =>
                     state <= idle;
             end case;
