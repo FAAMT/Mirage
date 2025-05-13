@@ -221,23 +221,4 @@ begin
         end loop;
         wait;
     end process;
-
-    -- process
-    --     variable line_out : line;
-    --     variable slv      : std_logic_vector(63 downto 0);
-
-    -- begin
-    --     for i in 0 to 1 loop
-    --         wait until (start = '1');
-
-    --         for j in 0 to 2 loop
-    --             wait for 5 us;
-    --             slv := std_logic_vector(taylor_approx_val);
-    --             write(line_out, to_hstring(slv));
-    --             writeline(output_file, line_out);
-    --         end loop;
-    --     end loop;
-    --     wait;
-    -- end process;
-
 end architecture;
