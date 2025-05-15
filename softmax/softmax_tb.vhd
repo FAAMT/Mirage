@@ -59,6 +59,9 @@ architecture tb of softmax_tb is
     signal fetch_mac : std_logic := '0';
     signal done_mac  : std_logic;
 
+    -- Attention Signals
+    signal fetch_attn : std_logic := '0';
+
     signal input_a  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => to_signed(0, 8)));
     signal input_b  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1) := (others => (others => to_signed(0, 8)));
     signal output_d : std_logic_vector(32 * TILE_H - 1 downto 0); -- 12x INT32 outputs
@@ -68,7 +71,8 @@ architecture tb of softmax_tb is
     signal mac_addr_off : integer := 0;
 
     -- Text Output Signals
-    file output_file : text open write_mode is "exp_output.txt";
+    signal attn_pass : integer := 0;
+
 begin
     -- Instantiate the softmax core
     uut : entity work.softmax
@@ -85,9 +89,10 @@ begin
             start => start,
             done  => done,
 
-            fetch_qkv => fetch_mac,
-            data_in   => mac_in,
-            data_out  => open,
+            fetch_qkv  => fetch_mac,
+            fetch_attn => fetch_attn,
+            data_in    => mac_in,
+            data_out   => open,
 
             -- Matrix Mult Interface
             start_mac => start_mac,
@@ -220,5 +225,109 @@ begin
             end loop;
         end loop;
         wait;
+    end process;
+
+    -------------------------------------------------------------------------------
+    --  Attention-output capture
+    --  • 12×32-bit words arrive in output_d whenever fetch_attn = '1'
+    --  • Write them in triples so the file shows 4 × 64 groups:
+    --      T0[ 0]  v0 v1 v2
+    --      T0[ 1]  v3 v4 v5
+    --      ...
+    --      T3[63]  ...
+    -------------------------------------------------------------------------------
+    attn_capture : process (clk)
+        type attention_array is array (0 to 63) of integer;
+        type attention_arrays is array (0 to 3) of attention_array;
+
+        variable attn_arrays : attention_arrays;
+        variable array_idx   : integer range 0 to 3  := 0;
+        variable element_idx : integer range 0 to 63 := 0;
+        variable L           : line;
+        file output_file     : text open write_mode is "attention_output.txt";
+    begin
+        if rising_edge(clk) then
+            if fetch_attn = '1' then
+                -- Initialize file header on first pass
+                if attn_pass = 0 then
+                    write(L, string'("=== Attention Output Arrays ==="));
+                    writeline(output_file, L);
+                end if;
+
+                -- Update pass counter
+                if attn_pass <= 21 then
+                    attn_pass    <= attn_pass + 1;
+                    else
+                    attn_pass <= 0;
+                end if;
+
+                -- Process each row and append to current array
+                for row in 0 to 11 loop
+                    -- Only process elements divisible by 3 on last pass
+                    if (attn_pass < 21) then
+                        -- Increment element counter
+                        element_idx := (row mod 3) + 3 * attn_pass;
+                        array_idx   := row / 3;
+
+                        -- Store value in current array
+                        attn_arrays(array_idx)(element_idx) :=
+                        to_integer(signed(output_d((row + 1) * 32 - 1 downto row * 32)));
+
+                        report
+                        "Row: " & integer'image(row) & " " &
+                        "Pass: " & integer'image(attn_pass) & " " &
+                        "Element: " & integer'image(element_idx) & " " &
+                        "Array: " & integer'image(array_idx) & " " &
+                        "Val: " & integer'image(attn_arrays(array_idx)(element_idx));
+
+                        else
+                        if ((row = 0) or (row = 3) or (row = 6) or (row = 9)) then
+                            -- Only process elements divisible by 3 on last pass                                -- Increment element counter
+                            element_idx := (row mod 3) + 3 * attn_pass;
+                            array_idx   := row / 3;
+
+                            -- Store value in current array
+                            attn_arrays(array_idx)(element_idx) :=
+                            to_integer(signed(output_d((row + 1) * 32 - 1 downto row * 32)));
+
+                            report
+                            "Row: " & integer'image(row) & " " &
+                            "Pass: " & integer'image(attn_pass) & " " &
+                            "Element: " & integer'image(element_idx) & " " &
+                            "Array: " & integer'image(array_idx) & " " &
+                            "Val: " & integer'image(attn_arrays(array_idx)(element_idx));
+                        end if;
+                    end if;
+                end loop;
+
+                -- When array is full, move to next array
+                if attn_pass = 21 then
+                    array_idx := 0;
+
+                    for array_iter in 0 to 3 loop
+                        writeline(output_file, L);
+
+                        -- Write completed array to file
+                        write(L, string'("Array_") & integer'image(array_idx) & string'(":"));
+                        writeline(output_file, L);
+
+                        for i in 0 to 63 loop
+                            write(L, attn_arrays(array_idx)(i));
+                            if i < 63 then
+                                write(L, ' ');
+                            end if;
+                            if (i + 1) mod 3 = 0 then -- New line every 16 elements
+                                writeline(output_file, L);
+                            end if;
+                        end loop;
+
+                        array_idx := array_idx + 1;
+
+                        -- Add spacing between arrays
+                        writeline(output_file, L);
+                    end loop;
+                end if;
+            end if;
+        end if;
     end process;
 end architecture;
