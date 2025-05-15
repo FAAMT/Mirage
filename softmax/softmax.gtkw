@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Tue May 13 11:13:48 2025
+[*] Thu May 15 11:27:39 2025
 [*]
 [dumpfile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/softmax/softmax.ghw"
-[dumpfile_mtime] "Tue May 13 11:12:20 2025"
-[dumpfile_size] 846811
+[dumpfile_mtime] "Thu May 15 11:27:24 2025"
+[dumpfile_size] 876265
 [savefile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/softmax/softmax.gtkw"
-[timestart] 54399500000
+[timestart] 53993900000
 [size] 1728 1005
-[pos] 0 64
-*-24.949675 54443400000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[pos] 0 65
+*-27.349676 54567700000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -40,10 +40,10 @@
 [treeopen] top.softmax_tb.
 [treeopen] top.softmax_tb.mac_core.
 [treeopen] top.softmax_tb.uut.
-[sst_width] 255
+[sst_width] 40
 [signals_width] 376
-[sst_expanded] 1
-[sst_vpaned_height] 356
+[sst_expanded] 0
+[sst_vpaned_height] 421
 @800200
 -CLK & RST
 @28
@@ -80,12 +80,16 @@ top.softmax_tb.uut.offset
 @800200
 -Fetch Signals
 @28
-top.softmax_tb.fetch_mac
 [color] 2
+top.softmax_tb.fetch_mac
+[color] 3
 top.softmax_tb.uut.fetch_qkv
 @420
-[color] 3
+[color] 4
 top.softmax_tb.uut.fetch_ctr
+@28
+[color] 6
+top.softmax_tb.uut.fetch_attn
 @1000200
 -Fetch Signals
 @800200
@@ -1475,7 +1479,7 @@ top.softmax_tb.uut.input_a[0,0][0]
 #{top.softmax_tb.uut.input_a[11,4][15:0]} top.softmax_tb.uut.input_a[11,4][7] top.softmax_tb.uut.input_a[11,4][6] top.softmax_tb.uut.input_a[11,4][5] top.softmax_tb.uut.input_a[11,4][4] top.softmax_tb.uut.input_a[11,4][3] top.softmax_tb.uut.input_a[11,4][2] top.softmax_tb.uut.input_a[11,4][1] top.softmax_tb.uut.input_a[11,4][0]
 @1401200
 -IN_A SIgnals
-@800200
+@c00200
 -IN_B Signals\
 @c00420
 [color] 1
@@ -1659,7 +1663,7 @@ top.softmax_tb.uut.input_b[8,4][0]
 #{top.softmax_tb.uut.input_b[11,3][15:0]} top.softmax_tb.uut.input_b[11,3][7] top.softmax_tb.uut.input_b[11,3][6] top.softmax_tb.uut.input_b[11,3][5] top.softmax_tb.uut.input_b[11,3][4] top.softmax_tb.uut.input_b[11,3][3] top.softmax_tb.uut.input_b[11,3][2] top.softmax_tb.uut.input_b[11,3][1] top.softmax_tb.uut.input_b[11,3][0]
 [color] 5
 #{top.softmax_tb.uut.input_b[11,4][15:0]} top.softmax_tb.uut.input_b[11,4][7] top.softmax_tb.uut.input_b[11,4][6] top.softmax_tb.uut.input_b[11,4][5] top.softmax_tb.uut.input_b[11,4][4] top.softmax_tb.uut.input_b[11,4][3] top.softmax_tb.uut.input_b[11,4][2] top.softmax_tb.uut.input_b[11,4][1] top.softmax_tb.uut.input_b[11,4][0]
-@1000200
+@1401200
 -IN_B Signals\
 @800200
 -Accum Signals
@@ -2138,6 +2142,8 @@ top.softmax_tb.uut.softmax_ready
 #{top.softmax_tb.uut.bram_scores[15][17:0]} top.softmax_tb.uut.bram_scores[15][17] top.softmax_tb.uut.bram_scores[15][16] top.softmax_tb.uut.bram_scores[15][15] top.softmax_tb.uut.bram_scores[15][14] top.softmax_tb.uut.bram_scores[15][13] top.softmax_tb.uut.bram_scores[15][12] top.softmax_tb.uut.bram_scores[15][11] top.softmax_tb.uut.bram_scores[15][10] top.softmax_tb.uut.bram_scores[15][9] top.softmax_tb.uut.bram_scores[15][8] top.softmax_tb.uut.bram_scores[15][7] top.softmax_tb.uut.bram_scores[15][6] top.softmax_tb.uut.bram_scores[15][5] top.softmax_tb.uut.bram_scores[15][4] top.softmax_tb.uut.bram_scores[15][3] top.softmax_tb.uut.bram_scores[15][2] top.softmax_tb.uut.bram_scores[15][1] top.softmax_tb.uut.bram_scores[15][0]
 @1401200
 -BRAM Scores
+@28
+top.softmax_tb.uut.store_attn
 @c00200
 -BRAM Softmax
 @420
@@ -2476,9 +2482,9 @@ top.softmax_tb.uut.bram_qkv[0][0]
 #{top.softmax_tb.uut.bram_qkv[127][15:0]} top.softmax_tb.uut.bram_qkv[127][15] top.softmax_tb.uut.bram_qkv[127][14] top.softmax_tb.uut.bram_qkv[127][13] top.softmax_tb.uut.bram_qkv[127][12] top.softmax_tb.uut.bram_qkv[127][11] top.softmax_tb.uut.bram_qkv[127][10] top.softmax_tb.uut.bram_qkv[127][9] top.softmax_tb.uut.bram_qkv[127][8] top.softmax_tb.uut.bram_qkv[127][7] top.softmax_tb.uut.bram_qkv[127][6] top.softmax_tb.uut.bram_qkv[127][5] top.softmax_tb.uut.bram_qkv[127][4] top.softmax_tb.uut.bram_qkv[127][3] top.softmax_tb.uut.bram_qkv[127][2] top.softmax_tb.uut.bram_qkv[127][1] top.softmax_tb.uut.bram_qkv[127][0]
 @1401200
 -K_0 Values
-@c00201
+@c00200
 -V_0 Values
-@421
+@420
 [color] 7
 #{top.softmax_tb.uut.bram_qkv[128][15:0]} top.softmax_tb.uut.bram_qkv[128][15] top.softmax_tb.uut.bram_qkv[128][14] top.softmax_tb.uut.bram_qkv[128][13] top.softmax_tb.uut.bram_qkv[128][12] top.softmax_tb.uut.bram_qkv[128][11] top.softmax_tb.uut.bram_qkv[128][10] top.softmax_tb.uut.bram_qkv[128][9] top.softmax_tb.uut.bram_qkv[128][8] top.softmax_tb.uut.bram_qkv[128][7] top.softmax_tb.uut.bram_qkv[128][6] top.softmax_tb.uut.bram_qkv[128][5] top.softmax_tb.uut.bram_qkv[128][4] top.softmax_tb.uut.bram_qkv[128][3] top.softmax_tb.uut.bram_qkv[128][2] top.softmax_tb.uut.bram_qkv[128][1] top.softmax_tb.uut.bram_qkv[128][0]
 [color] 1
@@ -2607,7 +2613,7 @@ top.softmax_tb.uut.bram_qkv[0][0]
 #{top.softmax_tb.uut.bram_qkv[190][15:0]} top.softmax_tb.uut.bram_qkv[190][15] top.softmax_tb.uut.bram_qkv[190][14] top.softmax_tb.uut.bram_qkv[190][13] top.softmax_tb.uut.bram_qkv[190][12] top.softmax_tb.uut.bram_qkv[190][11] top.softmax_tb.uut.bram_qkv[190][10] top.softmax_tb.uut.bram_qkv[190][9] top.softmax_tb.uut.bram_qkv[190][8] top.softmax_tb.uut.bram_qkv[190][7] top.softmax_tb.uut.bram_qkv[190][6] top.softmax_tb.uut.bram_qkv[190][5] top.softmax_tb.uut.bram_qkv[190][4] top.softmax_tb.uut.bram_qkv[190][3] top.softmax_tb.uut.bram_qkv[190][2] top.softmax_tb.uut.bram_qkv[190][1] top.softmax_tb.uut.bram_qkv[190][0]
 [color] 7
 #{top.softmax_tb.uut.bram_qkv[191][15:0]} top.softmax_tb.uut.bram_qkv[191][15] top.softmax_tb.uut.bram_qkv[191][14] top.softmax_tb.uut.bram_qkv[191][13] top.softmax_tb.uut.bram_qkv[191][12] top.softmax_tb.uut.bram_qkv[191][11] top.softmax_tb.uut.bram_qkv[191][10] top.softmax_tb.uut.bram_qkv[191][9] top.softmax_tb.uut.bram_qkv[191][8] top.softmax_tb.uut.bram_qkv[191][7] top.softmax_tb.uut.bram_qkv[191][6] top.softmax_tb.uut.bram_qkv[191][5] top.softmax_tb.uut.bram_qkv[191][4] top.softmax_tb.uut.bram_qkv[191][3] top.softmax_tb.uut.bram_qkv[191][2] top.softmax_tb.uut.bram_qkv[191][1] top.softmax_tb.uut.bram_qkv[191][0]
-@1401201
+@1401200
 -V_0 Values
 @c00200
 -Q_1 Values
