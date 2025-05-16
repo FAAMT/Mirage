@@ -49,17 +49,108 @@ architecture behavioral of ffn_tb is
     signal output_d   : std_logic_vector(32 * TILE_H - 1 downto 0) := (others => '0');
 
     -- Hardcoded attention matrix values
-    type attention_matrix is array(0 to 5, 0 to 3) of integer;
-    constant ATTENTION_VALUES : attention_matrix := (
-        -- First Q0-Q2 Array
-        (-6240, -6240, -6045, -6045),
-        (-6045, -6240, -6045, -6045),
-        (-6045, -6045, -6045, -6240),
+    ------------------------------------------------------------------
+    -- 85 rows × 3 columns   (255 integers in total)
+    ------------------------------------------------------------------
+    type attention_matrix is array (0 to 87, 0 to 2) of integer;
 
-        -- Last Q3 Array Array
-        (-2883, -372, -2790, -2883),
-        (-372, -2790, -2883, -372),
-        (-2790, -2976, -384, -2880)
+    constant ATTENTION_VALUES : attention_matrix :=
+    (
+    -- Array-0   ─────────────────────────────────────────────
+    (126, -1638, 504),    -- row  0
+    (-1512, 252, -126),   --      1
+    (-630, 756, -2142),   --      2
+    (882, -2268, 0),      --      3
+    (252, -504, 504),     --      4
+    (-1008, 756, -1260),  --      5
+    (1008, -1512, 1260),  --      6
+    (-1764, 1512, -2016), --      7
+    (1764, -2268, 2016),  --      8
+    (-2520, 2268, -2772), --      9
+    (2520, -3024, 2772),  --     10
+    (-3276, 3024, -3528), --     11
+    (3276, -3780, 3528),  --     12
+    (-4032, 3780, -5040), --     13
+    (4032, -4032, 4284),  --     14
+    (-5040, 4536, -5418), --     15
+    (4788, -5670, 5040),  --     16
+    (-6048, 5292, -6300), --     17
+    (5544, -6678, 5796),  --     18
+    (-6930, 6048, -7308), --     19
+    (6300, -7560, 6552),  --     20
+    (-7938, 0, 0),        --     21  (pad)
+
+    -- Array-1   ─────────────────────────────────────────────
+    (125, -1625, 500),    -- row 22
+    (-1500, 250, -125),   -- 23
+    (-625, 750, -2125),   -- 24
+    (875, -2250, 0),      -- 25
+    (250, -500, 500),     -- 26
+    (-1000, 750, -1250),  -- 27
+    (1000, -1500, 1250),  -- 28
+    (-1750, 1500, -2000), -- 29
+    (1750, -2250, 2000),  -- 30
+    (-2500, 2250, -2750), -- 31
+    (2500, -3000, 2750),  -- 32
+    (-3250, 3000, -3500), -- 33
+    (3250, -3750, 3500),  -- 34
+    (-4000, 3750, -5000), -- 35
+    (4000, -4000, 4250),  -- 36
+    (-5000, 4500, -5375), -- 37
+    (4750, -5625, 5000),  -- 38
+    (-6000, 5250, -6250), -- 39
+    (5500, -6625, 5750),  -- 40
+    (-6875, 6000, -7250), -- 41
+    (6250, -7500, 6500),  -- 42
+    (-7875, 0, 0),        -- 43  (pad)
+
+    -- Array-2   ─────────────────────────────────────────────
+    (125, -1625, 500),    -- row 44
+    (-1500, 250, -125),   -- 45
+    (-625, 750, -2125),   -- 46
+    (875, -2250, 0),      -- 47
+    (250, -500, 500),     -- 48
+    (-1000, 750, -1250),  -- 49
+    (1000, -1500, 1250),  -- 50
+    (-1750, 1500, -2000), -- 51
+    (1750, -2250, 2000),  -- 52
+    (-2500, 2250, -2750), -- 53
+    (2500, -3000, 2750),  -- 54
+    (-3250, 3000, -3500), -- 55
+    (3250, -3750, 3500),  -- 56
+    (-4000, 3750, -5000), -- 57
+    (4000, -4000, 4250),  -- 58
+    (-5000, 4500, -5375), -- 59
+    (4750, -5625, 5000),  -- 60
+    (-6000, 5250, -6250), -- 61
+    (5500, -6625, 5750),  -- 62
+    (-6875, 6000, -7250), -- 63
+    (6250, -7500, 6500),  -- 64
+    (-7875, 0, 0),        -- 65  (pad)
+
+    -- Array-3   ─────────────────────────────────────────────
+    (125, -1625, 500),    -- row 66
+    (-1500, 250, -125),   -- 67
+    (-625, 750, -2125),   -- 68
+    (875, -2250, 0),      -- 69
+    (250, -500, 500),     -- 70
+    (-1000, 750, -1250),  -- 71
+    (1000, -1500, 1250),  -- 72
+    (-1750, 1500, -2000), -- 73
+    (1750, -2250, 2000),  -- 74
+    (-2500, 2250, -2750), -- 75
+    (2500, -3000, 2750),  -- 76
+    (-3250, 3000, -3500), -- 77
+    (3250, -3750, 3500),  -- 78
+    (-4000, 3750, -5000), -- 79
+    (4000, -4000, 4250),  -- 80
+    (-5000, 4500, -5375), -- 81
+    (4750, -5625, 5000),  -- 82
+    (-6000, 5250, -6250), -- 83
+    (5500, -6625, 5750),  -- 84
+    (-6875, 6000, -7250),
+    (6250, -7500, 6500),
+    (-7875, 0, 0) -- 85  
     );
 
 begin
@@ -90,7 +181,8 @@ begin
 
     -- Stimulus process
     stim_proc : process
-        variable r_idx, c_idx : integer := 0;
+        variable a_idx, e_idx : integer := 0;
+        variable data         : signed(31 downto 0);
     begin
         -- Reset
         rst <= '1';
@@ -98,57 +190,57 @@ begin
         rst <= '0';
         wait for CLK_PERIOD;
 
-        -- Load attention matrix into BRAM
-        report "Loading first 12 values of attention matrix into BRAM";
-        fetch_attn <= '1';
+        ------------------------------------------------------------------
+        -- FIRST 12 words  (pass 0 : ATTENTION_VALUES rows 0-2)
+        ------------------------------------------------------------------
+        for pass in 0 to 21 loop
+            report "Loading 3 values" & " Pass: " & integer'image(pass);
 
-        -- First load the 3x4 matrix (12 values)
-        for row in 0 to 11 loop
-            r_idx := row / 4;
-            c_idx := row mod 4;
+            fetch_attn <= '1';
 
-            report integer'image(row) & " " & integer'image(r_idx) & " " & integer'image(c_idx);
-            -- Calculate the proper index and range
-            -- Assuming TILE_H is at least 4 (adjust if different) 
-            output_d(32 * row + 31 downto 32 * row) <=
-            std_logic_vector(to_signed(ATTENTION_VALUES(r_idx, c_idx), 32));
+            if pass < 21 then
+                for row in 0 to 11 loop -- 12×32-bit words
+                    -- map 3-row groups to the four output arrays
+                    a_idx := pass + (22 * (row / 3)); -- 0-3  (array index)
+                    e_idx := (row mod 3);             -- 0-2  (element in that array)
+
+                    -- ATTENTION_VALUES rows 0-2   (use e_idx)
+                    data := to_signed(ATTENTION_VALUES(a_idx, e_idx), 32);
+                    output_d(32 * row + 31 downto 32 * row) <= std_logic_vector(data);
+
+                    report " Pass: " & integer'image(pass) &
+                    " Row: " & integer'image(row) &
+                    " Array: " & integer'image(a_idx) &
+                    " Element: " & integer'image(e_idx) &
+                    " Val:  " & integer'image(ATTENTION_VALUES(a_idx, e_idx));
+                end loop;
+                else
+                for row in 0 to 11 loop -- 12×32-bit words
+                    if (row = 0) or (row = 3) or (row = 6) or (row = 9) then
+                        -- map 3-row groups to the four output arrays
+                        a_idx := pass + 22 * (row / 3); -- 0-3  (array index)
+                        e_idx := (row mod 3);           -- 0-2  (element in that array)
+
+                        -- ATTENTION_VALUES rows 0-2   (use e_idx)
+                        data := to_signed(ATTENTION_VALUES(a_idx, e_idx), 32);
+                        output_d(32 * row + 31 downto 32 * row) <= std_logic_vector(data);
+
+                        report " Pass: " & integer'image(pass) &
+                        " Row: " & integer'image(row) &
+                        " Array: " & integer'image(a_idx) &
+                        " Element: " & integer'image(e_idx) &
+                        " Val:  " & integer'image(ATTENTION_VALUES(a_idx, e_idx));
+                        else
+                        output_d(32 * row + 31 downto 32 * row) <= (others => '0');
+                    end if;
+                end loop;
+            end if;
+
+            wait for CLK_PERIOD;
+            fetch_attn <= '0';
+            wait for 5 * CLK_PERIOD;
+
         end loop;
-        wait for CLK_PERIOD;
-
-        fetch_attn <= '0';
-        wait for 5 * CLK_PERIOD;
-
-        -- Load attention matrix into BRAM
-        report "Loading last 4 values of attention matrix into BRAM";
-        fetch_attn <= '1';
-
-        -- First load the 3x4 matrix (12 values)
-        for row in 0 to 11 loop
-            r_idx := row / 4;
-            c_idx := row mod 4;
-
-            report integer'image(row) & " " & integer'image(r_idx + 3) & " " & integer'image(c_idx);
-            -- Calculate the proper index and range
-            -- Assuming TILE_H is at least 4 (adjust if different)
-            output_d(32 * row + 31 downto 32 * row) <=
-            std_logic_vector(to_signed(ATTENTION_VALUES(r_idx + 3, c_idx), 32));
-        end loop;
-        wait for CLK_PERIOD;
-
-        fetch_attn <= '0';
-        wait for CLK_PERIOD;
-
-        -- Start computation
-        report "Starting FFN computation";
-        start <= '1';
-        wait for CLK_PERIOD;
-        start <= '0';
-
-        -- Wait for completion
-        wait until done = '1';
-        report "FFN computation completed";
-
-        -- Add verification steps here to check outputs
 
         wait;
     end process;

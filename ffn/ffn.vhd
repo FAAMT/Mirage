@@ -39,7 +39,7 @@ architecture rtl of ffn is
         idle, compute_hidden_128, computer_output_64, result
     );
 
-    type bram_attention_type is array(0 to 15) of signed(17 downto 0);
+    type bram_attention_type is array(0 to 255) of signed(17 downto 0);
 
     -------------------------------------------------------------------
     -- 2) SIGNAL DECLARATIONS
@@ -48,15 +48,14 @@ architecture rtl of ffn is
     signal prev_state : state_type := idle;
 
     signal bram_attention : bram_attention_type;
-    signal bram_addr      : integer range 0 to 15 := 0;
-    signal bram_wr        : std_logic;
-
-    signal fetch_ctr : integer range 0 to 1 := 0;
+    signal fetch_ctr      : integer := 0;
 
 begin
 
     -- BRAM Fetch Process
     process (clk, rst)
+        variable r_mod_3 : integer;
+        variable r_div_3 : integer;
     begin
         if rst = '1' then
             -- State Signals
@@ -64,7 +63,7 @@ begin
             prev_state <= idle;
 
             -- BRAM Signals
-            bram_addr      <= 0;
+            -- bram_addr      <= 0;
             bram_attention <= (others => (others => '0'));
 
             -- Control Signals
@@ -72,20 +71,23 @@ begin
 
             elsif rising_edge(clk) then
             if fetch_attn = '1' then
-                if fetch_ctr = 0 then
-                    fetch_ctr <= fetch_ctr + 1;
+                fetch_ctr <= fetch_ctr + 1;
 
-                    for i in 0 to 11 loop
-                        bram_attention(i) <= resize(signed(output_d(32 * i + 31 downto 32 * i)), 18);
+                if fetch_ctr < 21 then
+                    for row in 0 to 11 loop
+                        r_mod_3 := row mod 3;
+                        r_div_3 := row / 3;
+
+                        bram_attention(r_div_3 * 64 + r_mod_3 + 3 * fetch_ctr) <= resize(signed(output_d(32 * row + 31 downto 32 * row)), 18);
                     end loop;
                     else
-                    for i in 0 to 3 loop
-                        fetch_ctr <= 0;
+                    for row in 0 to 11 loop
+                        if (row = 0) or (row = 3) or (row = 6) or (row = 9) then
+                            r_mod_3 := row mod 3;
+                            r_div_3 := row / 3;
 
-                        bram_attention(i + 12) <=
-                        resize(signed(output_d(95 + 96 * i downto 64 + 96 * i)), 18) +
-                        resize(signed(output_d(63 + 96 * i downto 32 + 96 * i)), 18) +
-                        resize(signed(output_d(31 + 96 * i downto 0 + 96 * i)), 18);
+                            bram_attention(r_div_3 * 64 + r_mod_3 + 3 * fetch_ctr) <= resize(signed(output_d(32 * row + 31 downto 32 * row)), 18);
+                        end if;
                     end loop;
                 end if;
             end if;

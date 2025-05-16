@@ -241,8 +241,8 @@ begin
         type attention_arrays is array (0 to 3) of attention_array;
 
         variable attn_arrays : attention_arrays;
-        variable array_idx   : integer range 0 to 3  := 0;
-        variable element_idx : integer range 0 to 63 := 0;
+        variable array_idx   : integer := 0;
+        variable element_idx : integer := 0;
         variable L           : line;
         file output_file     : text open write_mode is "attention_output.txt";
     begin
