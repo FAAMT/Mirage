@@ -36,10 +36,12 @@ architecture rtl of ffn is
     -- 1) TYPE DECLARATIONS
     -------------------------------------------------------------------
     type state_type is (
-        idle, compute_hidden_128, computer_output_64, result
+        idle, compute_hl_t0, computer_output_64, result
     );
 
     type bram_attention_type is array(0 to 255) of signed(17 downto 0);
+    type bram_hlw_type is array(0 to 128 * 64 - 1) of signed(17 downto 0); -- 128 neurons, 64 element vec, 
+    type bram_olw_type is array(0 to 255 * 64 - 1) of signed(17 downto 0);
 
     -------------------------------------------------------------------
     -- 2) SIGNAL DECLARATIONS
@@ -58,18 +60,13 @@ begin
         variable r_div_3 : integer;
     begin
         if rst = '1' then
-            -- State Signals
-            state      <= idle;
-            prev_state <= idle;
-
             -- BRAM Signals
-            -- bram_addr      <= 0;
             bram_attention <= (others => (others => '0'));
 
             -- Control Signals
             fetch_ctr <= 0;
 
-            elsif rising_edge(clk) then
+        elsif rising_edge(clk) then
             if fetch_attn = '1' then
                 fetch_ctr <= fetch_ctr + 1;
 
@@ -80,7 +77,7 @@ begin
 
                         bram_attention(r_div_3 * 64 + r_mod_3 + 3 * fetch_ctr) <= resize(signed(output_d(32 * row + 31 downto 32 * row)), 18);
                     end loop;
-                    else
+                else
                     for row in 0 to 11 loop
                         if (row = 0) or (row = 3) or (row = 6) or (row = 9) then
                             r_mod_3 := row mod 3;
@@ -93,4 +90,28 @@ begin
             end if;
         end if;
     end process;
+
+    -- Matrix Mult Tiling
+    process (clk, rst)
+        variable r_mod_3 : integer;
+        variable r_div_3 : integer;
+    begin
+        if rst = '1' then
+            state <= idle;
+        elsif rising_edge(clk) then
+            case state is
+                when idle =>
+                    if start = '1' then
+                        state <= computer_hl_t0;
+                    end if;
+
+                when computer_hl_t0 =>
+
+                when others =>
+                    state <= idle;
+            end case;
+
+        end if;
+    end process;
+
 end architecture;
