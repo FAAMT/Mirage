@@ -107,7 +107,7 @@ begin
                     if tile_h_pass = 5 and i >= 4 then
                         input_b_i(i, j) <= (others => '0');
                         else
-                        if state = compute_q then
+                        if state = compute_q or state = idle then
                             input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
                             elsif state = compute_k then
                             input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 16384 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
@@ -140,13 +140,16 @@ begin
                     if start = '1' then
                         state     <= compute_q;
                         start_mac <= '1';
+                    else
+                        start_mac <= '0';
                     end if;
 
                 when mac =>
                     if done_mac = '1' then
                         if tile_w_pass = 51 then
                             state     <= tile_incr;
-                            fetch_mac <= '1';
+                            start_mac <= '0';
+                            -- fetch_mac <= '1';
                         else
                             state     <= prev_state;
                             start_mac <= '1';
@@ -160,7 +163,7 @@ begin
                 when tile_incr =>
                     tile_w_pass <= 0;
                     start_mac   <= '1';
-                    fetch_mac   <= '0';
+                    fetch_mac   <= '1';
                     state       <= prev_state;
 
                     if tile_h_pass = 5 then
@@ -171,38 +174,44 @@ begin
                         elsif prev_state = compute_k then
                             state <= compute_v;
                         elsif prev_state = compute_v then
-                            state <= result;
+                            start_mac <= '0';
+                            state     <= result;
                         end if;
                     else
                         tile_h_pass <= tile_h_pass + 1;
                     end if;
 
                 when compute_q =>
+                    fetch_mac <= '0';
+                    start_mac <= '0';
+
                     if tile_h_pass > 5 then
                         tile_h_pass <= 0;
                         state       <= compute_k;
                     else
                         state      <= mac;
-                        start_mac  <= '0';
                         prev_state <= compute_q;
                     end if;
 
-                    start_mac  <= '0';
                     prev_state <= compute_q;
 
                 when compute_k =>
+                    start_mac <= '0';
+                    fetch_mac <= '0';
+
                     if tile_h_pass > 5 then
                         tile_h_pass <= 0;
-                        start_mac   <= '1';
                         state       <= compute_v;
                     else
                         state <= mac;
                     end if;
 
-                    start_mac  <= '0';
                     prev_state <= compute_k;
 
                 when compute_v =>
+                    start_mac <= '0';
+                    fetch_mac <= '0';
+
                     if tile_h_pass > 5 then
                         tile_h_pass <= 0;
                         state       <= result;
@@ -210,12 +219,12 @@ begin
                         state <= mac;
                     end if;
 
-                    start_mac  <= '0';
                     prev_state <= compute_v;
 
                 when result =>
-                    done  <= '1';
-                    state <= idle;
+                    done      <= '1';
+                    fetch_mac <= '0';
+                    state     <= idle;
 
                 when others =>
                     state <= idle;

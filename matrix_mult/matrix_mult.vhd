@@ -62,19 +62,25 @@ begin
         for i in 0 to TILE_H - 1 loop
           accum(i) <= (others => '0');
         end loop;
-        elsif start = '1' and computing = '0' then
+        else
+        if computing = '1' then
+          for i in 0 to TILE_H - 1 loop
+            accum(i) <= accum(i) + accum_val(i);
+          end loop;
+        end if;
+      end if;
+
+      if start = '1' and computing = '0' then
+
         computing <= '1';
         done_i    <= '1';
 
-        elsif computing = '1' then
-        for i in 0 to TILE_H - 1 loop
-          accum(i) <= accum(i) + accum_val(i);
-        end loop;
-
+        elsif computing = '1' or start = '1' then
         computing <= '0';
         done_i    <= '0';
         else
-        done_i <= '0';
+        computing <= start;
+        done_i    <= '0';
       end if;
     end if;
   end process;
@@ -82,17 +88,19 @@ begin
   -- Accumulator Logic
   -- This process computes all 12 dot product
   -- outputs for 5 elements in parallel.
-  accum_proc : process (computing)
+  accum_proc : process (input_a, input_b, start)
     variable tmp_val : signed(31 downto 0);
   begin
+    -- if rising_edge(clk) then
     if computing = '1' then
       for i in 0 to TILE_H - 1 loop
         tmp_val := (others => '0');
         for j in 0 to TILE_W - 1 loop
-          tmp_val := tmp_val + resize(w_mat(i, j) * a_vec(i, j), 32);
+          tmp_val := tmp_val + resize(input_b(i, j) * input_a(i, j), 32);
         end loop;
         accum_val(i) <= tmp_val;
       end loop;
+      -- end if;
     end if;
   end process;
 

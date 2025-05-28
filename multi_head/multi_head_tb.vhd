@@ -143,7 +143,7 @@ begin
         bram_wr <= '0';
         wait for 2 * clk_period;
 
-        -- Fill K Weights
+        -- Fill V Weights
         for i in 0 to 16383 loop
             rand_val := ((i * 5 mod 256) * 59 + (i / 256) * 37 + 13) mod 256;
             bram_addr    <= i + 16383 * 2 + 2;

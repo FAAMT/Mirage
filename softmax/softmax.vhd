@@ -43,7 +43,7 @@ architecture rtl of softmax is
     );
     type bram_qkv_type is array(0 to 767) of std_logic_vector(15 downto 0);
     type bram_scores_type is array(0 to 15) of signed(17 downto 0);
-    type bram_softmax_type is array(0 to 15) of signed(7 downto 0);
+    type bram_softmax_type is array(0 to 15) of signed(10 downto 0);
     -- type bram_attention_type is array(0 to 15) of signed(17 downto 0);
     type lut_max_type is array(0 to 3) of signed(17 downto 0);
 
@@ -61,6 +61,7 @@ architecture rtl of softmax is
     signal prev_state : state_type := idle;
 
     signal fetch_ctr  : integer range 0 to 5 := 0;
+    signal fetch_reg  : std_logic;
     signal start_max  : std_logic;
     signal pause_mac  : std_logic;
     signal q_ext_iter : integer;
@@ -72,10 +73,10 @@ architecture rtl of softmax is
     signal bram_qkv_addr : integer range 0 to 767 := 0;
     signal bram_qkv_off  : integer                := 16;
     signal offset        : integer                := 0;
+    signal mac_out_reg   : std_logic_vector(12 * 16 - 1 downto 0);
 
     signal bram_scores  : bram_scores_type;
     signal bram_softmax : bram_softmax_type;
-    -- signal bram_attention : bram_attention_type;
 
     signal max_lut     : lut_max_type;
     signal max_val     : signed(17 downto 0);
@@ -141,10 +142,11 @@ begin
             bram_qkv_addr <= 0;
             offset        <= 0;
 
-            -- Data Out Signal
-            data_out <= (others => '0');
+            -- Data In & Out Signal
+            mac_out_reg <= (others => '0');
+            data_out    <= (others => '0');
 
-            elsif rising_edge(clk) then
+        elsif rising_edge(clk) then
             case state is
 
                     -----------------------------------------------------------------
@@ -163,6 +165,7 @@ begin
                     pause_mac <= '0';
 
                     -- Reset MAX & Taylor Controls
+                    fetch_reg   <= '0';
                     start_max   <= '0';
                     taylor_calc <= '0';
                     taylor_done <= '0';
@@ -185,50 +188,49 @@ begin
                     -- FETCH: arm for data_in
                     -----------------------------------------------------------------
                 when fetch =>
-                    start_max <= '0';
+                    -- fetch_reg <= fetch_qkv;
+                    start_max   <= '0';
+                    mac_out_reg <= data_in;
+
                     if fetch_qkv = '1' then
-                        state      <= load;
-                        prev_state <= fetch;
-                    end if;
+                        -- state      <= load;
+                        -- prev_state <= fetch;
 
-                    -----------------------------------------------------------------
-                    -- LOAD: write 12 lanes into BRAM, using your exact case offsets
-                    -----------------------------------------------------------------
-                when load =>
-                    if bram_qkv_addr = 71 then
-                        state         <= compute_scores;
-                        bram_qkv_addr <= 0;
-                    else
-                        state <= prev_state;
-                    end if;
-
-                    bram_qkv_addr <= bram_qkv_addr + 1;
-
-                    for i in 0 to 11 loop
-                        if i < 4 then
-                            case bram_qkv_addr is
-                                when 5      => offset  <= - 8;
-                                when 11     => offset <= - 16;
-                                when 17     => offset <= - 24;
-                                when 23     => offset <= - 32;
-                                when 29     => offset <= - 40;
-                                when 35     => offset <= - 48;
-                                when 41     => offset <= - 56;
-                                when 47     => offset <= - 64;
-                                when 53     => offset <= - 72;
-                                when 59     => offset <= - 80;
-                                when 65     => offset <= - 88;
-                                when others => null;
-                            end case;
+                        if bram_qkv_addr = 71 then
+                            state         <= compute_scores;
+                            bram_qkv_addr <= 0;
+                        else
+                            -- state <= prev_state;
                         end if;
 
-                        -- Assign data if within valid range
-                        if (bram_qkv_addr = 5 or bram_qkv_addr = 11 or bram_qkv_addr = 17 or bram_qkv_addr = 23 or bram_qkv_addr = 29 or bram_qkv_addr = 35 or bram_qkv_addr = 41 or bram_qkv_addr = 47 or bram_qkv_addr = 53 or bram_qkv_addr = 59 or bram_qkv_addr = 65 or bram_qkv_addr = 71) and i < 4 then
-                            bram_qkv(12 * bram_qkv_addr + i + offset) <= data_in((bram_qkv_off * (i + 1) - 1) downto (bram_qkv_off * i));
-                        elsif (bram_qkv_addr /= 5 and bram_qkv_addr /= 11 and bram_qkv_addr /= 17 and bram_qkv_addr /= 23 and bram_qkv_addr /= 29 and bram_qkv_addr /= 35 and bram_qkv_addr /= 41 and bram_qkv_addr /= 47 and bram_qkv_addr /= 53 and bram_qkv_addr /= 59 and bram_qkv_addr /= 65 and bram_qkv_addr /= 71) then
-                            bram_qkv(12 * bram_qkv_addr + i + offset) <= data_in((bram_qkv_off * (i + 1) - 1) downto (bram_qkv_off * i));
-                        end if;
-                    end loop;
+                        bram_qkv_addr <= bram_qkv_addr + 1;
+
+                        for i in 0 to 11 loop
+                            if i < 4 then
+                                case bram_qkv_addr is
+                                    when 5      => offset  <= - 8;
+                                    when 11     => offset <= - 16;
+                                    when 17     => offset <= - 24;
+                                    when 23     => offset <= - 32;
+                                    when 29     => offset <= - 40;
+                                    when 35     => offset <= - 48;
+                                    when 41     => offset <= - 56;
+                                    when 47     => offset <= - 64;
+                                    when 53     => offset <= - 72;
+                                    when 59     => offset <= - 80;
+                                    when 65     => offset <= - 88;
+                                    when others => null;
+                                end case;
+                            end if;
+
+                            -- Assign data if within valid range
+                            if (bram_qkv_addr = 5 or bram_qkv_addr = 11 or bram_qkv_addr = 17 or bram_qkv_addr = 23 or bram_qkv_addr = 29 or bram_qkv_addr = 35 or bram_qkv_addr = 41 or bram_qkv_addr = 47 or bram_qkv_addr = 53 or bram_qkv_addr = 59 or bram_qkv_addr = 65 or bram_qkv_addr = 71) and i < 4 then
+                                bram_qkv(12 * bram_qkv_addr + i + offset) <= data_in((bram_qkv_off * (i + 1) - 1) downto (bram_qkv_off * i));
+                            elsif (bram_qkv_addr /= 5 and bram_qkv_addr /= 11 and bram_qkv_addr /= 17 and bram_qkv_addr /= 23 and bram_qkv_addr /= 29 and bram_qkv_addr /= 35 and bram_qkv_addr /= 41 and bram_qkv_addr /= 47 and bram_qkv_addr /= 53 and bram_qkv_addr /= 59 and bram_qkv_addr /= 65 and bram_qkv_addr /= 71) then
+                                bram_qkv(12 * bram_qkv_addr + i + offset) <= data_in((bram_qkv_off * (i + 1) - 1) downto (bram_qkv_off * i));
+                            end if;
+                        end loop;
+                    end if;
 
                     -----------------------------------------------------------------
                     -- COMPUTE_SCORES: issue MAC passes and collect 4×4 results
@@ -282,7 +284,7 @@ begin
                                         signed(bram_qkv(192 * q_ext_iter + 15 * q_int_iter + col)), 8), 8); -- Q[15 * q_int_iter + col]
 
                                         input_b(row, col) <= resize(shift_right(
-                                        signed(bram_qkv(64 + 15 * q_int_iter + col)), 8), 8); -- K[15 * q_int_iter + col]
+                                        signed(bram_qkv(64 + 192 * k_idx + 15 * q_int_iter + col)), 8), 8); -- K[15 * q_int_iter + col]
                                     else
                                         input_a(row, col) <= (others => '0');
                                         input_b(row, col) <= (others => '0');
@@ -299,13 +301,13 @@ begin
                     if softmax_ready = '1' and softmax_ctr < 4 then
                         softmax_ctr <= softmax_ctr + 1;
                         for i in 0 to 3 loop
-                            if softmax_out(i) > to_signed(32639, 16) then
-                                bram_softmax(i + 4 * softmax_ctr) <= to_signed(127, 8);
-                            elsif softmax_out(i) < to_signed(-32768, 16) then
-                                bram_softmax(i + 4 * softmax_ctr) <= to_signed(-128, 8);
-                            else
-                                bram_softmax(i + 4 * softmax_ctr) <= resize(softmax_out(i) srl 8, 8);
-                            end if;
+                            -- if softmax_out(i) > to_signed(2048, 64) then
+                            --     bram_softmax(i + 4 * softmax_ctr) <= to_signed(2048, 11);
+                            -- elsif softmax_out(i) < to_signed(-2048, 64) then
+                            --     bram_softmax(i + 4 * softmax_ctr) <= to_signed(-204, 11);
+                            -- else
+                            bram_softmax(i + 4 * softmax_ctr) <= resize(softmax_out(i), 11);
+                            -- end if;
                         end loop;
                     end if;
 
@@ -423,30 +425,30 @@ begin
             find_max    <= '0';
             processing  <= '0';
             max_index   <= 0;
-            elsif rising_edge(clk) then
+        elsif rising_edge(clk) then
             if start_max = '1' then
                 current_max <= signed(bram_scores(4 * max_index));
                 index       <= 1;
                 find_max    <= '0';
                 processing  <= '1';
-                elsif processing = '1' then
-                if index < 5 then
+            elsif processing = '1' then
+                if index < 4 then
                     score_idx := index + 4 * max_index;
                     if score_idx <= 15 and signed(bram_scores(score_idx)) > current_max then
                         current_max  <= signed(bram_scores(score_idx));
                     end if;
                     index <= index + 1;
-                    else
+                else
                     max_val    <= current_max;
                     find_max   <= '1';
                     processing <= '0';
                 end if;
-                elsif find_max = '1' then
+            elsif find_max = '1' then
                 max_lut(max_index) <= max_val;
                 find_max           <= '0';
                 if max_index < 3 then
                     max_index <= max_index + 1;
-                    else
+                else
                     max_index <= 0;
                 end if;
             end if;
@@ -467,26 +469,26 @@ begin
             term3         <= (others => (others => '0'));
             taylor_sum    <= (others => '0');
             softmax_ready <= '0';
-            elsif rising_edge(clk) then
+        elsif rising_edge(clk) then
             for i in 0 to 3 loop
                 if taylor_calc = '1' then
                     z_diff(i)        <= bram_scores(i + 4 * (max_ctr - 1)) - max_lut(max_ctr - 1);
-                    z_diff_q15(i)    <= shift_right(resize(z_diff(i), 16), 8);
+                    z_diff_q15(i)    <= (resize(z_diff(i), 16));
                     z_diff_sq(i)     <= z_diff_q15(i) * z_diff_q15(i);
                     z_diff_cu(i)     <= z_diff_sq(i) * z_diff_q15(i);
                     term1(i)         <= shift_left(resize(z_diff_q15(i), 64), 30);
                     term2(i)         <= shift_left(shift_right(resize(z_diff_sq(i), 64), 1), 15);
-                    term3(i)         <= shift_right(resize(z_diff_cu(i) * to_signed(21846, 64), 64), 30);
-                    taylor_approx(i) <= (to_signed(1, 64) sll 45) + term1(i) + term2(i) + term3(i);
+                    term3(i)         <= shift_right(resize(z_diff_cu(i) * to_signed(21846, 64), 64), 0);
+                    taylor_approx(i) <= (to_signed(1, 64)) + term1(i) + term2(i) + term3(i);
                 end if;
             end loop;
             if taylor_done = '1' then
                 softmax_ready <= '1';
                 taylor_sum    <= resize(taylor_approx(0), 64)
-                + resize(taylor_approx(1), 64)
-                + resize(taylor_approx(2), 64)
-                + resize(taylor_approx(3), 64);
-                else
+                    + resize(taylor_approx(1), 64)
+                    + resize(taylor_approx(2), 64)
+                    + resize(taylor_approx(3), 64);
+            else
                 softmax_ready <= '0';
             end if;
         end if;
@@ -497,8 +499,9 @@ begin
     begin
         for i in 0 to 3 loop
             if taylor_sum /= 0 then
-                softmax_out(i) <= shift_left(taylor_approx(i), 15)/taylor_sum;
-                else
+                softmax_out(i) <= shift_left(to_signed(1, 64), 8) - abs((shift_left(taylor_approx(i), 8)) / taylor_sum);
+
+            else
                 softmax_out(i) <= (others => '0');
             end if;
         end loop;
