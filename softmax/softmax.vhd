@@ -301,13 +301,7 @@ begin
                     if softmax_ready = '1' and softmax_ctr < 4 then
                         softmax_ctr <= softmax_ctr + 1;
                         for i in 0 to 3 loop
-                            -- if softmax_out(i) > to_signed(2048, 64) then
-                            --     bram_softmax(i + 4 * softmax_ctr) <= to_signed(2048, 11);
-                            -- elsif softmax_out(i) < to_signed(-2048, 64) then
-                            --     bram_softmax(i + 4 * softmax_ctr) <= to_signed(-204, 11);
-                            -- else
                             bram_softmax(i + 4 * softmax_ctr) <= resize(softmax_out(i), 11);
-                            -- end if;
                         end loop;
                     end if;
 
@@ -379,7 +373,7 @@ begin
                                 input_a(row, 4)   <= to_signed(0, 8);
 
                                 input_b(row, col) <= resize(shift_right(
-                                signed(bram_qkv(128 + 192 * col + r_mod_3 + 3 * v_ext_iter)), 7), 8);
+                                signed(bram_qkv(128 + 192 * col + r_mod_3 + 3 * v_ext_iter)), 8), 8);
                                 input_b(row, 4) <= to_signed(0, 8);
                             end loop;
                         end loop;
@@ -395,7 +389,7 @@ begin
                                     input_a(row, 4)   <= to_signed(0, 8);
 
                                     input_b(row, col) <= resize(shift_right(
-                                    signed(bram_qkv(128 + 192 * col + r_mod_3 + 3 * v_ext_iter)), 7), 8);
+                                    signed(bram_qkv(128 + 192 * col + r_mod_3 + 3 * v_ext_iter)), 8), 8);
                                     input_b(row, 4) <= to_signed(0, 8);
                                 else
                                     input_a(row, col) <= (others => '0');
@@ -499,7 +493,7 @@ begin
     begin
         for i in 0 to 3 loop
             if taylor_sum /= 0 then
-                softmax_out(i) <= shift_left(to_signed(1, 64), 8) - abs((shift_left(taylor_approx(i), 8)) / taylor_sum);
+                softmax_out(i) <= shift_left(to_signed(1, 64), 7) - abs((shift_left(taylor_approx(i), 7)) / taylor_sum) - 1;
 
             else
                 softmax_out(i) <= (others => '0');

@@ -93,36 +93,6 @@ architecture tb of system_tb is
     signal fetch_qkv_enable           : std_logic := '0';
 begin
 
-    -- Stretch fetch_qkv signal for 2 cycles after fetch_mac is high
-    -- process (clk, rst)
-    -- begin
-    --     if rst = '1' then
-    --         fetch_mac_d1     <= '0';
-    --         fetch_mac_d2     <= '0';
-    --         fetch_qkv        <= '0';
-    --         fetch_qkv_enable <= '0';
-
-    --         elsif rising_edge(clk) then
-    --         fetch_mac_d1 <= fetch_mac;
-    --         fetch_mac_d2 <= fetch_mac_d1;
-
-    --         -- Detect rising edge
-    --         if (fetch_mac_d1 = '1' and fetch_mac_d2 = '0') then
-    --             fetch_qkv_enable <= '1';
-    --             elsif (fetch_qkv_enable = '1') then
-    --             fetch_qkv_enable <= '0';
-    --         end if;
-
-    --         -- Generate 2-cycle pulse
-    --         if fetch_qkv_enable = '1' or fetch_qkv = '1' then
-    --             fetch_qkv <= '1';
-    --             else
-    --             fetch_qkv <= '0';
-    --         end if;
-    --     end if;
-    -- end process;
-
-    -- MAC Arbitration FSM
     -- MAC Arbitration FSM with counter for MHA completions
     process (clk, rst)
         variable mha_completion_counter : integer range 0 to 3 := 0;
