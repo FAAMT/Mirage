@@ -4,6 +4,8 @@ import numpy as np
 import torch
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModel
+from decimal import Decimal, getcontext
+
 from test_extracted_weights import (
     load_sliced_weights,
     D_MODEL, HEAD_DIM, NUM_HEADS,
@@ -450,68 +452,209 @@ for i in range(min(4, sum_exp.shape[0])):
 # -------------------------------------------------------
 # 5. SOFTMAX NORMALISATION
 # -------------------------------------------------------
-# result wanted in Q0.14 (0-to-1 probabilities)
-softmax_q14 = (exp_scores << 14) // sum_exp           # integer divide
+def compute_taylor_q345(scores):
+    table = []
+    int_vals = []
+
+    print("\n========== Starting Taylor Softmax Computation ==========\n")
+    for block in range(4):
+        start_idx = 4 * block
+        group = scores[start_idx: start_idx + 4]
+        max_val = max(group)
+        taylor_group = []
+
+        print(f"\n--- Q{block} ---")
+        print(f"Scores: {group}")
+        print(f"Max score in block: {max_val}")
+        
+        for i, score in enumerate(group):
+            z = score - max_val
+            z_q15 = z
+            z_sq = int(z_q15 * z_q15)
+            z_cu = int(z_sq * z_q15)
+
+            term1 = z_q15 << 30
+            term2 = int(z_sq / 2) << 15
+            term3 = ((z_cu * 21846)) 
+            taylor = 1 + term1 + term2 + term3
+
+            print(f"\nToken {i}:")
+            print(f"  Raw Score     = {score}")
+            print(f"  z = score - max = {z}")
+            print(f"  z_q15 (>>8)    = {z_q15}")
+            print(f"  z^2            = {z_sq}")
+            print(f"  z^3            = {z_cu}")
+            print(f"  Term1 (z<<30)  = {term1}")
+            print(f"  Term2          = {term2}")
+            print(f"  Term3 (approx) = {term3}")
+            print(f"  Taylor Approx  = {taylor}")
+
+            taylor_group.append(taylor)
+
+            table.append([
+                f"Q{block}", i, score, z, z_q15,
+                term1, term2, term3, taylor
+            ])
+
+        taylor_sum = sum(taylor_group)
+        print(f"\nTotal Taylor Sum: {taylor_sum}")
+        
+        softmax_fp = []
+        for i in range(4):
+            softmax_q015 = (taylor_group[i] / taylor_sum)  # Convert to Q0.15
+            softmax_float = 1 - softmax_q015  # Convert to float
+
+            print(f"Softmax[{i}] Q0.15  = {int(softmax_q015)}")
+            print(f"Softmax[{i}] Float  = {softmax_float:.6f}")
+
+            table[4 * block + i].append(taylor_sum)
+            table[4 * block + i].append(int(softmax_q015))
+            softmax_fp.append(round(softmax_float, 6))
+
+        # Earlier in your script (right after imports), set decimal precision:
+        getcontext().prec = 4  # 4 digits to ensure 3 significant digits in operations
+        
+        # Then modify the print section to:
+        print(f"\nFinal Softmax Vector (Float): Q{block} → {softmax_fp}")
+        print("Softmax Vector (7-bit integer representation):")
+       
+        for i, val in enumerate(softmax_fp):
+            # Convert with precise decimal arithmetic
+            int7_val = int(round(float(Decimal(str(val)) * Decimal(128))))
+            int7_val = max(0, min(127, int7_val))
+            int_vals.append(int7_val)
+            print(f"  Element {i}: {val:.6f} → {int7_val} (0x{int7_val:02x})")
+            print(f"    Precise calculation: {Decimal(str(val)):.6f} * 127 = {Decimal(str(val)) * Decimal(128):.3f} → rounded {int7_val}")
+        print("-" * 60)
+        # Earlier in your script (right after imports), set decimal precision:
+        getcontext().prec = 4  # 4 digits to ensure 3 significant digits in operations
+ 
+    return int_vals
 
 # -------------------------------------------------------
-# 6. OPTIONAL: convert to float for display
+# 6. ATTENTION OUTPUT CALCULATION (Softmax * V)
 # -------------------------------------------------------
-softmax_float = softmax_q14.astype(np.float32) / (1 << 14)
-print("\nSoft-max probabilities (float):")
-for r in range(softmax_float.shape[0]):
-    print(f"  Row {r}: {softmax_float[r]}")
 
+# First, let's get the softmax results in a usable format
+softmax_results = compute_taylor_q345(raw_scores.flatten())
 
-# # Integer division for probabilities (using fixed-point math)
-# print("\n5. Final Softmax Probabilities (Q0.16):")
-# probs = np.zeros(len(tokens), dtype=np.int32)
-# for i in range(len(tokens)):
-#     # Multiply by 1<<16 before division to maintain precision
-#     prob = (exp_scores[i] << 16) // sum_exp
-#     probs[i] = prob
+# Extract just the softmax float values from the results
+if softmax_results is None:
+    raise ValueError("Softmax computation failed - returned None")
+
+# Extract just the softmax float values (they're at index -2 in each entry)
+print("\nFinal Softmax Matrix (4x4):")
+softmax_matrix = np.array(softmax_results).reshape(4, 4)
+print(softmax_matrix)
+
+print("\nFinal V Matrices (4x4):")
+# Convert V matrices to numpy arrays (assuming they're in similar format as Q/K)
+V_matrices = v_mat_head  // 256
+print(V_matrices)
+
+print("\n=== Calculating Attention Outputs ===")
+
+# Compute head-specific softmax matrices and attention outputs
+attention_outputs = []
+softmax_matrices = []  # will hold a (NUM_HEADS × 4 × 4) tensor
+
+for head_idx in range(NUM_HEADS):
+    print(f"\nProcessing Head {head_idx}:")
     
-#     float_prob = prob / (1 << 16)
-#     print(f"  P(token {i} '{tokens[i]}') = {exp_scores[i]}/{sum_exp} ≈ {float_prob:.6f}")
-#     print(f"    => Attention weight: {float_prob:.4%}")
-# Custom FFN with detailed math
-print("\n--- Running FFN with debug ---")
-def feed_forward_custom(x, W_fc1, W_fc2):
-    print(f"FFN input shape: {x.shape}")
-    # FC1 debug
-    print("First 5 MACs for FC1 (hidden dim 0):")
-    for i in range(5):
-        a = x[0,0,i]
-        b = W_fc1[i,0]
-        print(f"  {a:.6f} * {b:.6f} = {a*b:.6f}")
-    h = np.matmul(x, W_fc1.T)
-    h_relu = np.maximum(0, h)
-    # Show first 5 ReLU outputs
-    print("First 5 ReLU outputs for hidden0:")
-    for i in range(5):
-        print(f"  max(0,{h[0,0,i]:.6f}) = {h_relu[0,0,i]:.6f}")
-    # FC2 debug
-    print("First 5 MACs for FC2 (output dim 0):")
-    for i in range(5):
-        a = h_relu[0,0,i]
-        b = W_fc2[i,0]
-        print(f"  {a:.6f} * {b:.6f} = {a*b:.6f}")
-    out = np.matmul(h_relu, W_fc2.T)
-    return out
+    # Extract Q, K, V for this head (each is shape (4, HEAD_DIM))
+    V_head = V_matrices[head_idx]
 
-ffn_out = feed_forward_custom(mha_out, W1, W2)
-print(f"FFN output shape: {ffn_out.shape}")
+    print(f"Softmax matrix (4x4) for head {head_idx}:")
+    print(softmax_matrix)
 
-# Print final encoder output for token 0
-print("\nFinal encoder output for first token (float32):")
-print(ffn_out[0,0])
-# Q1.7 equivalents of final output
-print("Q1.7 equivalents of final token output:")
-for i in range(5):
-    val = ffn_out[0,0,i]
-    q_fixed = int(np.clip(np.round(val * 128), -128, 127))
-    print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
+    for row in softmax_matrix:
+            q15_row = "  ".join(f"{(val / (1 << 7)):8.3f}" for val in row)
+            print(q15_row)
+    
+    print(f"\nV matrix (4x64) for head {head_idx} (first 5 columns shown):")
+    print(V_matrices)
+    # 3) Attention output (4×64), processed for head 0 (or macs=0)
+    for macs in range(0, 4):  # Typically one head at a time
+        print(f"\nAttention output (4x64) for head {macs}")
+        
+        attention_outputs = []  # Collect 64 output values
+    
+        for i in range(64):  # Loop over each feature dimension
+            attention_output = 0.0
+    
+            # Compute weighted sum of V[j][i] using softmax weights for position `macs`
+            for j in range(4):  # Loop over 4 tokens/rows
+                attention_output += softmax_matrix[macs][j] * V_matrices[j][i]
+    
+            attention_outputs.append(attention_output)
+    
+        # Reshape the 64-length list into 8×8 for clearer display
+        attention_array = np.array(attention_outputs).reshape(8, 8)
+        
+        # Print the 8×8 attention output with detailed breakdown for each value
+        print("Formatted Attention Output (8x8) with MAC breakdowns:")
+        for row_idx in range(8):
+            for col_idx in range(8):
+                index = row_idx * 8 + col_idx
+                output_val = attention_outputs[index]
 
-print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
+                # Print breakdown of each individual MAC calculation.
+                # print(f"\nOutput[{row_idx}, {col_idx}] = {output_val:.2f}")
+                # print("  MAC Breakdown:")
+                # for j in range(4):
+                #     smx = softmax_matrix[macs][j]
+                #     vval = V_matrices[j][index]
+                #     product = smx * vval
+                #     print(f"    softmax[{macs}][{j}]: {smx:.4f} * V[{j}][{index}]: {vval:.4f} = {product:.4f}")
+                # print(f"  => Total: {output_val:.4f}")
+                
+        print(f"Final Attention Output {macs} (8x8):")
+        for row in attention_array:
+            formatted_row = "  ".join(f"{val:8.2f}" for val in row)
+            q15_row = "  ".join(f"{(val / (1 << 15)):8.3f}" for val in row)
+            print(f"Float:  {formatted_row}")
+            print(f"Q1.15:  {q15_row}")
+
+
+
+# print("\n--- Running FFN with debug ---")
+# def feed_forward_custom(x, W_fc1, W_fc2):
+#     print(f"FFN input shape: {x.shape}")
+#     # FC1 debug
+#     print("First 5 MACs for FC1 (hidden dim 0):")
+#     for i in range(5):
+#         a = x[0,0,i]
+#         b = W_fc1[i,0]
+#         print(f"  {a:.6f} * {b:.6f} = {a*b:.6f}")
+#     h = np.matmul(x, W_fc1.T)
+#     h_relu = np.maximum(0, h)
+#     # Show first 5 ReLU outputs
+#     print("First 5 ReLU outputs for hidden0:")
+#     for i in range(5):
+#         print(f"  max(0,{h[0,0,i]:.6f}) = {h_relu[0,0,i]:.6f}")
+#     # FC2 debug
+#     print("First 5 MACs for FC2 (output dim 0):")
+#     for i in range(5):
+#         a = h_relu[0,0,i]
+#         b = W_fc2[i,0]
+#         print(f"  {a:.6f} * {b:.6f} = {a*b:.6f}")
+#     out = np.matmul(h_relu, W_fc2.T)
+#     return out
+
+# ffn_out = feed_forward_custom(mha_out, W1, W2)
+# print(f"FFN output shape: {ffn_out.shape}")
+
+# # Print final encoder output for token 0
+# print("\nFinal encoder output for first token (float32):")
+# print(ffn_out[0,0])
+# # Q1.7 equivalents of final output
+# print("Q1.7 equivalents of final token output:")
+# for i in range(5):
+#     val = ffn_out[0,0,i]
+#     q_fixed = int(np.clip(np.round(val * 128), -128, 127))
+#     print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
+
+# print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
 
 # Write Q1.7 weights to files
 def write_q17_weights(weights, filename):
