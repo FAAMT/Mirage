@@ -46,10 +46,12 @@ architecture tb of system_tb is
     signal start : std_logic := '0';
     signal done  : std_logic;
 
-    signal bram_addr     : integer range 0 to 49599     := 0;
+    signal bram_addr_mha : integer range 0 to 49599     := 0;
+    signal bram_addr_ffn : integer                      := 0;
     signal bram_data_in  : std_logic_vector(7 downto 0) := (others => '0');
     signal bram_data_out : std_logic_vector(7 downto 0);
-    signal bram_wr       : std_logic := '0';
+    signal bram_wr_mha   : std_logic := '0';
+    signal bram_wr_ffn   : std_logic := '0';
 
     signal input_a  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
     signal input_b  : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
@@ -57,19 +59,25 @@ architecture tb of system_tb is
 
     signal start_mac_mha : std_logic;
     signal start_mac_smx : std_logic;
+    signal start_mac_ffn : std_logic;
     signal fetch_mac     : std_logic;
     signal done_mac      : std_logic := '0'; -- Simulated handshake
 
     -- Add Softmax interface signals
     signal start_softmax    : std_logic := '0';
     signal done_softmax     : std_logic;
+    signal start_ffn        : std_logic := '0';
+    signal done_ffn         : std_logic;
     signal fetch_qkv        : std_logic := '0';
     signal fetch_attn       : std_logic;
     signal softmax_data_in  : std_logic_vector(12 * 16 - 1 downto 0) := (others => '0');
     signal softmax_data_out : std_logic_vector(12 * DATA_WIDTH - 1 downto 0);
+    signal ffn_data_in      : std_logic_vector(16 * 17 - 1 downto 0) := (others => '0');
+    signal ffn_data_out     : std_logic_vector(16 * DATA_WIDTH - 1 downto 0);
 
     -- Additional MAC control for softmax
-    signal clear_mac_softmax : std_logic;
+    signal clear_mac_smx : std_logic;
+    signal clear_mac_ffn : std_logic;
 
     -- Debug signals for GTKwave
     signal debug_current_op : string(1 to 4) := "IDLE";
@@ -78,16 +86,16 @@ architecture tb of system_tb is
     signal q_weights    : matrix_int8(0 to HEAD_DIM - 1, 0 to D_MODEL - 1);
     signal k_weights    : matrix_int8(0 to HEAD_DIM - 1, 0 to D_MODEL - 1);
     signal v_weights    : matrix_int8(0 to HEAD_DIM - 1, 0 to D_MODEL - 1);
-    signal proj_weights : matrix_int8(0 to D_MODEL - 1, 0 to HEAD_DIM - 1);
-    signal fc1_weights  : matrix_int8(0 to D_FF - 1, 0 to D_MODEL - 1);
-    signal fc2_weights  : matrix_int8(0 to D_MODEL - 1, 0 to D_FF - 1);
+    signal pl_weights   : matrix_int8(0 to HEAD_DIM - 1, 0 to D_MODEL - 1);
+    signal fc_1_weights : matrix_int8(0 to 511, 0 to 255);
+    signal fc_2_weights : matrix_int8(0 to D_MODEL - 1, 0 to D_FF - 1);
 
     -- Add MAC arbitration signals
-    type mac_arb_state is (IDLE, MHA_ACTIVE, SMX_ACTIVE);
-    signal mac_arbiter              : mac_arb_state := IDLE;
-    signal start_mac                : std_logic     := '0';
-    signal input_a_mha, input_a_smx : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
-    signal input_b_mha, input_b_smx : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
+    type mac_arb_state is (IDLE, MHA_ACTIVE, SMX_ACTIVE, FFN_ACTIVE);
+    signal mac_arbiter                           : mac_arb_state := IDLE;
+    signal start_mac                             : std_logic     := '0';
+    signal input_a_mha, input_a_smx, input_a_ffn : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
+    signal input_b_mha, input_b_smx, input_b_ffn : mac_array(0 to TILE_H - 1, 0 to TILE_W - 1);
 
     signal fetch_mac_d1, fetch_mac_d2 : std_logic := '0';
     signal fetch_qkv_enable           : std_logic := '0';
@@ -123,14 +131,17 @@ begin
                 when SMX_ACTIVE =>
                     mha_completion_counter := 0; -- Reset counter when in softmax
                     if done_softmax = '1' then
-                        mac_arbiter <= IDLE;
+                        mac_arbiter <= FFN_ACTIVE;
                     end if;
+
+                when FFN_ACTIVE =>
+
             end case;
         end if;
     end process;
 
     -- MAC Input Multiplexers
-    process (mac_arbiter, input_a_mha, input_b_mha, input_a_smx, input_b_smx)
+    process (mac_arbiter, input_a_mha, input_b_mha, input_a_smx, input_b_smx, input_a_ffn, input_b_ffn)
     begin
         case mac_arbiter is
             when MHA_ACTIVE =>
@@ -143,6 +154,11 @@ begin
                 input_b   <= input_b_smx;
                 start_mac <= start_mac;
 
+            when FFN_ACTIVE =>
+                input_a   <= input_a_ffn;
+                input_b   <= input_b_ffn;
+                start_mac <= start_mac;
+
             when IDLE =>
                 input_a   <= (others => (others => (others => '0')));
                 input_b   <= (others => (others => (others => '0')));
@@ -150,30 +166,61 @@ begin
         end case;
     end process;
 
+    -- Instantiate FFN Core
+    ffn_core : entity work.ffn
+        generic
+        map (
+        DATA_WIDTH => 17
+        )
+        port map
+        (
+            clk        => clk,
+            rst        => rst,
+            start      => start_ffn,
+            done       => done_ffn,
+            fetch_attn => fetch_attn,
+            data_in    => ffn_data_in,
+            -- data_out   => ffn_data_out,
+
+            bram_addr     => bram_addr_ffn,
+            bram_data_in  => bram_data_in,
+            bram_data_out => bram_data_out,
+            bram_wr       => bram_wr_ffn,
+
+            -- Matrix Mult Interface
+            start_mac => start_mac_ffn,
+            clear_mac => clear_mac_ffn,
+            done_mac  => done_mac,
+            input_a   => input_a_ffn,
+            input_b   => input_b_ffn,
+            output_d  => output_d
+        );
+
     -- Instantiate Softmax Core
     softmax_core : entity work.softmax
         generic
         map (
         DATA_WIDTH => DATA_WIDTH
         )
-        port map
+        port
+        map
         (
-            clk        => clk,
-            rst        => rst,
-            start      => start_softmax,
-            done       => done_softmax,
-            fetch_qkv  => fetch_mac,
-            fetch_attn => fetch_attn,
-            data_in    => softmax_data_in,
-            data_out   => softmax_data_out,
+        clk        => clk,
+        rst        => rst,
+        start      => start_softmax,
+        done       => done_softmax,
+        fetch_qkv  => fetch_mac,
+        fetch_attn => fetch_attn,
+        data_in    => softmax_data_in,
+        data_out   => softmax_data_out,
 
-            -- Matrix Mult Interface
-            start_mac => start_mac_smx,
-            clear_mac => clear_mac_softmax,
-            done_mac  => done_mac,
-            input_a   => input_a_smx,
-            input_b   => input_b_smx,
-            output_d  => output_d
+        -- Matrix Mult Interface
+        start_mac => start_mac_smx,
+        clear_mac => clear_mac_smx,
+        done_mac  => done_mac,
+        input_a   => input_a_smx,
+        input_b   => input_b_smx,
+        output_d  => output_d
         );
 
     -- Instantiate UUT (multi_head)
@@ -191,10 +238,10 @@ begin
         rst           => rst,
         start         => start_mha,
         done          => done_mha,
-        bram_addr     => bram_addr,
+        bram_addr     => bram_addr_mha,
         bram_data_in  => bram_data_in,
         bram_data_out => bram_data_out,
-        bram_wr       => bram_wr,
+        bram_wr       => bram_wr_mha,
         input_a       => input_a_mha,
         input_b       => input_b_mha,
         start_mac     => start_mac_mha,
@@ -214,8 +261,8 @@ begin
         map (
         clk      => clk,
         rst      => rst,
-        start    => start_mac_mha or start_mac_smx,
-        clear    => fetch_mac or clear_mac_softmax,
+        start    => start_mac_mha or start_mac_smx or start_mac_ffn,
+        clear    => fetch_mac or clear_mac_smx or clear_mac_ffn,
         input_a  => input_a,
         input_b  => input_b,
         output_d => output_d,
@@ -242,9 +289,9 @@ begin
         -- Stimulus signals
         variable temp_token_bram : matrix_int8(0 to SEQ_LEN - 1, 0 to D_MODEL - 1);
         variable temp_qkv_bram   : matrix_int8(0 to HEAD_DIM - 1, 0 to D_MODEL - 1);
-        variable temp_proj_bram  : matrix_int8(0 to D_MODEL - 1, 0 to HEAD_DIM - 1);
-        variable temp_fc1_bram   : matrix_int8(0 to D_FF - 1, 0 to D_MODEL - 1);
-        variable temp_fc2_bram   : matrix_int8(0 to D_MODEL - 1, 0 to D_FF - 1);
+        variable temp_proj_bram  : matrix_int8(0 to HEAD_DIM - 1, 0 to D_MODEL - 1);
+        variable temp_fc_1_bram  : matrix_int8(0 to 511, 0 to 255);
+        variable temp_fc_2_bram  : matrix_int8(0 to D_MODEL - 1, 0 to D_FF - 1);
     begin
         -- apply reset
         rst <= '1';
@@ -294,44 +341,65 @@ begin
         v_weights <= temp_qkv_bram;
 
         wait for clk_period;
+        debug_current_op <= "P_WT";
+        read_int8_matrix(
+        "/Users/faamt/Desktop/Nomadic Inc/Mirage/model/tb_stim/proj_layer_weights.txt",
+        HEAD_DIM, D_MODEL,
+        temp_proj_bram
+        );
+
+        pl_weights <= temp_proj_bram;
+
+        wait for clk_period;
+
+        debug_current_op <= "F_WT";
+        read_int8_matrix(
+        "/Users/faamt/Desktop/Nomadic Inc/Mirage/model/tb_stim/fc_1_weights.txt",
+        512, 256,
+        temp_fc_1_bram
+        );
+
+        fc_1_weights <= temp_fc_1_bram;
+
+        wait for clk_period;
 
         -- Write Q weights to BRAM (64x256 matrix, row-major order)
         for row in 0 to HEAD_DIM - 1 loop
             for col in 0 to D_MODEL - 1 loop
                 -- Address calculation: row * D_MODEL + col
-                bram_addr    <= row * D_MODEL + col;
-                bram_data_in <= std_logic_vector(q_weights(row, col));
-                bram_wr      <= '1';
+                bram_addr_mha <= row * D_MODEL + col;
+                bram_data_in  <= std_logic_vector(q_weights(row, col));
+                bram_wr_mha   <= '1';
                 wait for clk_period;
             end loop;
         end loop;
-        bram_wr <= '0';
+        bram_wr_mha <= '0';
         wait for clk_period;
 
         -- Write K weights to BRAM (64x256 matrix, row-major order)
         for row in 0 to HEAD_DIM - 1 loop
             for col in 0 to D_MODEL - 1 loop
                 -- Address calculation: 16384 + (row * D_MODEL + col)
-                bram_addr    <= 16384 + (row * D_MODEL + col);
-                bram_data_in <= std_logic_vector(k_weights(row, col));
-                bram_wr      <= '1';
+                bram_addr_mha <= 16384 + (row * D_MODEL + col);
+                bram_data_in  <= std_logic_vector(k_weights(row, col));
+                bram_wr_mha   <= '1';
                 wait for clk_period;
             end loop;
         end loop;
-        bram_wr <= '0';
+        bram_wr_mha <= '0';
         wait for clk_period;
 
         -- Write V weights to BRAM (64x256 matrix, row-major order)
         for row in 0 to HEAD_DIM - 1 loop
             for col in 0 to D_MODEL - 1 loop
                 -- Address calculation: 16384 + (row * D_MODEL + col)
-                bram_addr    <= 32768 + (row * D_MODEL + col);
-                bram_data_in <= std_logic_vector(v_weights(row, col));
-                bram_wr      <= '1';
+                bram_addr_mha <= 32768 + (row * D_MODEL + col);
+                bram_data_in  <= std_logic_vector(v_weights(row, col));
+                bram_wr_mha   <= '1';
                 wait for clk_period;
             end loop;
         end loop;
-        bram_wr <= '0';
+        bram_wr_mha <= '0';
         wait for clk_period;
 
         -- Write token embeddings to BRAM (addresses 49599-49599-255 downto 0)
@@ -342,12 +410,12 @@ begin
         for token_idx in 0 to 3 loop
             for dim_idx in 0 to D_MODEL - 1 loop
                 -- Calculate address (last 256 elements)
-                bram_addr    <= (49599 - 255) + dim_idx;
-                bram_data_in <= std_logic_vector(token_bram(token_idx, dim_idx));
-                bram_wr      <= '1';
+                bram_addr_mha <= (49599 - 255) + dim_idx;
+                bram_data_in  <= std_logic_vector(token_bram(token_idx, dim_idx));
+                bram_wr_mha   <= '1';
                 wait for clk_period;
             end loop;
-            bram_wr <= '0';
+            bram_wr_mha <= '0';
             wait for clk_period;
 
             -- Start the core
@@ -385,10 +453,49 @@ begin
         softmax_data_in <= (others => '0'); -- Replace with actual QKV data
         -- Wait for softmax completion
         wait until done_softmax = '1';
+        -- FFN Test Procedure
+        debug_current_op <= "FFN ";
 
-        -- Verify softmax outputs
-        debug_current_op <= "CHK ";
-        -- Add verification code here
+        -- Write Projection Layer weights to BRAM (64x256 matrix, row-major order)
+        for row in 0 to HEAD_DIM - 1 loop
+            for col in 0 to D_MODEL - 1 loop
+                bram_data_in <= std_logic_vector(pl_weights(row, col));
+                bram_wr_ffn  <= '1';
+                wait for 2 * clk_period;
+
+                if bram_addr_ffn >= 16383 then
+                    bram_addr_ffn <= 16383;
+                else
+                    bram_addr_ffn <= bram_addr_ffn + 1;
+                end if;
+            end loop;
+        end loop;
+        bram_wr_ffn <= '0';
+
+        bram_addr_ffn <= 16384;
+        wait for clk_period;
+
+        -- Write Hidden Layer weights to BRAM (512*256 matrix, row-major order)
+        for row in 0 to 511 loop
+            for col in 0 to 255 loop
+                bram_data_in <= std_logic_vector(fc_1_weights(row, col));
+                bram_wr_ffn  <= '1';
+                wait for 2 * clk_period;
+
+                if bram_addr_ffn < 1317072 and bram_addr_ffn > 16383 then
+                    bram_addr_ffn <= bram_addr_ffn + 1;
+                end if;
+            end loop;
+        end loop;
+        bram_wr_ffn <= '0';
+
+        wait for clk_period;
+        start_ffn <= '1';
+        wait for clk_period;
+        start_ffn <= '0';
+
+        -- Wait for FFN completion
+        -- wait until done_ffn = '1';
         wait;
     end process;
 

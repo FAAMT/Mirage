@@ -351,6 +351,7 @@ begin
 
                         if v_ext_iter = 21 and done_mac = '1'then
                             state <= idle;
+                            done  <= '1';
                         else
                             v_ext_iter <= v_ext_iter + 1;
                         end if;

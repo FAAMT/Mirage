@@ -98,9 +98,24 @@ def main_test(weights_directory_str: str):
     all_Wq = [load_sliced_weights(weights_dir, f"query_head{i}", (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
     all_Wk = [load_sliced_weights(weights_dir, f"key_head{i}",   (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
     all_Wv = [load_sliced_weights(weights_dir, f"value_head{i}", (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
-    W_o_full = load_sliced_weights(weights_dir, "attn_out_proj", (D_MODEL, D_MODEL))
+   # Load attention output projection weights
+    W_o_full = load_sliced_weights(weights_dir, "attn_out_proj", (round(D_MODEL / 4), D_MODEL))
+    print(f"W_o_full shape: {W_o_full.shape}")
+    print("W_o_full sample (first 2 rows, 5 cols):")
+    print(W_o_full[:2, :5])
+    
+    # Load FFN layer 1 weights
     W_fc1 = load_sliced_weights(weights_dir, "ffn_fc1", (D_FF, D_MODEL))
+    print(f"W_fc1 shape: {W_fc1.shape}")
+    print("W_fc1 sample (first 2 rows, 5 cols):")
+    print(W_fc1[:2, :5])
+    
+    # Load FFN layer 2 weights
     W_fc2 = load_sliced_weights(weights_dir, "ffn_fc2", (D_MODEL, D_FF))
+    print(f"W_fc2 shape: {W_fc2.shape}")
+    print("W_fc2 sample (first 2 rows, 5 cols):")
+    print(W_fc2[:2, :5])
+
 
     print("--- Weights Loaded Successfully ---")
     x = np.random.rand(BATCH_SIZE, SEQ_LEN, D_MODEL).astype(np.float32)

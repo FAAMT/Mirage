@@ -9,7 +9,8 @@ SRC="../types_pkg.vhd
      ../tb_io_pkg_body.vhd 
      ../matrix_mult/matrix_mult.vhd 
      ../multi_head/multi_head.vhd
-     ../softmax/softmax.vhd"
+     ../softmax/softmax.vhd
+     ../ffn/ffn.vhd"
 
 TB="system_tb.vhd"
 WAVE="system.ghw"
@@ -32,7 +33,7 @@ ghdl -e --std=08 $TOP_ENTITY || { echo "[ERROR] Elaboration failed"; exit 1; }
 
 # Run simulation
 echo "[INFO] Running simulation..."
-ghdl -r --std=08 $TOP_ENTITY --wave="$WAVE" --stop-time=300us || { echo "[ERROR] Simulation failed"; exit 1; }
+ghdl -r --std=08 $TOP_ENTITY --wave="$WAVE" --stop-time=2000us || { echo "[ERROR] Simulation failed"; exit 1; }
 
 # Launch GTKWave
 pkill gtkwave 2>/dev/null

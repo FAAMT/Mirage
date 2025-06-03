@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 import numpy as np
-import torch
+import torch, math
 from pathlib import Path
 from transformers import AutoTokenizer, AutoModel
 from decimal import Decimal, getcontext
@@ -557,6 +557,7 @@ print("\n=== Calculating Attention Outputs ===")
 # Compute head-specific softmax matrices and attention outputs
 attention_outputs = []
 softmax_matrices = []  # will hold a (NUM_HEADS × 4 × 4) tensor
+attention_4x64 = []
 
 for head_idx in range(NUM_HEADS):
     print(f"\nProcessing Head {head_idx}:")
@@ -590,6 +591,7 @@ for head_idx in range(NUM_HEADS):
     
         # Reshape the 64-length list into 8×8 for clearer display
         attention_array = np.array(attention_outputs).reshape(8, 8)
+        attention_4x64.append(attention_outputs)
         
         # Print the 8×8 attention output with detailed breakdown for each value
         print("Formatted Attention Output (8x8) with MAC breakdowns:")
@@ -597,16 +599,6 @@ for head_idx in range(NUM_HEADS):
             for col_idx in range(8):
                 index = row_idx * 8 + col_idx
                 output_val = attention_outputs[index]
-
-                # Print breakdown of each individual MAC calculation.
-                # print(f"\nOutput[{row_idx}, {col_idx}] = {output_val:.2f}")
-                # print("  MAC Breakdown:")
-                # for j in range(4):
-                #     smx = softmax_matrix[macs][j]
-                #     vval = V_matrices[j][index]
-                #     product = smx * vval
-                #     print(f"    softmax[{macs}][{j}]: {smx:.4f} * V[{j}][{index}]: {vval:.4f} = {product:.4f}")
-                # print(f"  => Total: {output_val:.4f}")
                 
         print(f"Final Attention Output {macs} (8x8):")
         for row in attention_array:
@@ -615,46 +607,230 @@ for head_idx in range(NUM_HEADS):
             print(f"Float:  {formatted_row}")
             print(f"Q1.15:  {q15_row}")
 
+def calculate_projection(attention_4x64, Wo):
+    """
+    Calculate projected output with detailed MAC breakdowns
+    Args:
+        attention_4x64: 4x64 attention matrix (float32)
+        Wo: 64x256 projection matrix (float32)
+    Returns:
+        Projected outputs with detailed computation logs
+    """
+    # Convert to numpy arrays if they aren't already
+    attention_4x64 = np.array(attention_4x64, dtype=np.float32)
+    Wo = np.array(Wo, dtype=np.float32)
+    
+    # Initialize accumulators
+    projected_outputs = []
+    global_pass_counter = 0
+    
+    for att_idx in range(4):  # For each of the 4 tokens
+        print(f"\n=== Processing Projected Attention {att_idx} ===")
+        attn_vec = attention_4x64[att_idx]
+        proj_out = np.zeros(256)
+        
+        for out_idx in range(256):  # For each output dimension
+            wo_column = Wo[:, out_idx]
+            macs = []
+            row_accumulator = 0
+            pass_accumulator = 0
+            
+            print(f"\nOutput element {out_idx}:")
+            print("="*40)
+            
+            for i in range(64):  # For each of 64 MAC operations
+                # Calculate MAC with proper scaling
+                scaled_attn = round((math.ceil(attn_vec[i]/(2**8)))-1)
+                scaled_wo = round((wo_column[i] * (2 ** 7)))
+                print(f"Wo => {wo_column[i]} INT8 => {scaled_wo}")
+                mac = scaled_attn * scaled_wo
+                macs.append(mac)
+                
+                # Update accumulators
+                row_accumulator += 1
+                pass_accumulator += mac
+                
+                # Print every 5 MACs
+                if (i + 1) % 5 == 0:
+                    start_idx = i - 4
+                    print("Individual MAC elements:")
+                    for j in range(start_idx, i+1):
+                        print(f"  MAC {j}: {round((math.ceil(attn_vec[j]/(2**8)))-1)} * {round((wo_column[i] * (2 ** 7)))} = {macs[j]}")
+                    current_sum = sum(macs[start_idx:i+1])
+                    print(f"Sum of MACs {start_idx:2d} to {i:2d}: {current_sum:12.2f}")
+                    print(f"Pass Accum: {pass_accumulator:12.2f}")
 
+            # Handle final group if not divisible by 5
+            if 64 % 5 != 0:
+                remaining = 64 % 5
+                start_idx = 64 - remaining
+                current_sum = sum(macs[start_idx:64])
+                print(f"Sum of MACs {start_idx:2d} to {63:2d}: {current_sum:12.2f}")
+                print("-"*30)
+            
+            # Final output value
+            out_val = sum(macs)
+            proj_out[out_idx] = out_val
+            
+            # Print final total for this output element
+            print(f"\nTotal sum of 64 products: {out_val:12.2f}")
+            
+            # Update pass counter every 12 rows (256/4 = 64, 64/12 ≈ 5 full passes)
+            if row_accumulator >= 12:
+                global_pass_counter += 1
+                print(f"\nPass {global_pass_counter} completed")
+                row_accumulator = 0
+        
+        projected_outputs.append(proj_out)
+        
+        # Print token summary
+        print(f"\nCompleted Token {att_idx} projection")
+        print(f"Output shape: {proj_out.shape}")
+        print("Sample values:", proj_out[:5])
+    
+    return np.array(projected_outputs)
 
-# print("\n--- Running FFN with debug ---")
-# def feed_forward_custom(x, W_fc1, W_fc2):
-#     print(f"FFN input shape: {x.shape}")
-#     # FC1 debug
-#     print("First 5 MACs for FC1 (hidden dim 0):")
-#     for i in range(5):
-#         a = x[0,0,i]
-#         b = W_fc1[i,0]
-#         print(f"  {a:.6f} * {b:.6f} = {a*b:.6f}")
-#     h = np.matmul(x, W_fc1.T)
-#     h_relu = np.maximum(0, h)
-#     # Show first 5 ReLU outputs
-#     print("First 5 ReLU outputs for hidden0:")
-#     for i in range(5):
-#         print(f"  max(0,{h[0,0,i]:.6f}) = {h_relu[0,0,i]:.6f}")
-#     # FC2 debug
-#     print("First 5 MACs for FC2 (output dim 0):")
-#     for i in range(5):
-#         a = h_relu[0,0,i]
-#         b = W_fc2[i,0]
-#         print(f"  {a:.6f} * {b:.6f} = {a*b:.6f}")
-#     out = np.matmul(h_relu, W_fc2.T)
-#     return out
+proj_out = calculate_projection(attention_4x64, Wo)
 
-# ffn_out = feed_forward_custom(mha_out, W1, W2)
-# print(f"FFN output shape: {ffn_out.shape}")
+print("\n--- Running FFN with debug ---")
+def feed_forward_verbose(x, W_fc1, W_fc2,
+                         mac_group: int = 5,
+                         neuron_group: int = 12,
+                         verbose: bool = True):
+    """
+    Fully-connected 256→512→256 feed-forward layer with exhaustive logging.
 
-# # Print final encoder output for token 0
-# print("\nFinal encoder output for first token (float32):")
-# print(ffn_out[0,0])
-# # Q1.7 equivalents of final output
-# print("Q1.7 equivalents of final token output:")
-# for i in range(5):
-#     val = ffn_out[0,0,i]
-#     q_fixed = int(np.clip(np.round(val * 128), -128, 127))
-#     print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
+    ▸ Now converts the token vector and both weight matrices to signed-int8
+      (Q1.7: round(val*128) clip [-128,127]) inside the function.
+    ▸ All MACs are carried out in int16→int32 arithmetic; results are
+      de-quantised back to float32 on return.
+    ▸ Prints every individual product (a * b = p) plus the original
+      group-sum diagnostics.
 
-# print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
+    Everything else – pass counts, grouping logic, ReLU placement – is
+    unchanged.
+    """
+    import numpy as np                           # local to keep signature identical
+
+    # ---------- Sanity checks ----------
+    x      = np.asarray(x,      np.float32).reshape(-1)
+    W_fc1  = np.asarray(W_fc1,  np.float32)
+    W_fc2  = np.asarray(W_fc2,  np.float32)
+
+    assert x.shape      == (256,),          "x must be 1×256"
+    assert W_fc1.shape  == (512, 256),      "W_fc1 must be 512×256"
+    assert W_fc2.shape  == (256, 512),      "W_fc2 must be 256×512"
+
+    # ---------- Quantise to int8 ----------
+    w_to_i8 = lambda a: np.clip(np.round(a * 128), -128, 127).astype(np.int8)
+    x_to_i8 = lambda a: np.round(np.right_shift((a).astype(np.int16), 8))
+
+    x_i8   = x_to_i8(x)           # (256,)
+    W1_i8  = w_to_i8(W_fc1)       # (512,256)
+    W2_i8  = w_to_i8(W_fc2)       # (256,512)
+
+    hidden_i16 = np.empty(512, dtype=np.int16)
+
+    # ---------- First FC (256 → 512) ----------
+    row_acc          = 0
+    pass_counter_hid = 0
+
+    for n_idx in range(512):
+        w_i8 = W1_i8[n_idx]                     # (256,)
+        macs = []
+        if verbose:
+            print(f"\n=== Neuron {n_idx:03d} ===")
+
+        acc32 = 0
+        # ---- 256 MACs → 52 MAC-groups ----
+        for m in range(256):
+            a = int(x_i8[m])
+            b = int(w_i8[m])
+            prod = a * b                        # int16 * int16 → int32
+            macs.append(prod)
+            acc32 += prod
+
+            if verbose:
+                print(f"    MAC {m:03d}: {a:4d} * {b:4d} = {prod:6d}")
+
+            # print running Σ every mac_group elements
+            last_in_group = (m + 1) % mac_group == 0 or m == 255
+            if last_in_group and verbose:
+                g_start = m - (m % mac_group)
+                g_sum   = sum(macs[g_start:m+1])
+                print(f"  MACs {g_start:03d}-{m:03d}: Σ = {g_sum: 8d}")
+
+        # ReLU (still int32), clamp to int16
+        relu_val = max(0, acc32)
+        hidden_i16[n_idx] = np.int16(np.clip(relu_val, 0, 32767))
+        if verbose:
+            print(f"  ReLU out (int16): {hidden_i16[n_idx]:6d}")
+
+        # neuron-group pass bookkeeping
+        row_acc += 1
+        if row_acc == neuron_group:
+            pass_counter_hid += 1
+            if verbose:
+                print(f"-- Hidden Pass {pass_counter_hid:02d} complete")
+            row_acc = 0
+
+    # add final partial pass (8 neurons)
+    if row_acc:
+        pass_counter_hid += 1
+        if verbose:
+            print(f"-- Hidden Pass {pass_counter_hid:02d} complete (final)")
+
+    assert pass_counter_hid == 43, "Hidden layer must finish in 43 passes"
+
+    if verbose:
+        tot_act = hidden_i16.astype(np.int32).sum()
+        print(f"\nHidden layer total activation sum (int32) = {tot_act: 8d}")
+
+    # ---------- Second FC (512 → 256) ----------
+    out_i32 = np.empty(256, dtype=np.int32)
+    for o_idx in range(256):
+        w2_i8 = W2_i8[o_idx]                    # (512,)
+        if verbose:
+            print(f"\n--- Output neuron {o_idx:03d} ---")
+        acc32 = 0
+        for m in range(512):
+            a = int(hidden_i16[m])
+            b = int(w2_i8[m])
+            prod = a * b
+            acc32 += prod
+            print(f"    MAC {m:03d}: {a:6d} * {b:4d} = {prod:8d}")
+            if (m + 1) % mac_group == 0 or m == 511:
+                g_start = m - (m % mac_group)
+                g_sum = sum(int(hidden_i16[k]) * int(w2_i8[k])
+                            for k in range(g_start, m + 1))
+                if verbose:
+                    print(f"  MACs {g_start:03d}-{m:03d}: Σ = {g_sum: 10d}")
+        out_i32[o_idx] = acc32
+        if verbose:
+            print(f"  Output[{o_idx}] (int32): {acc32: 10d}")
+
+    # ---------- De-quantise back to float32 ----------
+    # two Q1.7 multiplies → scale factor Q²
+    return out_i32.astype(np.float32) / (128 * 128)
+
+# ffn_out = feed_forward_custom(proj_out, W1, W2)
+for tok_idx, tok_vec in enumerate(proj_out):      # proj_out is (4,256)
+    print(f"\n### Token {tok_idx} ###")
+    ffn_out = feed_forward_verbose(tok_vec, W1, W2)     # now shape = (256,)
+
+print(f"FFN output shape: {ffn_out.shape}")
+
+# Print final encoder output for token 0
+print("\nFinal encoder output for first token (float32):")
+print(ffn_out[0,0])
+# Q1.7 equivalents of final output
+print("Q1.7 equivalents of final token output:")
+for i in range(5):
+    val = ffn_out[0,0,i]
+    q_fixed = int(np.clip(np.round(val * 128), -128, 127))
+    print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
+
+print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
 
 # Write Q1.7 weights to files
 def write_q17_weights(weights, filename):
