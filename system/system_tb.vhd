@@ -363,6 +363,16 @@ begin
 
         wait for clk_period;
 
+        debug_current_op <= "F_WT";
+        read_int8_matrix(
+        "/Users/faamt/Desktop/Nomadic Inc/Mirage/model/tb_stim/fc_2_weights.txt",
+        256, 512,
+        temp_fc_2_bram
+        );
+
+        fc_2_weights <= temp_fc_2_bram;
+
+        wait for clk_period;
         -- Write Q weights to BRAM (64x256 matrix, row-major order)
         for row in 0 to HEAD_DIM - 1 loop
             for col in 0 to D_MODEL - 1 loop
@@ -400,6 +410,58 @@ begin
             end loop;
         end loop;
         bram_wr_mha <= '0';
+        wait for clk_period;
+
+        -- Write Projection Layer weights to BRAM (64x256 matrix, row-major order)
+        for row in 0 to HEAD_DIM - 1 loop
+            for col in 0 to D_MODEL - 1 loop
+                bram_data_in <= std_logic_vector(pl_weights(row, col));
+                bram_wr_ffn  <= '1';
+                wait for 2 * clk_period;
+
+                if bram_addr_ffn >= 16383 then
+                    bram_addr_ffn <= 16383;
+                else
+                    bram_addr_ffn <= bram_addr_ffn + 1;
+                end if;
+            end loop;
+        end loop;
+        bram_wr_ffn <= '0';
+
+        bram_addr_ffn <= 16384;
+        wait for clk_period;
+
+        -- Write Hidden Layer weights to BRAM (512*256 matrix, row-major order)
+        for row in 0 to 511 loop
+            for col in 0 to 255 loop
+                bram_data_in <= std_logic_vector(fc_1_weights(row, col));
+                bram_wr_ffn  <= '1';
+                wait for 2 * clk_period;
+
+                if bram_addr_ffn < 147456 and bram_addr_ffn > 16383 then
+                    bram_addr_ffn <= bram_addr_ffn + 1;
+                end if;
+            end loop;
+        end loop;
+        bram_wr_ffn <= '0';
+
+        bram_addr_ffn <= 147456;
+        wait for clk_period;
+
+        -- Write Outer Layer weights to BRAM (256*512 matrix, row-major order)
+        for row in 0 to 255 loop
+            for col in 0 to 511 loop
+                bram_data_in <= std_logic_vector(fc_2_weights(row, col));
+                bram_wr_ffn  <= '1';
+                wait for 2 * clk_period;
+
+                if bram_addr_ffn < 2634144 and bram_addr_ffn > 147455 then
+                    bram_addr_ffn <= bram_addr_ffn + 1;
+                end if;
+            end loop;
+        end loop;
+        bram_wr_ffn <= '0';
+
         wait for clk_period;
 
         -- Write token embeddings to BRAM (addresses 49599-49599-255 downto 0)
@@ -456,40 +518,7 @@ begin
         -- FFN Test Procedure
         debug_current_op <= "FFN ";
 
-        -- Write Projection Layer weights to BRAM (64x256 matrix, row-major order)
-        for row in 0 to HEAD_DIM - 1 loop
-            for col in 0 to D_MODEL - 1 loop
-                bram_data_in <= std_logic_vector(pl_weights(row, col));
-                bram_wr_ffn  <= '1';
-                wait for 2 * clk_period;
-
-                if bram_addr_ffn >= 16383 then
-                    bram_addr_ffn <= 16383;
-                else
-                    bram_addr_ffn <= bram_addr_ffn + 1;
-                end if;
-            end loop;
-        end loop;
-        bram_wr_ffn <= '0';
-
-        bram_addr_ffn <= 16384;
-        wait for clk_period;
-
-        -- Write Hidden Layer weights to BRAM (512*256 matrix, row-major order)
-        for row in 0 to 511 loop
-            for col in 0 to 255 loop
-                bram_data_in <= std_logic_vector(fc_1_weights(row, col));
-                bram_wr_ffn  <= '1';
-                wait for 2 * clk_period;
-
-                if bram_addr_ffn < 1317072 and bram_addr_ffn > 16383 then
-                    bram_addr_ffn <= bram_addr_ffn + 1;
-                end if;
-            end loop;
-        end loop;
-        bram_wr_ffn <= '0';
-
-        wait for clk_period;
+        wait for 2 * clk_period;
         start_ffn <= '1';
         wait for clk_period;
         start_ffn <= '0';
