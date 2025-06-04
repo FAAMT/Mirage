@@ -693,7 +693,7 @@ def calculate_projection(attention_4x64, Wo):
 proj_out = calculate_projection(attention_4x64, Wo)
 
 print("\n--- Running FFN with debug ---")
-def feed_forward_verbose(x, W_fc1, W_fc2,
+def feed_forward_verbose(tok_idx, x, W_fc1, W_fc2,
                          mac_group: int = 5,
                          neuron_group: int = 12,
                          verbose: bool = True):
@@ -789,48 +789,62 @@ def feed_forward_verbose(x, W_fc1, W_fc2,
     # ---------- Second FC (512 → 256) ----------
     out_i32 = np.empty(256, dtype=np.int32)
     for o_idx in range(256):
-        w2_i8 = W2_i8[o_idx]                    # (512,)
+        w2_i8 = W2_i8[o_idx]     
+        macs = []               # (512,)
         if verbose:
-            print(f"\n--- Output neuron {o_idx:03d} ---")
+            print(f"\n---Token {tok_idx} Output neuron {o_idx:03d} ---")
         acc32 = 0
         for m in range(512):
-            a = int(hidden_i16[m])
+            a = int(np.right_shift(hidden_i16[m].astype(np.int16),4))
             b = int(w2_i8[m])
             prod = a * b
+            macs.append(prod)
             acc32 += prod
             print(f"    MAC {m:03d}: {a:6d} * {b:4d} = {prod:8d}")
             if (m + 1) % mac_group == 0 or m == 511:
                 g_start = m - (m % mac_group)
-                g_sum = sum(int(hidden_i16[k]) * int(w2_i8[k])
-                            for k in range(g_start, m + 1))
+                g_sum = sum(macs[g_start:m+1])
                 if verbose:
                     print(f"  MACs {g_start:03d}-{m:03d}: Σ = {g_sum: 10d}")
-        out_i32[o_idx] = acc32
+        # Apply ReLU before storing
+        out_i32[o_idx] = max(0, acc32)
         if verbose:
-            print(f"  Output[{o_idx}] (int32): {acc32: 10d}")
+            print(f" Token {tok_idx} Output[{o_idx}] (int32): {out_i32[o_idx]: 10d}")
+
+    # Print final FFN output array (256 values)
+    print("\nFinal FFN Output (256 values) after ReLU:")
+    for i in range(0, 256, 8):  # Print 8 values per line
+        line = ", ".join(f"{val:8d}" for val in out_i32[i:i+8])
+        print(f"  [{i:3d}-{i+7:3d}]: {line}")
 
     # ---------- De-quantise back to float32 ----------
     # two Q1.7 multiplies → scale factor Q²
     return out_i32.astype(np.float32) / (128 * 128)
 
-# ffn_out = feed_forward_custom(proj_out, W1, W2)
 for tok_idx, tok_vec in enumerate(proj_out):      # proj_out is (4,256)
     print(f"\n### Token {tok_idx} ###")
-    ffn_out = feed_forward_verbose(tok_vec, W1, W2)     # now shape = (256,)
+    ffn_out = feed_forward_verbose(tok_idx,tok_vec, W1, W2)     # now shape = (256,)
 
 print(f"FFN output shape: {ffn_out.shape}")
 
-# Print final encoder output for token 0
-print("\nFinal encoder output for first token (float32):")
-print(ffn_out[0,0])
-# Q1.7 equivalents of final output
-print("Q1.7 equivalents of final token output:")
-for i in range(5):
-    val = ffn_out[0,0,i]
-    q_fixed = int(np.clip(np.round(val * 128), -128, 127))
-    print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
+# Write FFN output to file in Q1.7 format (same style as weight files)
+ffn_out_file = Path("tb_stim/ffn_out.txt")
+with open(ffn_out_file, "w") as f:
+    f.write("-- FFN Output (Q1.7 Fixed-Point)\n")
+    f.write("-- Format: (dim_0, dim_1, ..., dim_255)\n")
+    
+    # Convert to Q1.7 and write as a single row
+    for item in range(len(ffn_out)):
+        ffn_out_q17 = ffn_out[item]  * (128 * 128)                  # may be scalar or vector
+        # ensure iterable
+        iterable     = ffn_out_q17 if np.ndim(ffn_out_q17) else [ffn_out_q17]
+        weight_str   = ", ".join(f"{val}" for val in iterable)
+        f.write(f"{weight_str}\n")
 
 print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
+
+
+
 
 # Write Q1.7 weights to files
 def write_q17_weights(weights, filename):
