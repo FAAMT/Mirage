@@ -26,9 +26,9 @@ W1 = load_sliced_weights(WEIGHTS_DIR, "ffn_fc1", (2*D_MODEL, D_MODEL))
 W2 = load_sliced_weights(WEIGHTS_DIR, "ffn_fc2", (D_MODEL, 2*D_MODEL))
 
 # Load tokenizer and embeddings
-tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-ar-en")
+tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-ar")
 model = AutoModel.from_pretrained(
-    "Helsinki-NLP/opus-mt-ar-en", torch_dtype=torch.float32
+    "Helsinki-NLP/opus-mt-en-ar", torch_dtype=torch.float32
 )
 embeddings = model.get_input_embeddings().weight.detach().cpu().numpy()
 
@@ -65,18 +65,16 @@ for i in range(5):
     q_fixed = int(np.clip(np.round(val * 128), -128, 127))
     print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
 
-# Positional encoding
-def get_pos_encoding(seq_len, d_model):
-    pos = np.arange(seq_len)[:, None]
-    i = np.arange(d_model)[None, :]
-    angle = pos / np.power(10000, (2 * (i//2)) / d_model)
-    pe = np.zeros_like(angle)
-    pe[:, 0::2] = np.sin(angle[:, 0::2])
-    pe[:, 1::2] = np.cos(angle[:, 1::2])
-    return pe
+seq_len = 6                         # = 6 tokens here
+pe = (model.encoder                    # grab learned positional-emb matrix
+           .embed_positions
+           .weight[:seq_len, :D_MODEL]       # slice to (seq_len, 256)
+           .detach()
+           .cpu()
+           .numpy())                         # → NumPy float32
 
-pe = get_pos_encoding(x.shape[1], D_MODEL)
-x_enc = x + pe[None, :, :]
+x_enc = x + pe[None, :, :]                   # broadcast-add ⇒ (1, seq_len, 256)
+
 print("\nFirst 5 embedding values for token 0 after pos-enc:")
 for i in range(5):
     val = x_enc[0,0,i]
@@ -85,11 +83,12 @@ for i in range(5):
 print("Q1.7 fixed-point equivalents after pos-enc:")
 for i in range(5):
     val = x_enc[0,0,i]
+    q_fixed_un = int(np.round(val * 128))
     q_fixed = int(np.clip(np.round(val * 128), -128, 127))
-    print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
+    print(f"  {val:.6f} *128 → {q_fixed_un} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
 
 # Store token embeddings in a text file (VHDL friendly format)
-user_tokens = [0, 1, 2, 3]  # Change or expand as needed
+user_tokens = [0, 1, 2, 3, 4, 5]  # Change or expand as needed
 
 embedding_file_path = Path("tb_stim/token_embeddings.txt")
 with open(embedding_file_path, "w") as f:
@@ -105,7 +104,16 @@ with open(embedding_file_path, "w") as f:
 # Multi-Head Attention with detailed math
 print("\n--- Running Single-Head Attention with debug ---")
 t0 = time.perf_counter()
-mha_out = multi_head_attention(x_enc, Wq, Wk, Wv, Wo)
+eps = 1e-5
+mu  = x_enc.mean(axis=-1, keepdims=True)
+var = x_enc.var(axis=-1, keepdims=True)
+x_ln = (x_enc - mu) / np.sqrt(var + eps)
+
+mha_out = multi_head_attention(x_ln, Wq, Wk, Wv, Wo)  # <= changed arg
+x_enc   = x_enc + mha_out          # residual connection
+
+print("\n[DEBUG] after 1st LN + residual (first token, 8 dims):",
+      np.round(x_enc[0,0,:8], 4))
 t1 = time.perf_counter()
 print(f"MHA output shape: {mha_out.shape}")
 
@@ -721,6 +729,7 @@ def feed_forward_verbose(tok_idx, x, W_fc1, W_fc2,
     assert W_fc1.shape  == (512, 256),      "W_fc1 must be 512×256"
     assert W_fc2.shape  == (256, 512),      "W_fc2 must be 256×512"
 
+    print(f"W_fc2: {W_fc2}")
     # ---------- Quantise to int8 ----------
     w_to_i8 = lambda a: np.clip(np.round(a * 128), -128, 127).astype(np.int8)
     x_to_i8 = lambda a: np.round(np.right_shift((a).astype(np.int16), 8))
@@ -821,26 +830,51 @@ def feed_forward_verbose(tok_idx, x, W_fc1, W_fc2,
     # two Q1.7 multiplies → scale factor Q²
     return out_i32.astype(np.float32) / (128 * 128)
 
+# Initialize container for all token outputs
+all_ffn_outputs = []
+
 for tok_idx, tok_vec in enumerate(proj_out):      # proj_out is (4,256)
     print(f"\n### Token {tok_idx} ###")
-    ffn_out = feed_forward_verbose(tok_idx,tok_vec, W1, W2)     # now shape = (256,)
+    ffn_out = feed_forward_verbose(tok_idx, tok_vec, W1, W2)  # shape = (256,)
+    all_ffn_outputs.append(ffn_out)
 
-print(f"FFN output shape: {ffn_out.shape}")
+# Convert to numpy array (4 tokens × 256 dims)
+ffn_out = np.array(all_ffn_outputs)  # shape = (4,256)
 
-# Write FFN output to file in Q1.7 format (same style as weight files)
+# NEW CODE #
+# 1. Add residual connection
+# residual = x_enc[0]  # shape = (6,256) - but we only have 4 tokens processed
+# residual = residual[:4]  # Take first 4 tokens to match our FFN outputs
+
+# # Add residual (broadcasting works now that shapes match)
+# ffn_out += residual[:, :256]
+
+# # 2. Apply LayerNorm
+# gamma = model.encoder.layers[-1].final_layer_norm.weight.detach().numpy()  # (512,)
+# beta = model.encoder.layers[-1].final_layer_norm.bias.detach().numpy()     # (512,)
+
+# # Only use first 256 dimensions of gamma/beta if needed
+# if len(gamma) > 256:
+#     gamma = gamma[:256]
+#     beta = beta[:256]
+
+# # Vectorized LayerNorm
+# mean = ffn_out.mean(axis=1, keepdims=True)
+# var = ffn_out.var(axis=1, keepdims=True)
+# ffn_out = (ffn_out - mean) / np.sqrt(var + 1e-5)
+# ffn_out = ffn_out * gamma + beta
+
+print(f"FFN output shape: {ffn_out.shape}")  # Should be (4,256)
+# Write **all token** FFN outputs to Q1.7 txt  ──────────────
 ffn_out_file = Path("tb_stim/ffn_out.txt")
 with open(ffn_out_file, "w") as f:
     f.write("-- FFN Output (Q1.7 Fixed-Point)\n")
-    f.write("-- Format: (dim_0, dim_1, ..., dim_255)\n")
-    
-    # Convert to Q1.7 and write as a single row
-    for item in range(len(ffn_out)):
-        ffn_out_q17 = ffn_out[item]  * (128 * 128)                  # may be scalar or vector
-        # ensure iterable
-        iterable     = ffn_out_q17 if np.ndim(ffn_out_q17) else [ffn_out_q17]
-        weight_str   = ", ".join(f"{val}" for val in iterable)
-        f.write(f"{weight_str}\n")
+    f.write("-- Format: one 256-int row per token\n")
 
+    ffn_out_q17 = np.round(ffn_out * 128).astype(np.int32)   # (T,256)
+    for row in ffn_out_q17:                                  # loop over tokens
+        row_str = ", ".join(str(v) for v in row)
+        f.write(f"({row_str}),\n")
 print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
 
 

@@ -74,6 +74,8 @@ architecture rtl of ffn is
     signal proj_int_iter   : integer := 0;
     signal hidden_ext_iter : integer := 0;
     signal hidden_int_iter : integer := 0;
+    signal outer_ext_iter  : integer := 0;
+    signal outer_int_iter  : integer := 0;
 
 begin
 
@@ -87,8 +89,10 @@ begin
             if bram_wr = '1' then
                 if bram_addr >= 0 and bram_addr < 16384 then
                     bram_proj(bram_addr) <= signed(bram_data_in);
-                else
+                elsif bram_addr < 147456 then
                     bram_hlw(bram_addr - 16384) <= signed(bram_data_in);
+                elsif bram_addr < 278528 then
+                    bram_olw(bram_addr - 147456) <= signed(bram_data_in);
                 end if;
             end if;
         end if;
@@ -206,6 +210,8 @@ begin
             proj_ext_iter   <= 0;
             hidden_int_iter <= 0;
             hidden_ext_iter <= 0;
+            outer_int_iter  <= 0;
+            outer_ext_iter  <= 0;
 
             for row in 0 to 11 loop
                 for col in 0 to 4 loop
@@ -218,6 +224,7 @@ begin
             case state is
                 when idle =>
                     prev_state <= idle;
+                    clear_mac  <= '0';
 
                     if start = '1' then
                         state <= compute_pl;
@@ -350,6 +357,76 @@ begin
                                     if col < 1 then
                                         input_a(row, col) <= resize(shift_right(signed(bram_hl_in(col + 5 * hidden_int_iter)), 8), 8);
                                         input_b(row, col) <= bram_hlw(col + 5 * hidden_int_iter + 256 * row + 12 * 256 * hidden_ext_iter);
+                                    end if;
+                                end if;
+                            end if;
+                        end loop;
+                    end loop;
+
+                when compute_ol =>
+                    prev_state <= compute_ol;
+
+                    if start_mac = '0' and done_mac = '1' then
+                        clear_mac <= '0';
+
+                        if outer_int_iter = 102 and done_mac = '1'then
+                            if outer_ext_iter = 21 then
+                                state     <= idle;
+                                clear_mac <= '1';
+                            else
+                                outer_int_iter <= 0;
+                                clear_mac      <= '1';
+                            end if;
+                        else
+                            outer_int_iter <= outer_int_iter + 1;
+                        end if;
+
+                    elsif start_mac = '0' and done_mac = '0' then
+                        start_mac <= '1';
+                        clear_mac <= '0';
+
+                        if outer_int_iter = 0 and prev_state = compute_ol and state = compute_ol then
+                            outer_ext_iter <= outer_ext_iter + 1;
+                        end if;
+                    else
+                        start_mac <= '0';
+                        clear_mac <= '0';
+                    end if;
+
+                    for row in 0 to 11 loop
+                        for col in 0 to 4 loop
+                            r_mod_3 := row mod 3;
+                            r_div_3 := row / 3;
+
+                            if outer_ext_iter = 21 then
+                                if row < 4 then
+                                    if outer_int_iter < 102 then
+                                        input_a(row, col) <= resize(shift_right(bram_ol_in(col + 5 * outer_int_iter), 4), 8);
+                                        input_b(row, col) <= bram_olw(col + 5 * outer_int_iter + 512 * row + 12 * 512 * outer_ext_iter);
+                                    else
+                                        input_a(row, col) <= (others => '0');
+                                        input_b(row, col) <= (others => '0');
+
+                                        if col < 2 then
+                                            input_a(row, col) <= resize(shift_right(bram_ol_in(col + 5 * outer_int_iter), 4), 8);
+                                            input_b(row, col) <= bram_olw(col + 5 * outer_int_iter + 512 * row + 12 * 512 * outer_ext_iter);
+                                        end if;
+                                    end if;
+                                else
+                                    input_a(row, col) <= (others => '0');
+                                    input_b(row, col) <= (others => '0');
+                                end if;
+                            else
+                                if outer_int_iter < 102 then
+                                    input_a(row, col) <= resize(shift_right(bram_ol_in(col + 5 * outer_int_iter), 4), 8);
+                                    input_b(row, col) <= bram_olw(col + 5 * outer_int_iter + 512 * row + 12 * 512 * outer_ext_iter);
+                                else
+                                    input_a(row, col) <= (others => '0');
+                                    input_b(row, col) <= (others => '0');
+
+                                    if col < 2 then
+                                        input_a(row, col) <= resize(shift_right(bram_ol_in(col + 5 * outer_int_iter), 4), 8);
+                                        input_b(row, col) <= bram_olw(col + 5 * outer_int_iter + 512 * row + 12 * 512 * outer_ext_iter);
                                     end if;
                                 end if;
                             end if;
