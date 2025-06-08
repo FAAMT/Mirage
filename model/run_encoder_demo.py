@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import time
+import sys, time
 import numpy as np
 import torch, math
 from pathlib import Path
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModel, AutoModelForSeq2SeqLM
 from decimal import Decimal, getcontext
 
 from test_extracted_weights import (
@@ -15,21 +15,31 @@ from test_extracted_weights import (
 # Directory of extracted weights
 WEIGHTS_DIR = Path("./weights")
 
+def load_quantized_weights(weights_dir, name, shape):
+    """Load weights in same format as extract_weights.py outputs"""
+    weight_path = Path(weights_dir) / f"{name}.bin"
+    scale_path = Path(weights_dir) / f"{name}.scale"
+    zp_path = Path(weights_dir) / f"{name}.zp"
+    
+    weights = np.fromfile(weight_path, dtype=np.int8).reshape(shape)
+    scale = np.fromfile(scale_path, dtype=np.float32)
+    zp = np.fromfile(zp_path, dtype=np.uint8)
+    return weights.astype(np.float32) * scale + zp
+    
 # Load QKV and projections
-Wq = [load_sliced_weights(WEIGHTS_DIR, f"query_head{i}", (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
-Wk = [load_sliced_weights(WEIGHTS_DIR, f"key_head{i}",   (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
-Wv = [load_sliced_weights(WEIGHTS_DIR, f"value_head{i}", (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
-Wo = load_sliced_weights(WEIGHTS_DIR, "attn_out_proj", (D_MODEL, D_MODEL))
+Wq = [load_quantized_weights(WEIGHTS_DIR, f"query_head{i}", (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
+Wk = [load_quantized_weights(WEIGHTS_DIR, f"key_head{i}",   (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
+Wv = [load_quantized_weights(WEIGHTS_DIR, f"value_head{i}", (HEAD_DIM, D_MODEL)) for i in range(NUM_HEADS)]
+Wo = load_quantized_weights(WEIGHTS_DIR, "attn_out_proj", (D_MODEL, D_MODEL))
 
 # Load FFN weights: ffn_fc1 (512,256) and ffn_fc2 (256,512)
-W1 = load_sliced_weights(WEIGHTS_DIR, "ffn_fc1", (2*D_MODEL, D_MODEL))
-W2 = load_sliced_weights(WEIGHTS_DIR, "ffn_fc2", (D_MODEL, 2*D_MODEL))
+W1 = load_quantized_weights(WEIGHTS_DIR, "ffn_fc1", (2*D_MODEL, D_MODEL))
+W2 = load_quantized_weights(WEIGHTS_DIR, "ffn_fc2", (D_MODEL, 2*D_MODEL))
 
 # Load tokenizer and embeddings
 tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-ar")
-model = AutoModel.from_pretrained(
-    "Helsinki-NLP/opus-mt-en-ar", torch_dtype=torch.float32
-)
+model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-en-ar", torch_dtype=torch.float32)
+
 embeddings = model.get_input_embeddings().weight.detach().cpu().numpy()
 
 # Prepare input
@@ -65,20 +75,46 @@ for i in range(5):
     q_fixed = int(np.clip(np.round(val * 128), -128, 127))
     print(f"  {val:.6f} *128 → {q_fixed} (Q1.7: {q_fixed}/128 = {q_fixed/128:.6f})")
 
-seq_len = 6                         # = 6 tokens here
-pe = (model.encoder                    # grab learned positional-emb matrix
-           .embed_positions
-           .weight[:seq_len, :D_MODEL]       # slice to (seq_len, 256)
-           .detach()
-           .cpu()
-           .numpy())                         # → NumPy float32
+true_pe = {}
 
-x_enc = x + pe[None, :, :]                   # broadcast-add ⇒ (1, seq_len, 256)
+def hook_fn(module, input, output):
+    true_pe["with_pos"] = input[0].detach().cpu().numpy()
 
-print("\nFirst 5 embedding values for token 0 after pos-enc:")
-for i in range(5):
-    val = x_enc[0,0,i]
-    print(f"  x_enc[0,0,{i}] = {val:.6f}")
+hook = model.model.encoder.layers[0].register_forward_hook(hook_fn)
+
+with torch.no_grad():
+    _ = model.model.encoder(
+        input_ids=torch.tensor(ids, dtype=torch.long),
+        attention_mask=torch.ones_like(torch.tensor(ids), dtype=torch.long)
+    )
+
+input_ids=torch.tensor(ids, dtype=torch.long)
+hook.remove()
+
+token_only = model.model.shared(input_ids).detach().cpu().numpy()
+# Step 1: Add token + pos
+residual = token_only
+
+# Step 2: Get LayerNorm weights from the encoder block
+ln = model.model.encoder.layers[0].self_attn_layer_norm
+gamma = ln.weight.detach().cpu().numpy()
+beta = ln.bias.detach().cpu().numpy()
+
+# Step 3: Apply LayerNorm manually (axis=-1)
+mu  = residual.mean(axis=-1, keepdims=True)
+var = residual.var(axis=-1, keepdims=True)
+eps = 1e-6
+
+normalized = (residual - mu) / np.sqrt(var + eps)
+resid_norm = normalized * gamma + beta
+# x_enc = x[0] + pe[0,:6,:256]  # Remove the extra dimension from x and add directly
+x_enc = resid_norm[:,:6,:256]
+
+print("\nResidual (token + pos-enc):")
+for t in range(x_enc.shape[1]):
+    vec = x_enc[0, t, :16]
+    print(f"Token {t}: " + " ".join(f"{v:7.4f}" for v in vec))
+
 # Q1.7 equivalents after pos-enc
 print("Q1.7 fixed-point equivalents after pos-enc:")
 for i in range(5):
@@ -103,19 +139,6 @@ with open(embedding_file_path, "w") as f:
 
 # Multi-Head Attention with detailed math
 print("\n--- Running Single-Head Attention with debug ---")
-t0 = time.perf_counter()
-eps = 1e-5
-mu  = x_enc.mean(axis=-1, keepdims=True)
-var = x_enc.var(axis=-1, keepdims=True)
-x_ln = (x_enc - mu) / np.sqrt(var + eps)
-
-mha_out = multi_head_attention(x_ln, Wq, Wk, Wv, Wo)  # <= changed arg
-x_enc   = x_enc + mha_out          # residual connection
-
-print("\n[DEBUG] after 1st LN + residual (first token, 8 dims):",
-      np.round(x_enc[0,0,:8], 4))
-t1 = time.perf_counter()
-print(f"MHA output shape: {mha_out.shape}")
 
 # Show attention calculations for head 0
 head_index = 0
@@ -135,7 +158,16 @@ for i, row in enumerate(Wq_q17):
     print(f"Row {i}:")
     print(f"  Float: {Wq[head_index][i]}")
     print(f"  Q1.7:  {row}")
+    
+mha_out = multi_head_attention(x_enc, Wq, Wk, Wv, Wo)  # <= changed arg
+x_enc   = x_enc + mha_out          # residual connection
 
+print("\n[DEBUG] after 1st LN + residual (first token, 8 dims):",
+      np.round(x_enc[0,0,:8], 4))
+t1 = time.perf_counter()
+print(f"MHA output shape: {mha_out.shape}")
+
+# sys.exit()
 # Calculate and print Q matrix with proper 32-bit accumulation
 print("\nQ Matrix Calculations (32-bit accumulated values):")
 q_mat_head = np.zeros((x_enc[0].shape[0], HEAD_DIM), dtype=np.int32)  # Store 32-bit accumulated values
@@ -412,11 +444,6 @@ for token_idx in range(num_tokens):
 # After all tokens and Q heads are processed, print the raw_scores matrix
 print("\nFinal Raw Scores Matrix (4 Q heads × 4 chunks):")
 print(raw_scores)     
-
-# 2. Scale by 1/sqrt(head_dim)  ───────────────────────────────────────────────
-# print("\n2. Scaling by 1/sqrt(head_dim):")
-# scale_factor = 1 / np.sqrt(HEAD_DIM)
-# print(f"  Scale factor: 1/sqrt({HEAD_DIM}) = {scale_factor:.6f}")
 
 scaled_scores = (raw_scores * 1).astype(np.int32)
 for i in range(min(4, len(tokens))):
@@ -833,51 +860,47 @@ def feed_forward_verbose(tok_idx, x, W_fc1, W_fc2,
 # Initialize container for all token outputs
 all_ffn_outputs = []
 
+gamma = model.model.encoder.layers[-1].final_layer_norm.weight.detach().numpy()  # (512,)
+beta  = model.model.encoder.layers[-1].final_layer_norm.bias.detach().numpy()     # (512,)
+if len(gamma) > 256:
+    gamma = gamma[:256]
+    beta = beta[:256]
+
 for tok_idx, tok_vec in enumerate(proj_out):      # proj_out is (4,256)
     print(f"\n### Token {tok_idx} ###")
+    
+    # 1. FFN Forward
     ffn_out = feed_forward_verbose(tok_idx, tok_vec, W1, W2)  # shape = (256,)
+    
+    # 2. Add residual connection
+    residual_tok = x_enc[0, tok_idx, :256]
+    ffn_out += residual_tok
+
+    # 3. LayerNorm
+    mean = ffn_out.mean()
+    var  = ffn_out.var()
+    ffn_out = (ffn_out - mean) / np.sqrt(var + 1e-6)
+    ffn_out = ffn_out * gamma + beta
+
+    # Save per-token FFN result
     all_ffn_outputs.append(ffn_out)
 
-# Convert to numpy array (4 tokens × 256 dims)
-ffn_out = np.array(all_ffn_outputs)  # shape = (4,256)
+# Convert all outputs to numpy array
+all_ffn_outputs = np.array(all_ffn_outputs)  # shape (T, 256)
+print(f"Final FFN output shape: {all_ffn_outputs.shape}")  # Should be (4, 256)
 
-# NEW CODE #
-# 1. Add residual connection
-# residual = x_enc[0]  # shape = (6,256) - but we only have 4 tokens processed
-# residual = residual[:4]  # Take first 4 tokens to match our FFN outputs
-
-# # Add residual (broadcasting works now that shapes match)
-# ffn_out += residual[:, :256]
-
-# # 2. Apply LayerNorm
-# gamma = model.encoder.layers[-1].final_layer_norm.weight.detach().numpy()  # (512,)
-# beta = model.encoder.layers[-1].final_layer_norm.bias.detach().numpy()     # (512,)
-
-# # Only use first 256 dimensions of gamma/beta if needed
-# if len(gamma) > 256:
-#     gamma = gamma[:256]
-#     beta = beta[:256]
-
-# # Vectorized LayerNorm
-# mean = ffn_out.mean(axis=1, keepdims=True)
-# var = ffn_out.var(axis=1, keepdims=True)
-# ffn_out = (ffn_out - mean) / np.sqrt(var + 1e-5)
-# ffn_out = ffn_out * gamma + beta
-
-print(f"FFN output shape: {ffn_out.shape}")  # Should be (4,256)
-# Write **all token** FFN outputs to Q1.7 txt  ──────────────
+# Write all FFN outputs to Q1.7 file
 ffn_out_file = Path("tb_stim/ffn_out.txt")
 with open(ffn_out_file, "w") as f:
     f.write("-- FFN Output (Q1.7 Fixed-Point)\n")
     f.write("-- Format: one 256-int row per token\n")
 
-    ffn_out_q17 = np.round(ffn_out * 128).astype(np.int32)   # (T,256)
-    for row in ffn_out_q17:                                  # loop over tokens
+    ffn_out_q17 = np.round(all_ffn_outputs * 128).astype(np.int32)
+
+    for token_idx, row in enumerate(ffn_out_q17):
         row_str = ", ".join(str(v) for v in row)
+        print(f"Token {token_idx} Q1.7:", row[:16])  # print first 16 values for debug
         f.write(f"({row_str}),\n")
-print(f"Total elapsed time: {(time.perf_counter()-t0)*1000:.2f} ms")
-
-
 
 
 # Write Q1.7 weights to files
