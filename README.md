@@ -14,9 +14,8 @@ Mirage is an open-source, low-footprint hardware accelerator aimed at bringing r
 
 Mirage consists of tightly-coupled VHDL cores forming a minimal Transformer block: multi-head attention, fixed-point softmax, and a feed-forward MLP, all managed by a Cortex-A9 CPU for orchestration and token tiling.
 
-<p align="center">
-  <img src="/Users/faamt/Desktop/Nomadic Inc/Mirage/images/mirage-top-level-bd.png" alt="Mirage Top-Level Block Diagram" width="600"/>
-</p>
+![Diagram](images/mirage-top-level-bd.png)
+
 
 | Core     | Function                                   | DSP  | BRAM | Thruput*             |
 |----------|-------------------------------------------|------|------|----------------------|
