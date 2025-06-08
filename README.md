@@ -12,6 +12,12 @@ Mirage is an open-source, low-footprint hardware accelerator aimed at bringing r
 
 ## High-Level Architecture 🚀⚡✨
 
+Mirage consists of tightly-coupled VHDL cores forming a minimal Transformer block: multi-head attention, fixed-point softmax, and a feed-forward MLP, all managed by a Cortex-A9 CPU for orchestration and token tiling.
+
+<p align="center">
+  <img src="/Users/faamt/Desktop/Nomadic Inc/Mirage/images/mirage-top-level-bd.png" alt="Mirage Top-Level Block Diagram" width="600"/>
+</p>
+
 | Core     | Function                                   | DSP  | BRAM | Thruput*             |
 |----------|-------------------------------------------|------|------|----------------------|
 | MMC      | 64 × 64 INT8 matrix multiply (time-multiplexed) | 60   | 16   | 1 tile / 5 cy        |
@@ -44,19 +50,19 @@ An ARM Cortex-A9 on the PS side orchestrates DMA, tiling and token streaming. �
 A detailed day-by-day log lives in `docs/timeline.md`. 🚀⚡✨
 
 ## Repository Layout 🚀⚡✨
-/boards/ Board files & XDC constraints
-/docs/ Specs, white-papers, dev diary
-/scripts/ Python verification helpers (no external libs)
-/sim/ GHDL & GtkWave testbenches
-/vhdl/ RTL cores (mmc/, mha/, smx/, ffn/, glue/)
+/boards/ Board files & XDC constraints  
+/docs/ Specs, white-papers, dev diary  
+/scripts/ Python verification helpers (no external libs)  
+/sim/ GHDL & GtkWave testbenches  
+/vhdl/ RTL cores (mmc/, mha/, smx/, ffn/, glue/)  
 Makefile Convenience targets for sim & synth
 
 ## Quick Start 🚀⚡✨
 
 ### Prerequisites 🚀⚡✨
 
-- Vivado 2023.1 (or compatible) WebPACK is enough
-- GHDL ≥ 4.0 for VHDL-2008 simulation
+- Vivado 2023.1 (or compatible) WebPACK is enough  
+- GHDL ≥ 4.0 for VHDL-2008 simulation  
 - Python 3.11 (standard library only – numpy-free zone)
 
 ### Build & Simulate 🚀⚡✨
