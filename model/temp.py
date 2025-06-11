@@ -6,8 +6,70 @@ import sys  # Added for sys.exit()
 from transformers import AutoModelForSeq2SeqLM, MarianTokenizer
 from transformers.modeling_outputs import BaseModelOutput
 
+
+# Configuration
+CONFIG = {
+    "model_name": "Helsinki-NLP/opus-mt-en-ar",
+    "sentence": "My name is Fahad"
+}
+
+# Load models and tokenizer
+print("\n🔍 Loading Models and Tokenizer")
+print("─────────────────────────────")
+model = AutoModelForSeq2SeqLM.from_pretrained(CONFIG["model_name"], torch_dtype=torch.float32)
+tokenizer = MarianTokenizer.from_pretrained(CONFIG["model_name"])
+
+# Tokenization
+print("\n🔍 Tokenization")
+print("──────────────")
+input_ids = tokenizer(CONFIG["sentence"], return_tensors="pt")["input_ids"]
+original_tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
+print(f"Sentence: '{CONFIG['sentence']}'")
+print(f"Token IDs: {input_ids[0].tolist()}")
+print(f"Tokens: {original_tokens}")
+
+# Get embeddings and positional encoding
+print("\n🔍 Embeddings and Positional Encoding")
+print("────────────────────────────────────")
+token_embeddings = model.model.shared(input_ids)
+
+# Hook to get positional encodings and attention outputs
+captured_values = {}
+def capture_pe(module, input, output):
+    captured_values['encoder_input'] = input[0]
+    captured_values['attention_output'] = output[0]
+
+def capture_att(module, input, output):
+    captured_values['attention_hook'] = output[0]
+
+def capture_res(module, input):
+    captured_values['residual_pre_ln'] = input[0]
+
+# We'll use the first layer for comparison
+encoder_layer = model.model.encoder.layers[0]
+hook_pe = encoder_layer.register_forward_hook(capture_pe)
+hook_att = encoder_layer.self_attn_layer_norm.register_forward_hook(capture_att)
+hook_res = encoder_layer.self_attn_layer_norm.register_forward_pre_hook(capture_res)
+
+with torch.no_grad():
+    encoder_output = model.model.encoder(
+        input_ids=input_ids,
+        attention_mask=torch.ones_like(input_ids, dtype=torch.long)
+    )
+hook_pe.remove()
+
+model_residual = captured_values["residual_pre_ln"].cpu().numpy().astype(np.float32)
+attn_hook = captured_values["attention_hook"].cpu().numpy().astype(np.float32)
+pos_encoding = captured_values['encoder_input'] - token_embeddings
+combined_embeddings = token_embeddings + pos_encoding
+combined_embeddings_np = combined_embeddings.detach().cpu().numpy().astype(np.float32)
+hidden_np = combined_embeddings_np
+
+
+# MHA Custom Function #
+
 def multi_head_attention_forward(x: np.ndarray, Wq_full: np.ndarray, Wk_full: np.ndarray, 
-                                       Wv_full: np.ndarray, Wo_bias: np.ndarray, Wo_full: np.ndarray, 
+                                       Wv_full: np.ndarray, Bo_model: np.ndarray, Wo_full: np.ndarray, 
                                        num_heads: int, head_dim: int, return_intermediates=False):
     """
     Enhanced Multi-Head Attention with intermediate value tracking
@@ -84,251 +146,158 @@ def multi_head_attention_forward(x: np.ndarray, Wq_full: np.ndarray, Wk_full: np
         head_out = all_head_outputs[0]
     
     # Output projection
-    output = head_out @ Wo_full.T + Wo_bias
+    output = head_out @ Wo_full.T + Bo_model
     
     if return_intermediates:
         return output, intermediates
     return output
+    
+    # ─────────────────────────────────────────────────────────────────────────
 
-# Configuration
-CONFIG = {
-    "model_name": "Helsinki-NLP/opus-mt-en-ar",
-    "sentence": "My name is Fahad"
-}
+# FFN Custom Function #
 
-# Load models and tokenizer
-print("\n🔍 Loading Models and Tokenizer")
-print("─────────────────────────────")
-model = AutoModelForSeq2SeqLM.from_pretrained(CONFIG["model_name"], torch_dtype=torch.float32)
-tokenizer = MarianTokenizer.from_pretrained(CONFIG["model_name"])
+def ffn_custom_verbose(x_fp32: np.ndarray,
+                       W1: np.ndarray, b1: np.ndarray,
+                       W2: np.ndarray, b2: np.ndarray,
+                       tok_idx: int, layer_idx: int,
+                       show: int = 4):
+    """
+    Simple 256 → 512 → 256 FFN with ReLU and detailed prints.
 
-# Tokenization
-print("\n🔍 Tokenization")
-print("──────────────")
-input_ids = tokenizer(CONFIG["sentence"], return_tensors="pt")["input_ids"]
-original_tokens = tokenizer.convert_ids_to_tokens(input_ids[0])
-print(f"Sentence: '{CONFIG['sentence']}'")
-print(f"Token IDs: {input_ids[0].tolist()}")
-print(f"Tokens: {original_tokens}")
+    * x_fp32 : 1 × 256 input vector (float32)
+    * W1, b1 : (512,256) and (512,) first FC weights / bias (float32)
+    * W2, b2 : (256,512) and (256,) second FC weights / bias (float32)
 
-# Get embeddings and positional encoding
-print("\n🔍 Embeddings and Positional Encoding")
-print("────────────────────────────────────")
-token_embeddings = model.model.shared(input_ids)
+    Returns: 1 × 256 float32 vector.
+    """
+    # FC-1 + ReLU
+    hidden = W1 @ x_fp32 + b1
+    hidden = np.maximum(hidden, 0.0)
 
-# Hook to get positional encodings and attention outputs
-captured_values = {}
-def capture_pe(module, input, output):
-    captured_values['encoder_input'] = input[0]
-    captured_values['attention_output'] = output[0]
+    # FC-2 + ReLU
+    out = W2 @ hidden + b2
+    out = np.maximum(out, 0.0)
 
-def capture_att(module, input, output):
-    captured_values['attention_hook'] = output[0]
+    print(f"\n[Layer {layer_idx} | token {tok_idx}] "
+          f"FFN in → out first {show} dims:")
+    print("    in :", np.round(x_fp32[:show], 4))
+    print("  FC1+ :", np.round(hidden[:show], 4))
+    print("   out :", np.round(out[:show], 4))
 
-def capture_res(module, input):
-    captured_values['residual_pre_ln'] = input[0]
-
-# We'll use the first layer for comparison
-encoder_layer = model.model.encoder.layers[0]
-hook_pe = encoder_layer.register_forward_hook(capture_pe)
-hook_att = encoder_layer.self_attn_layer_norm.register_forward_hook(capture_att)
-hook_res = encoder_layer.self_attn_layer_norm.register_forward_pre_hook(capture_res)
-
-with torch.no_grad():
-    encoder_output = model.model.encoder(
-        input_ids=input_ids,
-        attention_mask=torch.ones_like(input_ids, dtype=torch.long)
-    )
-hook_pe.remove()
-
-model_residual = captured_values["residual_pre_ln"].cpu().numpy().astype(np.float32)
-attn_hook = captured_values["attention_hook"].cpu().numpy().astype(np.float32)
-pos_encoding = captured_values['encoder_input'] - token_embeddings
-combined_embeddings = token_embeddings + pos_encoding
-combined_embeddings_np = combined_embeddings.detach().cpu().numpy().astype(np.float32)
+    return out.astype(np.float32)
+# ─────────────────────────────────────────────────────────────────────────
 
 # Get model's attention weights and biases
-attn = encoder_layer.self_attn
-num_heads = attn.num_heads
-head_dim = attn.head_dim
+for idx, layer in enumerate(model.model.encoder.layers):
+    print(f"\n Layer {idx}")
+    attn = layer.self_attn
+    num_heads = attn.num_heads
+    head_dim = attn.head_dim
 
-# Extract weights from the model
-Wq_model = attn.q_proj.weight.detach().numpy()
-Wk_model = attn.k_proj.weight.detach().numpy()
-Wv_model = attn.v_proj.weight.detach().numpy()
-Wo_bias = attn.out_proj.bias.detach().numpy()
-Wo_model = attn.out_proj.weight.detach().numpy()
+    # Extract weights from the model
+    Wq_model = attn.q_proj.weight.detach().numpy()
+    Wk_model = attn.k_proj.weight.detach().numpy()
+    Wv_model = attn.v_proj.weight.detach().numpy()
+    Bo_model = attn.out_proj.bias.detach().numpy()
+    Wo_model = attn.out_proj.weight.detach().numpy()
 
-# Reshape into separate heads for our custom implementation
-Wq_custom = [Wq_model[i*head_dim:(i+1)*head_dim, :] for i in range(num_heads)]
-Wk_custom = [Wk_model[i*head_dim:(i+1)*head_dim, :] for i in range(num_heads)]
-Wv_custom = [Wv_model[i*head_dim:(i+1)*head_dim, :] for i in range(num_heads)]
+    # Prepare inputs
+    input_np = combined_embeddings.detach().numpy()  # Use full embedding dimension
 
-# Prepare inputs
-input_np = combined_embeddings.detach().numpy()  # Use full embedding dimension
-
-print("\n🔍 Multi-Head Attention Comparison")
-print("─────────────────────────────────")
-
-# Run model's attention
-print("\nModel's Attention Implementation:")
-print("--------------------------------")
-model_output = captured_values['attention_output'].detach().numpy()
-
-# Get model's QKV projections
-with torch.no_grad():
-    q_model = attn.q_proj(captured_values['encoder_input'])
-    k_model = attn.k_proj(captured_values['encoder_input'])
-    v_model = attn.v_proj(captured_values['encoder_input'])
-    
-    # Reshape into heads
-    q_model_heads = q_model.view(q_model.size(0), q_model.size(1), num_heads, head_dim).transpose(1, 2)
-    k_model_heads = k_model.view(k_model.size(0), k_model.size(1), num_heads, head_dim).transpose(1, 2)
-    v_model_heads = v_model.view(v_model.size(0), v_model.size(1), num_heads, head_dim).transpose(1, 2)
-
-# Run our custom attention with intermediates
-custom_output, intermediates = multi_head_attention_forward(
-    input_np, 
-    Wq_full=Wq_model,
-    Wk_full=Wk_model,
-    Wv_full=Wv_model,
-    Wo_bias=Wo_bias,
-    Wo_full=Wo_model,
-    num_heads=num_heads,
-    head_dim=head_dim,
-    return_intermediates=True
-)
-
-# Step 1: Add MHA + token + pos_enc
-residual = custom_output + combined_embeddings_np
-
-# Step 2: Get LayerNorm weights from the encoder block
-ln = model.model.encoder.layers[0].self_attn_layer_norm
-gamma = ln.weight.detach().cpu().numpy()
-beta = ln.bias.detach().cpu().numpy()
-
-residual  = residual.astype(np.float32)
-gamma = gamma.astype(np.float32)
-beta  = beta.astype(np.float32)
-
-# Step 3: Apply LayerNorm manually (axis=-1)
-mu  = residual.mean(axis=-1, keepdims=True)
-var = residual.var(axis=-1, keepdims=True)
-eps = ln.eps
-
-normalized = (residual - mu) / np.sqrt(var + eps)
-resid_norm = normalized * gamma + beta
-
-torch_out = ln(torch.from_numpy(residual)).detach().numpy()
-
-# Compare QKV projections for first head
-print("\n🔍 QKV Projections Comparison (First Head)")
-print("──────────────────────────────────────────")
-
-# Model's Q projections (first head)
-print("\nModel Q (first head, first token):")
-print(q_model_heads[0, 0, 0, :16].detach().numpy())
-
-# Custom Q projections (first head)
-print("\nCustom Q (first head, first token):")
-print(intermediates['q_proj'][0, 0, :16])
-
-print("\nQ-projection bias terms (first 16):")
-print(Wo_bias[:16])
-
-# Model's K projections (first head)
-print("\nModel K (first head, first token):")
-print(k_model_heads[0, 0, 0, :16].detach().numpy())
-
-# Custom K projections (first head)
-print("\nCustom K (first head, first token):")
-print(intermediates['k_proj'][0, 0, :16])
-
-# Model's V projections (first head)
-print("\nModel V (first head, first token):")
-print(v_model_heads[0, 0, 0, :16].detach().numpy())
-
-# Custom V projections (first head)
-print("\nCustom V (first head, first token):")
-print(intermediates['v_proj'][0, 0, :16])
-
-# Compare attention scores for first head
-print("\n🔍 Attention Scores Comparison (First Head)")
-print("──────────────────────────────────────────")
-
-# Compare outputs
-print("\n🔍 Output Comparison")
-print("───────────────────")
-
-print("\n Encoder MHA FFN -> Add & Norm Output (first 16 dimensions):")
-print("FP32:", " ".join(f"{x:.4f}" for x in attn_hook[0, :16]))
-print("Q1.7:", " ".join(f"{int(round(x*128)):4d}" for x in attn_hook[0, :16]))
-
-# print("\nCustom Output (first 16 dimensions):")
-# print("FP32:", " ".join(f"{x:.4f}" for x in custom_output[0, 0, :16]))
-# print("Q1.7:", " ".join(f"{int(round(x*128)):4d}" for x in custom_output[0, 0, :16]))
-
-print("\nCustom MHA Output -> Add & Norm (first 16 dimensions):")
-print("FP32:", " ".join(f"{x:.4f}" for x in resid_norm[0, 0, :16]))
-print("Q1.7:", " ".join(f"{int(round(x*128)):4d}" for x in resid_norm[0, 0, :16]))
-
-print("\nDifference (absolute):")
-diff = np.abs(attn_hook[0, :16] - resid_norm[0, 0, :16])
-print("FP32:", " ".join(f"{x:.4f}" for x in diff))
-print("Max difference:", np.max(diff))
-
-
-print("\n Decoding the following tensors...")
-
-print("\nEncoder FFN -> Add & Norm Output (first 16 dimensions):")
-print("FP32:", " ".join(f"{x:.4f}" for x in model_output[0, 0, :16]))
-print("Q1.7:", " ".join(f"{int(round(x*128)):4d}" for x in model_output[0, 0, :16]))
-
-# Step 1: Add MHA + token + pos_enc
-residual = model_output + combined_embeddings_np
-
-# Step 2: Get LayerNorm weights from the encoder block
-ln = model.model.encoder.layers[0].final_layer_norm
-gamma = ln.weight.detach().cpu().numpy()
-beta = ln.bias.detach().cpu().numpy()
-
-residual  = residual.astype(np.float32)
-gamma = gamma.astype(np.float32)
-beta  = beta.astype(np.float32)
-
-# Step 3: Apply LayerNorm manually (axis=-1)
-mu  = residual.mean(axis=-1, keepdims=True)
-var = residual.var(axis=-1, keepdims=True)
-eps = ln.eps
-
-normalized = (residual - mu) / np.sqrt(var + eps)
-resid_norm = normalized * gamma + beta
-
-# 1) Choose which tensor you want the decoder to see:
-# --------------------------------------------------------------------------
-# a) Reference: model's own encoder output (all layers finished)
-enc_states = encoder_output.last_hidden_state                   # torch Tensor
-
-print(resid_norm)
-print(enc_states)
-
-# b) Later: your custom pipeline once you have FFN + LN done
-# enc_states = torch.from_numpy(custom_encoder_np)              # shape (B,S,D)
-
-# 2) Wrap it in BaseModelOutput so .generate() skips the encoder
-enc_out = BaseModelOutput(last_hidden_state=enc_states)
-
-# 3) Run generation
-with torch.no_grad():
-    translated_ids = model.generate(
-        encoder_outputs=enc_out,                                # <-- here
-        attention_mask=torch.ones_like(input_ids, dtype=torch.long),
-        max_length=40,
-        num_beams=5,
-        early_stopping=True
+    # Get model's QKV projections
+    hidden_t = torch.from_numpy(hidden_np)
+    with torch.no_grad():
+         q_ref   = attn.q_proj(hidden_t)
+         k_ref   = attn.k_proj(hidden_t)
+         v_ref   = attn.v_proj(hidden_t)
+         mha_ref = attn(hidden_t)[0].detach().numpy()
+     # 3.  custom MHA
+    custom_out, inter = multi_head_attention_forward(
+        hidden_np, Wq_full=Wq_model, Wk_full=Wk_model, Wv_full=Wv_model,
+        Bo_model=Bo_model, Wo_full=Wo_model,
+        num_heads=num_heads, head_dim=head_dim,
+        return_intermediates=True
     )
 
-# 4) Decode tokens to text
-translation = tokenizer.decode(translated_ids[0], skip_special_tokens=True)
-print("\n🌐 Translation using supplied encoder states:")
-print(translation)
+    # 4.  Add & LN (post-MHA)
+    res1 = custom_out + hidden_np
+    ln1  = layer.self_attn_layer_norm
+    mu1, var1 = res1.mean(-1, keepdims=True), res1.var(-1, keepdims=True)
+    res1_norm = ((res1 - mu1) / np.sqrt(var1 + ln1.eps)) \
+                * ln1.weight.detach().numpy() + ln1.bias.detach().numpy()
+
+    # ---- 5.  FFN (custom & model comparison) -------------------------------
+    W1 = layer.fc1.weight.detach().numpy()
+    b1 = layer.fc1.bias.detach().numpy()
+    W2 = layer.fc2.weight.detach().numpy()
+    b2 = layer.fc2.bias.detach().numpy()
+
+    ffn_custom = ffn_custom_verbose(res1_norm[0, 0], W1, b1, W2, b2,
+                                    tok_idx=0, layer_idx=idx)
+
+    with torch.no_grad():                              # reference via PyTorch
+        ffn_ref = layer.fc2(layer.activation_fn(
+                    layer.fc1(torch.from_numpy(res1_norm)))).numpy()
+
+    print("   ΔFFN max :", np.abs(ffn_ref - ffn_custom).max())
+
+    # 6.  Add & LN (post-FFN)  → next-layer input
+    res2 = ffn_custom + res1_norm
+    ln2  = layer.final_layer_norm
+    mu2, var2 = res2.mean(-1, keepdims=True), res2.var(-1, keepdims=True)
+    hidden_np = ((res2 - mu2) / np.sqrt(var2 + ln2.eps)) \
+                * ln2.weight.detach().numpy() + ln2.bias.detach().numpy()
+    hidden_np = hidden_np.astype(np.float32)
+
+
+    # ── pretty print: first-token, head-0, first 4 dims ──────────────────
+    q_ref_4  = q_ref[0, 0, :4].cpu().numpy()
+    k_ref_4  = k_ref[0, 0, :4].cpu().numpy()
+    v_ref_4  = v_ref[0, 0, :4].cpu().numpy()
+    q_cst_4  = inter["q_proj"][0, 0, :4]
+    k_cst_4  = inter["k_proj"][0, 0, :4]
+    v_cst_4  = inter["v_proj"][0, 0, :4]
+    mha_ref_4 = mha_ref[0, 0, :4]
+    mha_cst_4 = custom_out[0, 0, :4]
+
+    # ── pretty print: FFN vectors (same token, 4 dims) ──────────────────
+    ffn_ref_4  = torch.from_numpy(ffn_ref).numpy()[0, :4]        # model FFN output
+    ffn_cst_4  = ffn_custom[:4]                # custom FFN output
+    post_ln_4  = hidden_np[0, 0, :4]           # after FFN Add&LN
+
+    print(f"\n🔍 Layer {idx} • first-token/head-0 (first 4 dims)")
+    print("     Q_ref :", q_ref_4)
+    print("     Q_cst :", q_cst_4)
+    print("     K_ref :", k_ref_4)
+    print("     K_cst :", k_cst_4)
+    print("     V_ref :", v_ref_4)
+    print("     V_cst :", v_cst_4)
+    print("   MHA_ref :", mha_ref_4)
+    print("   MHA_cst :", mha_cst_4)
+    print("   FFN_ref :", ffn_ref_4)
+    print("   FFN_cst :", ffn_cst_4)
+    print("   post-LN :", post_ln_4)
+    print("────────────────────────────────────────────────────────────")
+
+# ── after the loop: final hidden state & translations ───────────────────
+custom_enc_np = hidden_np
+print("\n🔍 Final encoder first-token dims 0-3 :", custom_enc_np[0, 0, :4])
+
+enc_out_custom = BaseModelOutput(
+    last_hidden_state=torch.from_numpy(custom_enc_np)
+)
+
+with torch.no_grad():
+    ids_custom = model.generate(
+        encoder_outputs=enc_out_custom,
+        attention_mask=torch.ones_like(input_ids),
+        num_beams=5, max_length=40, early_stopping=True,
+    )
+    ids_ref = model.generate(                                  # HF reference
+        input_ids=input_ids,
+        attention_mask=torch.ones_like(input_ids),
+        num_beams=5, max_length=40, early_stopping=True,
+    )
+
+print("\n🌐 Translation  (HF encoder) :", tokenizer.decode(ids_ref[0],    skip_special_tokens=True))
+print("🌐 Translation (custom enc.) :", tokenizer.decode(ids_custom[0], skip_special_tokens=True))
