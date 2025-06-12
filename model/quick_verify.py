@@ -159,8 +159,8 @@ def multi_head_attention_forward(x: np.ndarray, Wq_full: np.ndarray, Wk_full: np
 def ffn_custom_verbose(x_fp32: np.ndarray,
                        W1: np.ndarray, b1: np.ndarray,
                        W2: np.ndarray, b2: np.ndarray,
-                       tok_idx: int, layer_idx: int,
-                       show: int = 4):
+                       act_fn,
+                       tok_idx: int, layer_idx: int):
     """
     Simple 256 → 512 → 256 FFN with ReLU and detailed prints.
 
@@ -171,21 +171,18 @@ def ffn_custom_verbose(x_fp32: np.ndarray,
     Returns: 1 × 256 float32 vector.
     """
     # FC-1 + ReLU
-    hidden = W1 @ x_fp32 + b1
-    hidden = np.maximum(hidden, 0.0)
+    fc1_pre  = W1 @ x_fp32 + b1          # pre-ReLU
+    fc1_post = act_fn(torch.from_numpy(fc1_pre)).numpy()   # ←
+    out      = W2 @ fc1_post + b2
 
-    # FC-2 + ReLU
-    out = W2 @ hidden + b2
-    out = np.maximum(out, 0.0)
+    # console trace (token-local)
+    print(f"\n[Layer {layer_idx} | token {tok_idx}] FFN stages (first 4 dims)")
+    print("    in            :", np.round(x_fp32[:4],   4))
+    print("  FC1 pre-ReLU    :", np.round(fc1_pre[:4],  4))
+    print("  FC1 post-ReLU   :", np.round(fc1_post[:4], 4))
+    print("  FC2 (output)    :", np.round(out[:4],      4))
 
-    print(f"\n[Layer {layer_idx} | token {tok_idx}] "
-          f"FFN in → out first {show} dims:")
-    print("    in :", np.round(x_fp32[:show], 4))
-    print("  FC1+ :", np.round(hidden[:show], 4))
-    print("   out :", np.round(out[:show], 4))
-
-    return out.astype(np.float32)
-# ─────────────────────────────────────────────────────────────────────────
+    return fc1_pre.astype(np.float32), fc1_post.astype(np.float32), out.astype(np.float32)
 
 # Get model's attention weights and biases
 for idx, layer in enumerate(model.model.encoder.layers):
@@ -225,6 +222,8 @@ for idx, layer in enumerate(model.model.encoder.layers):
     mu1, var1 = res1.mean(-1, keepdims=True), res1.var(-1, keepdims=True)
     res1_norm = ((res1 - mu1) / np.sqrt(var1 + ln1.eps)) \
                 * ln1.weight.detach().numpy() + ln1.bias.detach().numpy()
+    # print(f"res1_norm shape: {res1_norm.shape}")
+    # print("mean of first token:", res1[0, 0, :4], "→", mu1[0, 0])
 
     # ---- 5.  FFN (custom & model comparison) -------------------------------
     W1 = layer.fc1.weight.detach().numpy()
@@ -232,23 +231,7 @@ for idx, layer in enumerate(model.model.encoder.layers):
     W2 = layer.fc2.weight.detach().numpy()
     b2 = layer.fc2.bias.detach().numpy()
 
-    ffn_custom = ffn_custom_verbose(res1_norm[0, 0], W1, b1, W2, b2,
-                                    tok_idx=0, layer_idx=idx)
-
-    with torch.no_grad():                              # reference via PyTorch
-        ffn_ref = layer.fc2(layer.activation_fn(
-                    layer.fc1(torch.from_numpy(res1_norm)))).numpy()
-
-    print("   ΔFFN max :", np.abs(ffn_ref - ffn_custom).max())
-
-    # 6.  Add & LN (post-FFN)  → next-layer input
-    res2 = ffn_custom + res1_norm
-    ln2  = layer.final_layer_norm
-    mu2, var2 = res2.mean(-1, keepdims=True), res2.var(-1, keepdims=True)
-    hidden_np = ((res2 - mu2) / np.sqrt(var2 + ln2.eps)) \
-                * ln2.weight.detach().numpy() + ln2.bias.detach().numpy()
-    hidden_np = hidden_np.astype(np.float32)
-
+    ffn_custom_all = np.zeros_like(res1_norm)
 
     # ── pretty print: first-token, head-0, first 4 dims ──────────────────
     q_ref_4  = q_ref[0, 0, :4].cpu().numpy()
@@ -260,11 +243,6 @@ for idx, layer in enumerate(model.model.encoder.layers):
     mha_ref_4 = mha_ref[0, 0, :4]
     mha_cst_4 = custom_out[0, 0, :4]
 
-    # ── pretty print: FFN vectors (same token, 4 dims) ──────────────────
-    ffn_ref_4  = torch.from_numpy(ffn_ref).numpy()[0, :4]        # model FFN output
-    ffn_cst_4  = ffn_custom[:4]                # custom FFN output
-    post_ln_4  = hidden_np[0, 0, :4]           # after FFN Add&LN
-
     print(f"\n🔍 Layer {idx} • first-token/head-0 (first 4 dims)")
     print("     Q_ref :", q_ref_4)
     print("     Q_cst :", q_cst_4)
@@ -274,27 +252,76 @@ for idx, layer in enumerate(model.model.encoder.layers):
     print("     V_cst :", v_cst_4)
     print("   MHA_ref :", mha_ref_4)
     print("   MHA_cst :", mha_cst_4)
-    print("   FFN_ref :", ffn_ref_4)
-    print("   FFN_cst :", ffn_cst_4)
-    print("   post-LN :", post_ln_4)
+    
     print("────────────────────────────────────────────────────────────")
+    
+    # ── allocate with the correct FC-1 width (2048, not 512) ──────────────
+    fc1_dim = W1.shape[0]                                 # 2048 for Marian
+    fc1_pre_cust  = np.empty((res1_norm.shape[1], fc1_dim), dtype=np.float32)
+    fc1_post_cust = np.empty_like(fc1_pre_cust)
+    ffn_cust_out  = np.empty_like(fc1_pre_cust)
 
-# ── after the loop: final hidden state & translations ───────────────────
-custom_enc_np = hidden_np
-print("\n🔍 Final encoder first-token dims 0-3 :", custom_enc_np[0, 0, :4])
+    for t_idx in range(res1_norm.shape[1]):
+        pre, post, out_vec = ffn_custom_verbose(
+            res1_norm[0, t_idx], W1, b1, W2, b2,
+            act_fn=layer.activation_fn,   
+            tok_idx=t_idx, layer_idx=idx)
 
-enc_out_custom = BaseModelOutput(
-    last_hidden_state=torch.from_numpy(custom_enc_np)
-)
+        # store the whole vector, *not* a single element
+        fc1_pre_cust [t_idx] = pre
+        fc1_post_cust[t_idx] = post
+        ffn_custom_all[0, t_idx] = out_vec
+        
+    # ── reference FC1 (pre/post-ReLU) via PyTorch ──────────────────
+    with torch.no_grad():
+        fc1_ref_pre  = layer.fc1(torch.from_numpy(res1_norm)).squeeze(0)
+    fc1_ref_post = layer.activation_fn(fc1_ref_pre).numpy()
+    print("\n  REF FC1 pre-ReLU    :", fc1_ref_pre[:4])
+    print("  REF FC1 post-ReLU   :", fc1_ref_post[:4])    
+    pre_diff  = np.abs(fc1_ref_pre  - fc1_pre_cust ).max()
+    post_diff = np.abs(fc1_ref_post - fc1_post_cust).max()
+    print(f"ΔFC1 pre-ReLU  max: {pre_diff:.6f}")
+    print(f"ΔFC1 post-ReLU max: {post_diff:.6f}")
+
+    # ── FC2 comparison ────────────────────────────────────────────
+    with torch.no_grad():                              # reference via PyTorch
+        ffn_ref = layer.fc2(layer.activation_fn(
+                    layer.fc1(torch.from_numpy(res1_norm)))).numpy()
+
+    print("\n  REF FC2 output     :", ffn_ref[0, :4])
+    print("  CUST FC2 output   :", ffn_custom_all[0, :4])
+    ffn_diff = np.abs(ffn_ref - ffn_custom_all).max()
+    print(f"ΔFC2 output max    : {ffn_diff:.6f}")
+
+    # ── Add & LN after FC-2  → next-layer input ───────────────────
+    res2 = ffn_custom_all + res1_norm            # residual add
+
+    #    Add & LN (post-MHA)
+    ln2  = layer.final_layer_norm
+    mu2, var2 = res2.mean(-1, keepdims=True), res2.var(-1, keepdims=True)
+    res2_norm = ((res2 - mu2) / np.sqrt(var2 + ln2.eps)) * ln2.weight.detach().numpy() + ln2.bias.detach().numpy()
+    hidden_np = res2_norm.astype(np.float32)
+    cus_outer_np = hidden_np  
+
+    # keep reference path via native LayerNorm (optional)
+    with torch.no_grad():
+        ref_outer_np = ln2(torch.from_numpy(res2)).numpy().astype(np.float32)
+
+# ── after the loop: wrap encoder outputs & translate ─────────
+ref_enc_np = ref_outer_np            # final reference states
+cus_enc_np = cus_outer_np            # final custom states
+
+enc_out_ref    = BaseModelOutput(last_hidden_state=torch.from_numpy(ref_enc_np))
+enc_out_custom = BaseModelOutput(last_hidden_state=torch.from_numpy(cus_enc_np))
 
 with torch.no_grad():
-    ids_custom = model.generate(
-        encoder_outputs=enc_out_custom,
+    ids_ref = model.generate(
+        encoder_outputs=enc_out_ref,          # ← bug-1 fixed
         attention_mask=torch.ones_like(input_ids),
         num_beams=5, max_length=40, early_stopping=True,
     )
-    ids_ref = model.generate(                                  # HF reference
-        input_ids=input_ids,
+    ids_custom = model.generate(
+        encoder_outputs=enc_out_custom,
         attention_mask=torch.ones_like(input_ids),
         num_beams=5, max_length=40, early_stopping=True,
     )
