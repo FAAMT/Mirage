@@ -1,4 +1,6 @@
 import onnxruntime as ort
+import onnx
+from onnx import numpy_helper
 import numpy as np
 from transformers import MarianTokenizer
 import os
@@ -25,6 +27,71 @@ def load_sessions(model_path):
 
     loaded_sessions[model_path] = (encoder, decoder, tokenizer)
     return encoder, decoder, tokenizer
+
+def print_fc_weights(model_path):
+    import onnx, os
+    from onnx import numpy_helper
+
+    model_file = os.path.join(model_path, "encoder_model.int8.onnx")
+    model      = onnx.load(model_file)
+    init       = {i.name: numpy_helper.to_array(i) for i in model.graph.initializer}
+
+    # FC1 = (512×2048), FC2 = (2048×512)
+    fc1 = next(((n,a) for n,a in init.items() if a.ndim==2 and a.shape==(512,2048)), None)
+    fc2 = next(((n,a) for n,a in init.items() if a.ndim==2 and a.shape==(2048,512)), None)
+
+    if fc1:
+        name, arr = fc1
+        print(f"🔹 FC1 '{name}' first 10 values:\n  {arr.flatten()[:10]}")
+    else:
+        print("⚠️  FC1 (512×2048) not found")
+
+    if fc2:
+        name, arr = fc2
+        print(f"🔹 FC2 '{name}' first 10 values:\n  {arr.flatten()[:10]}")
+    else:
+        print("⚠️  FC2 (2048×512) not found")
+
+def print_fp32_values(model_path):
+    path = os.path.join(model_path, "encoder_model.int8.onnx")
+    model = onnx.load(path)
+    init = {t.name: numpy_helper.to_array(t) for t in model.graph.initializer}
+
+    # Define the exact names we found in the model
+    quantized_weights = {
+        'onnx::MatMul_1120_quantized': {
+            'scale': 'onnx::MatMul_1120_scale',
+            'zero_point': 'onnx::MatMul_1120_zero_point'
+        },
+        'onnx::MatMul_1121_quantized': {
+            'scale': 'onnx::MatMul_1121_scale',
+            'zero_point': 'onnx::MatMul_1121_zero_point'
+        }
+    }
+
+    for qname, params in quantized_weights.items():
+        if qname not in init:
+            print(f"⚠️  Quantized weight '{qname}' missing")
+            continue
+
+        # Get quantized values
+        q = init[qname].astype(np.int32)
+        
+        # Get scale and zero point using exact names
+        scale = init.get(params['scale'])
+        zp = init.get(params['zero_point'], 0)  # Default to 0 if not found
+        
+        if scale is None:
+            print(f"⚠️  Scale not found for '{qname}', showing quantized values")
+            print(f"\n🔹 {qname} → INT8 first 10 values:\n   {q.flatten()[:10]}")
+            continue
+            
+        # Dequantize
+        fp32 = (q - zp) * scale
+        print(f"\n🔹 {qname} → FP32 first 10 values:")
+        print(f"   Scale: {scale}, Zero-point: {zp}")
+        print(f"   Values: {np.round(fp32.flatten()[:10], 6)}")
+        print(f"   Shape: {init[qname].shape}, Dtype: {init[qname].dtype}")
 
 def translate(text, model_path):
     encoder, decoder, tokenizer = load_sessions(model_path)
@@ -64,6 +131,8 @@ def main():
 
     direction = "en-ar"
     model_path = os.path.join("/Users/faamt/Desktop/Nomadic Inc/Mirage/model/onnx_models/", direction)
+    # print_fc_weights(model_path)
+    # print_fp32_values(model_path)
 
     while True:
         user_input = input(f"[{direction}] > ").strip()
