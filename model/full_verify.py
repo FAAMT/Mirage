@@ -100,7 +100,25 @@ combined_embeddings_np = combined_embeddings.detach().cpu().numpy().astype(np.fl
 hidden_np = combined_embeddings_np
 
 combined_embeddings = hidden_np                       # alias for clarity
-print(combined_embeddings)
+# Convert to Q1.7 format (int8 with 7 fractional bits)
+combined_embeddings_q17 = np.clip(combined_embeddings * 128, -128, 127).astype(np.int8)
+
+print("\n🔍 Combined Embeddings (Token + Positional)")
+print("───────────────────────────────────────────")
+print("Format: [token_index] token_string")
+print("fp32: first 4 ... last 4")
+print("Q1.7: first 4 ... last 4 (int8)")
+print("─" * 50)
+
+for i, token in enumerate(original_tokens):
+    fp32 = combined_embeddings[0, i]
+    q17 = combined_embeddings_q17[0, i]
+    
+    print(f"[{i}] {token}")
+    print(f"  fp32: {fp32[:4].tolist()} ... {fp32[-4:].tolist()}")
+    print(f"  Q1.7: {q17[:4].tolist()} ... {q17[-4:].tolist()}")
+    print("─" * 50)
+
 # ────────────────────────────────────── ENCODING-PHASE VERIFICATION ──────────────────────────────────
 print("\n Encoding Phase Calculations")
 print("────────────────────────────────────")

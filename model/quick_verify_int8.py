@@ -256,7 +256,7 @@ for idx, layer in enumerate(model.model.encoder.layers):
 
     # Prepare inputs
     input_np = combined_embeddings.detach().numpy()  # Use full embedding dimension
-    print(input_np)
+
     # Get model's QKV projections
     hidden_t = torch.from_numpy(hidden_np)
     with torch.no_grad():
