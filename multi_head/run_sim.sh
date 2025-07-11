@@ -2,7 +2,7 @@
 
 # Configuration
 TOP_ENTITY="multi_head_tb"
-SRC="../types_pkg.vhd ../types_pkg_body.vhd ../matrix_mult/matrix_mult.vhd ../multi_head/multi_head.vhd"
+SRC="../types_pkg.vhd ../types_pkg_body.vhd ../tb_io_pkg.vhd ../tb_io_pkg_body.vhd  ../matrix_mult/matrix_mult.vhd ../multi_head/multi_head.vhd"
 TB="../multi_head/multi_head_tb.vhd"
 WAVE="multi_head.ghw"
 GTKW="multi_head.gtkw"
@@ -24,7 +24,7 @@ ghdl -e --std=08 $TOP_ENTITY || { echo "[ERROR] Elaboration failed"; exit 1; }
 
 # Run simulation
 echo "[INFO] Running simulation..."
-ghdl -r --std=08 $TOP_ENTITY --wave="$WAVE" --stop-time=300us || { echo "[ERROR] Simulation failed"; exit 1; }
+ghdl -r --std=08 $TOP_ENTITY --wave="$WAVE" --stop-time=6ms || { echo "[ERROR] Simulation failed"; exit 1; }
 
 # Launch GTKWave
 pkill gtkwave 2>/dev/null
