@@ -38,22 +38,6 @@ model = AutoModelForSeq2SeqLM.from_pretrained(CONFIG["model_name"], torch_dtype=
 tokenizer   = MarianTokenizer.from_pretrained(CONFIG["model_name"])
 
 # ─────────────────────────────────────────── TOKENISATION ────────────────────────────────────────────
-print("\n Tokenization")
-print("──────────────")
-input_ids        = tokenizer(CONFIG["sentence"], return_tensors="pt")["input_ids"]
-original_tokens  = tokenizer.convert_ids_to_tokens(input_ids[0])
-print(f"Sentence: '{CONFIG['sentence']}'")
-print(f"Token IDs: {input_ids[0].tolist()}")
-print(f"Tokens: {original_tokens}")
-
-# ────────────────────────────── EMBEDDINGS & POSITIONAL ENCODING ─────────────────────────────────────
-print("\n Embeddings and Positional Encoding")
-print("────────────────────────────────────")
-token_embeddings = tokenizer(
-    CONFIG["sentence"], return_tensors="np", padding=False, truncation=True
-)
-
-# Tokenization
 print("\n🔍 Tokenization")
 print("──────────────")
 input_ids = tokenizer(CONFIG["sentence"], return_tensors="pt")["input_ids"]
@@ -214,24 +198,27 @@ for idx, layer in enumerate(model.model.encoder.layers):
         return_intermediates=True,
     )
 
+    sys.exit(0)
+    
     print("\n MHA Projections")
     print(f"\n🔍 Layer {idx} • first-token — first 4 dims per head")
     proj_map = {"Q": "q_proj", "K": "k_proj", "V": "v_proj"}
-
+    x = hidden_np
     for tag, key in proj_map.items():
         print(f"\n{tag} Projection:")
         arr = inter[key]  # (B,T,E) or (B,T,H,D)
-        if arr.ndim == 4:
-            for h in range(num_heads):
-                print(f"  == {tag}-Head {h} ===")
-                print(f"    Float: {arr[0,0,h,:4]}")
-                print(f"    Q1.7:  {to_q17(arr[0,0,h,:4])}")
-        else:
-            for h in range(num_heads):
-                s, e = h * head_dim, h * head_dim + 4
-                print(f"  == {tag}-Head {h} ===")
-                print(f"    Float: {arr[0,0,s:e]}")
-                print(f"    Q1.7:  {to_q17(arr[0,0,s:e])}")
+        for h in range(num_heads):
+            raw = (x[0,0] @ Wq_model)[h*head_dim:(h+1)*head_dim][:4]
+            scaled = raw / np.sqrt(head_dim)
+            print(f"\n    Raw->Scaled:")
+            print(f"      Raw: {raw} → Q1.7: {to_q17(raw)}")
+            print(f"      Scaled: {scaled} → Q1.7: {to_q17(scaled)}")
+            s, e = h * head_dim, h * head_dim + 4
+
+            print(f"\n    == {tag}-Head {h} ===")
+            print(f"    Float: {arr[0,0,s:e]}")
+            print(f"    Q1.7:  {to_q17(arr[0,0,s:e])}")
+
 
     # —— Scores & Probabilities ——
     print(f"\n🔍 Layer {idx} • attention scores / probabilities")
@@ -241,6 +228,13 @@ for idx, layer in enumerate(model.model.encoder.layers):
         print(f"\n  == Head {h} ===")
         print(f"     Scores: {sc[0,:4]}")
         print(f"     Q1.17 : {to_q117(sc[0,:4])}")
+        # New: Show score -> prob transformation
+        print(f"     Score->Prob:")
+        for i in range(4):
+            score = sc[0,i]
+            prob = pr[0,i]
+            print(f"       Score {i}: {score:.6f} → Prob: {prob:.6f}")
+            print(f"         Q1.17: {to_q117(score)} → {to_q117(prob)}")
         print(f"     Probs : {pr[0,:4]}")
         print(f"     Q1.17 : {to_q117(pr[0,:4])}")
     print("────────────────────────────────────────────────────────────")
@@ -252,7 +246,53 @@ for idx, layer in enumerate(model.model.encoder.layers):
         print(f" == Head {h} ===")
         print(f"    Float: {mha_out[0,0,s:e]}")
         print(f"    Q1.7: {to_q17(mha_out[0,0,s:e])}")
+        # New: Show value projection contribution
+        v_proj = inter['v_proj'][0,0,s:e]
+        attn_probs = inter['attention_probs'][h][0,0,:]
+        print(f"    Value Projection:")
+        print(f"      V: {v_proj} → Q1.7: {to_q17(v_proj)}")
+        print(f"      Attn Weights: {attn_probs[:4]} → Q1.17: {to_q117(attn_probs[:4])}")
 
+    # New: Add comprehensive transformation breakdown
+    # print("\n🔍 Full Transformation Breakdown (Head 0, First Dimension)")
+    # h = 0  # Focus on first head for clarity
+    # dim = 0  # First dimension
+
+    # # Raw projections
+    # q_raw = (x[0,0] @ Wq_model.T)[h*head_dim + dim]
+    # k_raw = (x[0,0] @ Wk_model.T)[h*head_dim + dim]
+    # v_raw = (x[0,0] @ Wv_model.T)[h*head_dim + dim]
+
+    # # After head processing
+    # q_head = inter['q_heads'][0][0,h,dim]
+    # k_head = inter['k_heads'][0][0,h,dim]
+    # v_head = inter['v_heads'][0][0,h,dim]
+
+    # # Attention calculations
+    # attn_score = inter['attention_scores'][h][0,0,dim]
+    # attn_prob = inter['attention_probs'][h][0,0,dim]
+    # output = mha_out[0,0,h*head_dim + dim]
+
+    # print(f"""
+    # Full Transformation Path:
+    # 1. Raw Projections:
+    #    Q: {q_raw:.6f} → Q1.7: {to_q17(q_raw)}
+    #    K: {k_raw:.6f} → Q1.7: {to_q17(k_raw)} 
+    #    V: {v_raw:.6f} → Q1.7: {to_q17(v_raw)}
+
+    # 2. After Head Scaling (÷sqrt(head_dim)):
+    #    Q: {q_head:.6f} → Q1.7: {to_q17(q_head)}
+    #    K: {k_head:.6f} → Q1.7: {to_q17(k_head)}
+    #    V: {v_head:.6f} → Q1.7: {to_q17(v_head)}
+
+    # 3. Attention Calculation:
+    #    Score: {attn_score:.6f} → Q1.17: {to_q117(attn_score)}
+    #    Prob: {attn_prob:.6f} → Q1.17: {to_q117(attn_prob)}
+
+    # 4. Output Contribution:
+    #    Weighted Value: {attn_prob * v_head:.6f}
+    #    Final Output: {output:.6f} → Q1.7: {to_q17(output)}
+    # """)
     # ─────────────────────────────── RESIDUAL + LN (POST-MHA) ───────────────────────────────
     res1      = mha_out + hidden_np
     ln1       = layer.self_attn_layer_norm

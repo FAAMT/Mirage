@@ -21,7 +21,7 @@ entity multi_head is
         done  : out std_logic;
 
         -- BRAM Signals
-        bram_addr     : in integer range 0 to 49599; -- 49151 + 191 + 255
+        bram_addr     : in integer range 0 to (3 * (HEAD_DIM * MODEL_DIM) + TOKEN_DIM) - 1;
         bram_data_in  : in std_logic_vector(7 downto 0);
         bram_data_out : out std_logic_vector(7 downto 0);
         bram_wr       : in std_logic;
@@ -40,13 +40,11 @@ architecture behavioral of multi_head is
 
     -- Type Declarations
     type state_type is (idle, compute_q, compute_k, compute_v, mac, tile_incr, softmax, result);
-    type bram_qkv_type is array (0 to 49151) of std_logic_vector(7 downto 0); -- 48KB for W_Q/K/V
-    type bram_bias_type is array (0 to 191) of std_logic_vector(7 downto 0);  -- 192B for Biases
-    type bram_token_type is array (0 to 255) of std_logic_vector(7 downto 0); -- 256B for Token Input
+    type bram_qkv_type is array (0 to BASE_OFFSET) of std_logic_vector(7 downto 0); -- 48KB for W_Q/K/V
+    type bram_token_type is array (0 to TOKEN_DIM) of std_logic_vector(7 downto 0); -- 256B for Token Input
 
     -- BRAM Storage
     signal bram_qkv    : bram_qkv_type;
-    signal bram_bias   : bram_bias_type;
     signal bram_token  : bram_token_type;
     signal bram_wr_reg : std_logic;
 
@@ -67,20 +65,15 @@ begin
     process (clk)
     begin
         if rising_edge(clk) then
-            if (bram_addr   <= 49151) then
+            if (bram_addr   <= BASE_OFFSET - 1) then
                 bram_data_out_i <= bram_qkv(bram_addr);
                 if bram_wr = '1' then
                     bram_qkv(bram_addr) <= bram_data_in;
                 end if;
-                elsif (bram_addr >= 49152) and (bram_addr <= 49343) then
-                bram_data_out_i                           <= bram_bias(bram_addr - 49152);
+            elsif (bram_addr >= BASE_OFFSET) and (bram_addr <= BASE_OFFSET + TOKEN_DIM) then
+                bram_data_out_i                                 <= bram_token(bram_addr - BASE_OFFSET);
                 if bram_wr = '1' then
-                    bram_bias(bram_addr - 49152) <= bram_data_in;
-                end if;
-                elsif (bram_addr >= 49344) and (bram_addr <= 49599) then
-                bram_data_out_i                           <= bram_token(bram_addr - 49344);
-                if bram_wr = '1' then
-                    bram_token(bram_addr - 49344) <= bram_data_in;
+                    bram_token(bram_addr - BASE_OFFSET) <= bram_data_in;
                 end if;
             end if;
         end if;
@@ -88,12 +81,12 @@ begin
 
     -- QKV Dynamic Weight and Input Assignment
     -- Q = base = 0
-    -- K = base = 256 * 64 = 16384
-    -- V = base = 2 * 256 * 64 = 32768
+    -- K = base = MODEL_DIM * HEAD_DIM = 32768
+    -- V = base = 2 * MODEL_DIM * HEAD_DIM = 65536
     -- QKV Dynamic Weight and Input Assignment
     process (state, tile_w_pass, tile_h_pass, bram_wr)
     begin
-        base_addr_qkv <= 5 * tile_w_pass + 12 * 256 * tile_h_pass;
+        base_addr_qkv <= 5 * tile_w_pass + 12 * MODEL_DIM * tile_h_pass;
 
         for i in 0 to TILE_H - 1 loop
             for j in 0 to TILE_W - 1 loop
@@ -101,21 +94,21 @@ begin
                     input_a_i(i, j) <= (others => '0');
                     input_b_i(i, j) <= (others => '0');
 
-                    elsif (TILE_W * tile_w_pass + j) <= 255 then
-                    input_a_i(i, j)                  <= signed(bram_token(TILE_W * tile_w_pass + j));
+                elsif (TILE_W * tile_w_pass + j) < MODEL_DIM then
+                    input_a_i(i, j) <= signed(bram_token(TILE_W * tile_w_pass + j));
 
                     if tile_h_pass = 5 and i >= 4 then
                         input_b_i(i, j) <= (others => '0');
-                        else
+                    else
                         if state = compute_q or state = idle then
-                            input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
-                            elsif state = compute_k then
-                            input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 16384 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
-                            elsif state = compute_v then
-                            input_b_i(i, j) <= signed(bram_qkv(256 * i + j + 32768 + 5 * tile_w_pass + 12 * 256 * tile_h_pass));
+                            input_b_i(i, j) <= signed(bram_qkv(MODEL_DIM * i + j + 5 * tile_w_pass + 12 * MODEL_DIM * tile_h_pass));
+                        elsif state = compute_k then
+                            input_b_i(i, j) <= signed(bram_qkv(MODEL_DIM * i + j + (MODEL_DIM * HEAD_DIM) + 5 * tile_w_pass + 12 * MODEL_DIM * tile_h_pass));
+                        elsif state = compute_v then
+                            input_b_i(i, j) <= signed(bram_qkv(MODEL_DIM * i + j + (2 * MODEL_DIM * HEAD_DIM) + 5 * tile_w_pass + 12 * MODEL_DIM * tile_h_pass));
                         end if;
                     end if;
-                    else
+                else
                     input_a_i(i, j) <= (others => '0');
                     input_b_i(i, j) <= (others => '0');
                 end if;
@@ -133,7 +126,7 @@ begin
             start_mac   <= '0';
             fetch_mac   <= '0';
             done        <= '0';
-            elsif rising_edge(clk) then
+        elsif rising_edge(clk) then
             case state is
                 when idle =>
                     done <= '0';
@@ -146,10 +139,9 @@ begin
 
                 when mac =>
                     if done_mac = '1' then
-                        if tile_w_pass = 51 then
+                        if tile_w_pass = 102 then
                             state     <= tile_incr;
                             start_mac <= '0';
-                            -- fetch_mac <= '1';
                         else
                             state     <= prev_state;
                             start_mac <= '1';
