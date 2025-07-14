@@ -197,102 +197,69 @@ for idx, layer in enumerate(model.model.encoder.layers):
         head_dim=head_dim,
         return_intermediates=True,
     )
-
-    sys.exit(0)
     
-    print("\n MHA Projections")
-    print(f"\n🔍 Layer {idx} • first-token — first 4 dims per head")
-    proj_map = {"Q": "q_proj", "K": "k_proj", "V": "v_proj"}
-    x = hidden_np
-    for tag, key in proj_map.items():
-        print(f"\n{tag} Projection:")
-        arr = inter[key]  # (B,T,E) or (B,T,H,D)
-        for h in range(num_heads):
-            raw = (x[0,0] @ Wq_model)[h*head_dim:(h+1)*head_dim][:4]
-            scaled = raw / np.sqrt(head_dim)
-            print(f"\n    Raw->Scaled:")
-            print(f"      Raw: {raw} → Q1.7: {to_q17(raw)}")
-            print(f"      Scaled: {scaled} → Q1.7: {to_q17(scaled)}")
-            s, e = h * head_dim, h * head_dim + 4
+    # ─────────────────────────── Q × Kᵀ  MAC TRACE  (Layer‑0) ───────────────────────────
+    #
+    # Produces, for each head and each token, the first four MAC contributions of the
+    # Q·Kᵀ dot product, the cumulative sum over those four dims, and the final
+    # scaled dot product used for attention scores.
+    #
+    # Assumes:
+    #   • `inter` dict returned by multi_head_attention_forward
+    #   • `num_heads`, `head_dim`, `original_tokens` or `tok_ids`
+    #   • layer index (`idx`) already in scope  (we only print for idx == 0)
+    #
+    if idx == 0:                                                   # keep log small
+        q_heads = inter["q_heads"]   # list[num_heads] → (B,T,D)
+        k_heads = inter["k_heads"]   # list[num_heads] → (B,T,D)
+        seq_len = q_heads[0].shape[1]
 
-            print(f"\n    == {tag}-Head {h} ===")
-            print(f"    Float: {arr[0,0,s:e]}")
-            print(f"    Q1.7:  {to_q17(arr[0,0,s:e])}")
+        print(f"\n🔍 Layer 0 • Q×Kᵀ partial MAC trace (first 4 dims)")
+        rt = range                       # alias
 
+        for t in rt(seq_len):            # query token index
+            print(f"\n── Token {t} ──")
+            for h in rt(num_heads):
+                q_vec = q_heads[h][0, t]                      # (D,)
+                print(f"  == Head {h} ==")
 
-    # —— Scores & Probabilities ——
-    print(f"\n🔍 Layer {idx} • attention scores / probabilities")
-    for h in range(num_heads):
-        sc = inter["attention_scores"][h][0]
-        pr = inter["attention_probs"][h][0]
-        print(f"\n  == Head {h} ===")
-        print(f"     Scores: {sc[0,:4]}")
-        print(f"     Q1.17 : {to_q117(sc[0,:4])}")
-        # New: Show score -> prob transformation
-        print(f"     Score->Prob:")
-        for i in range(4):
-            score = sc[0,i]
-            prob = pr[0,i]
-            print(f"       Score {i}: {score:.6f} → Prob: {prob:.6f}")
-            print(f"         Q1.17: {to_q117(score)} → {to_q117(prob)}")
-        print(f"     Probs : {pr[0,:4]}")
-        print(f"     Q1.17 : {to_q117(pr[0,:4])}")
-    print("────────────────────────────────────────────────────────────")
+                # Compare against first four *keys* only (j = 0‥3)
+                for j in rt(min(4, seq_len)):                 # key token index
+                    k_vec = k_heads[h][0, j]                  # (D,)
+                    partial = q_vec[:4] * k_vec[:4]           # first 4 MACs
+                    cum_sum = np.add.accumulate(partial)      # running sum
+                    full_dot = np.dot(q_vec, k_vec)           # all‑dim dot
+                    scaled   = full_dot / np.sqrt(head_dim)   # scale factor
+
+                    # ── pretty print ───────────────────────────────────────────────
+                    print(f"    • q{t}·k{j}:")
+                    print(f"        MACs   : {to_q17(partial)}")
+                    print(f"        CumSum : {to_q17(cum_sum)}")
+                    print(f"        Σ Q1.7 : {to_q17(full_dot)}")
+                    print(f"        Scaled Q1.17: {to_q117(scaled)}")
 
     # —— MHA Output ——
-    print("\nMHA Final Output:")
-    for h in range(num_heads):
-        s, e = h * head_dim, h * head_dim + 4
-        print(f" == Head {h} ===")
-        print(f"    Float: {mha_out[0,0,s:e]}")
-        print(f"    Q1.7: {to_q17(mha_out[0,0,s:e])}")
-        # New: Show value projection contribution
-        v_proj = inter['v_proj'][0,0,s:e]
-        attn_probs = inter['attention_probs'][h][0,0,:]
-        print(f"    Value Projection:")
-        print(f"      V: {v_proj} → Q1.7: {to_q17(v_proj)}")
-        print(f"      Attn Weights: {attn_probs[:4]} → Q1.17: {to_q117(attn_probs[:4])}")
+    print("\nMHA Final Output (per‑token • per‑head)")
+    seq_len = inter['v_proj'].shape[1]        # == number of tokens
 
-    # New: Add comprehensive transformation breakdown
-    # print("\n🔍 Full Transformation Breakdown (Head 0, First Dimension)")
-    # h = 0  # Focus on first head for clarity
-    # dim = 0  # First dimension
+    for t in range(seq_len):
+        print(f"\n── Token {t} • '{original_tokens[t]}' ──")
+        for h in range(num_heads):
+            s, e = h * head_dim, h * head_dim + 4
 
-    # # Raw projections
-    # q_raw = (x[0,0] @ Wq_model.T)[h*head_dim + dim]
-    # k_raw = (x[0,0] @ Wk_model.T)[h*head_dim + dim]
-    # v_raw = (x[0,0] @ Wv_model.T)[h*head_dim + dim]
+            # Slice projections and head outputs **for this token**
+            v_proj      = inter['v_proj']           [0, t, s:e]
+            attn_scores = inter['attention_scores'][h][0, t, :4]   # first 4 scores
+            attn_probs  = inter['attention_probs' ] [h][0, t, :4]
+            head_vec    = inter['head_outputs'    ][h][0, t, :4]
 
-    # # After head processing
-    # q_head = inter['q_heads'][0][0,h,dim]
-    # k_head = inter['k_heads'][0][0,h,dim]
-    # v_head = inter['v_heads'][0][0,h,dim]
+            print(f"  == Head {h} ==")
+            print(f"    V:           {v_proj}          → Q1.7  : {to_q17(v_proj)}")
+            print(f"    Attn scores: {attn_scores}     → Q1.17 : {to_q117(attn_scores)}")
+            print(f"    Attn probs : {attn_probs}      → Q1.17 : {to_q117(attn_probs)}")
+            print(f"    Head out   : {head_vec}        → Q1.7  : {to_q17(head_vec)}")
 
-    # # Attention calculations
-    # attn_score = inter['attention_scores'][h][0,0,dim]
-    # attn_prob = inter['attention_probs'][h][0,0,dim]
-    # output = mha_out[0,0,h*head_dim + dim]
 
-    # print(f"""
-    # Full Transformation Path:
-    # 1. Raw Projections:
-    #    Q: {q_raw:.6f} → Q1.7: {to_q17(q_raw)}
-    #    K: {k_raw:.6f} → Q1.7: {to_q17(k_raw)} 
-    #    V: {v_raw:.6f} → Q1.7: {to_q17(v_raw)}
-
-    # 2. After Head Scaling (÷sqrt(head_dim)):
-    #    Q: {q_head:.6f} → Q1.7: {to_q17(q_head)}
-    #    K: {k_head:.6f} → Q1.7: {to_q17(k_head)}
-    #    V: {v_head:.6f} → Q1.7: {to_q17(v_head)}
-
-    # 3. Attention Calculation:
-    #    Score: {attn_score:.6f} → Q1.17: {to_q117(attn_score)}
-    #    Prob: {attn_prob:.6f} → Q1.17: {to_q117(attn_prob)}
-
-    # 4. Output Contribution:
-    #    Weighted Value: {attn_prob * v_head:.6f}
-    #    Final Output: {output:.6f} → Q1.7: {to_q17(output)}
-    # """)
     # ─────────────────────────────── RESIDUAL + LN (POST-MHA) ───────────────────────────────
     res1      = mha_out + hidden_np
     ln1       = layer.self_attn_layer_norm
