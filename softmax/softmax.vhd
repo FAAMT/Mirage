@@ -41,10 +41,8 @@ architecture rtl of softmax is
         compute_scores, compute_softmax,
         compute_attention, result
     );
-    type bram_qkv_type is array(0 to 767) of std_logic_vector(15 downto 0);
     type bram_scores_type is array(0 to 15) of signed(17 downto 0);
     type bram_softmax_type is array(0 to 15) of signed(10 downto 0);
-    -- type bram_attention_type is array(0 to 15) of signed(17 downto 0);
     type lut_max_type is array(0 to 3) of signed(17 downto 0);
 
     type taylor_array_18 is array(0 to 3) of signed(17 downto 0);
@@ -68,12 +66,6 @@ architecture rtl of softmax is
     signal q_int_iter : integer;
     signal v_ext_iter : integer;
     signal v_int_iter : integer;
-
-    signal bram_qkv      : bram_qkv_type;
-    signal bram_qkv_addr : integer range 0 to 767 := 0;
-    signal bram_qkv_off  : integer                := 16;
-    signal offset        : integer                := 0;
-    signal mac_out_reg   : std_logic_vector(12 * 16 - 1 downto 0);
 
     signal bram_scores  : bram_scores_type;
     signal bram_softmax : bram_softmax_type;

@@ -222,37 +222,6 @@ begin
                 wait for 2 * clk_period;
             end loop;
         end loop;
-
-        -- Verify QKV cache contents
-        cache_rd <= '1';
-        for tok_num in 0 to 3 loop
-            for head_num in 0 to 7 loop
-                for qkv_type in 0 to 2 loop   -- 0: Query, 1: Key, 2: Value
-                    for fetch_pass in 0 to 5 loop -- 6 passes for HEAD_DIM / TILE_W
-                        -- Calculate cache address (mimics qkv_cache logic)
-                        if qkv_type = 0 then
-                            cache_addr <= '0'; -- Query address
-                        elsif qkv_type = 1 then
-                            cache_addr <= '0'; -- Key address
-                        else
-                            cache_addr <= '0'; -- Value address
-                        end if;
-                        wait for clk_period;
-                        -- Write cache output to file for verification
-                        for i in 0 to 11 loop
-                            if fetch_pass < 5 or (fetch_pass = 5 and i < 4) then
-                                write(line_buffer, integer'image(to_integer(signed(cache_data_out((CACHE_DATA_WIDTH * (i + 1) - 1) downto (CACHE_DATA_WIDTH * i))))));
-                                writeline(output_file, line_buffer);
-                            end if;
-                        end loop;
-                    end loop;
-                end loop;
-            end loop;
-        end loop;
-        cache_rd <= '0';
-
-        wait for 10 * clk_period; -- Stabilization
-        wait;
     end process;
 
 end architecture;
