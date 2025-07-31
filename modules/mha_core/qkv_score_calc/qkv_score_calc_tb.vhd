@@ -273,7 +273,7 @@ begin
         variable k_mat     : int8_gemm_array(0 to HEAD_DIM - 1, 0 to MODEL_DIM - 1);
         variable v_mat     : int8_gemm_array(0 to HEAD_DIM - 1, 0 to MODEL_DIM - 1);
     begin
-        for tok_num in 0 to 0 loop
+        for tok_num in 0 to 3 loop
             -- Process all 8 heads in a loop
             read_int8_matrix("/Users/faamt/Desktop/Nomadic Inc/Mirage/model/tb_stim/token_embeddings_" & integer'image(tok_num) & ".txt",
             1, TOKEN_DIM, token_mat);
@@ -349,13 +349,14 @@ begin
                 proj_start <= '0';
                 wait for 2 * clk_period;
             end loop;
-
-            -- Start the QKV Score Calc core
-            score_start            <= '1';
-            wait until score_start <= '0';
-            wait for 2 * clk_period;
-
         end loop;
+
+        -- Start the QKV Score Calc core
+        score_start <= '1';
+        wait for 2 * clk_period;
+
+        wait until score_done = '1';
+        score_start <= '0';
 
         wait for 10 * clk_period; -- small stabilization
         wait;

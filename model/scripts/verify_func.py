@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import numpy as np
-import math, torch
+import math, torch, sys
 from pathlib import Path
 from decimal import Decimal, getcontext
+
+# Constants
+S_TOK = 0.1747814076030969          # <- from token dump (use per-token if it varies)
+Q17   = 128  
 
 def load_quantized_weights(root: Path, stem: str, shape):
     w_path  = root / f"{stem}.bin"
@@ -24,6 +28,19 @@ def load_quantized_weights(root: Path, stem: str, shape):
 def to_q17(x):
     """Convert float32 to Q1.7 fixed-point representation."""
     return np.clip(np.round(x * 128), -128, 127).astype(np.int8)
+
+def to_q17_sf(x, q17, sf):
+    """
+    Convert float32 to Q1.7 fixed-point representation with a scaling factor.
+    """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)  # Convert to numpy if needed
+    
+    # Apply scaling and convert to Q1.7
+    x_scaled = x * sf * q17
+    x_q17 = np.clip(np.round(x_scaled), -128, 127).astype(np.int8)
+    
+    return x_q17
 
 def to_q117(x):
     """Convert float32 to Q1.17 fixed-point representation."""
@@ -108,80 +125,6 @@ def compute_taylor_q345(scores):
  
     return int_vals
 
-def calculate_projection(attention_4x64, Wo):
-    """
-    Calculate projected output with detailed MAC breakdowns
-    Args:
-        attention_4x64: 4x64 attention matrix (float32)
-        Wo: 64x256 projection matrix (float32)
-    Returns:
-        Projected outputs with detailed computation logs
-    """
-    attention_4x64 = np.array(attention_4x64, dtype=np.float32)
-    Wo = np.array(Wo, dtype=np.float32)
-    
-    projected_outputs = []
-    global_pass_counter = 0
-    
-    for att_idx in range(4):
-        print(f"\n=== Processing Projected Attention {att_idx} ===")
-        attn_vec = attention_4x64[att_idx]
-        proj_out = np.zeros(256)
-        
-        for out_idx in range(256):
-            wo_column = Wo[:, out_idx]
-            macs = []
-            row_accumulator = 0
-            pass_accumulator = 0
-            
-            print(f"\nOutput element {out_idx}:")
-            print("="*40)
-            
-            for i in range(64):
-                scaled_attn = round((math.ceil(attn_vec[i]/(2**8)))-1)
-                scaled_wo = round((wo_column[i] * (2 ** 7)))
-                print(f"Wo => {wo_column[i]} INT8 => {scaled_wo}")
-                mac = scaled_attn * scaled_wo
-                macs.append(mac)
-                
-                row_accumulator += 1
-                pass_accumulator += mac
-                
-                if (i + 1) % 5 == 0:
-                    start_idx = i - 4
-                    print("Individual MAC elements:")
-                    for j in range(start_idx, i+1):
-                        print(f"  MAC {j}: {round((math.ceil(attn_vec[j]/(2**8)))-1)} * {round((wo_column[i] * (2 ** 7)))} = {macs[j]}")
-                    current_sum = sum(macs[start_idx:i+1])
-                    print(f"Sum of MACs {start_idx:2d} to {i:2d}: {current_sum:12.2f}")
-                    print(f"Pass Accum: {pass_accumulator:12.2f}")
-
-            if 64 % 5 != 0:
-                remaining = 64 % 5
-                start_idx = 64 - remaining
-                current_sum = sum(macs[start_idx:64])
-                print(f"Sum of MACs {start_idx:2d} to {63:2d}: {current_sum:12.2f}")
-                print("-"*30)
-            
-            out_val = sum(macs)
-            proj_out[out_idx] = out_val
-            
-            print(f"\nTotal sum of 64 products: {out_val:12.2f}")
-            
-            if row_accumulator >= 12:
-                global_pass_counter += 1
-                print(f"\nPass {global_pass_counter} completed")
-                row_accumulator = 0
-        
-        projected_outputs.append(proj_out)
-        
-        print(f"\nCompleted Token {att_idx} projection")
-        print(f"Output shape: {proj_out.shape}")
-        print("Sample values:", proj_out[:5])
-    
-    return np.array(projected_outputs)
-
-
 # MHA Custom Function #
 
 def multi_head_attention_forward(x: np.ndarray, attn, Wq_full: np.ndarray, Wk_full: np.ndarray, 
@@ -212,6 +155,15 @@ def multi_head_attention_forward(x: np.ndarray, attn, Wq_full: np.ndarray, Wk_fu
     k_bias = attn.k_proj.bias.detach().numpy()
     v_bias = attn.v_proj.bias.detach().numpy()
 
+    # Process only first token initially
+    current_token = 0
+    print(f"\n=== Processing Token {current_token} ===")
+
+
+    # Projections for first token only
+    tok_amount = 3
+    first_token = x[:, current_token:current_token+tok_amount, :]  # Shape [batch, 1, d_model]
+
     q_bias = np.zeros_like(q_bias)
     k_bias = np.zeros_like(k_bias)
     v_bias = np.zeros_like(v_bias)
@@ -220,130 +172,143 @@ def multi_head_attention_forward(x: np.ndarray, attn, Wq_full: np.ndarray, Wk_fu
 #   Uncomment this section for verbose output  #
 ################################################
 
-#    # Q, K, and V MAC Projections with proper scaling
-#     print("\n=== Multi-Head Projection Results ===")
-#     for token_idx in range(seq_l):
-#        print(f"\n=== Token {token_idx} Projections ===")
-#        for head_idx in range(8):
-#            print(f"\n=== Head {head_idx} ===")
+   # Q, K, and V MAC Projections with proper scaling    
+    for token_idx in range(1):
+    #    print(f"\n=== Token {token_idx} Projections ===")
+       for head_idx in range(1):
+        #    print(f"\n=== Head {head_idx} ===")
    
-#            # Calculate start and end indices for this head's weights
-#            start_idx = head_idx * head_dim
-#            end_idx = (head_idx + 1) * head_dim
+           # Calculate start and end indices for this head's weights
+           start_idx = head_idx * head_dim
+           end_idx = (head_idx + 1) * head_dim
    
-#            for proj_type, W_proj, bias in [('Q', Wq_full.T, q_bias), 
-#                                            ('K', Wk_full.T, k_bias), 
-#                                            ('V', Wv_full.T, v_bias)]:
-#                print(f"\n{proj_type} Projection (Elements {start_idx}-{end_idx-1}):")
+           for proj_type, W_proj, bias in [('Q', Wq_full, q_bias), 
+                                           ('K', Wk_full, k_bias), 
+                                           ('V', Wv_full, v_bias)]:
+            #    print(f"\n{proj_type} Projection (Elements {start_idx}-{end_idx-1}):")
    
-#                # Store results for first 5 elements of this head
-#                results = []
+               # Store results for first 5 elements of this head
+               results = []
    
-#                # Scaling factors based on theoretical [-7,7] range
+               # Scaling factors based on theoretical [-7,7] range
    
-#                # Adjust scaling factor based on actual max observed:
-#                actual_max = np.max(np.abs(x))
-#                scale_factor = min(7.0, actual_max * 1.05)  # 10% headroom
-#                inverse_scale = 1.0 / scale_factor if scale_factor != 0 else 1.0
+               # Adjust scaling factor based on actual max observed:
+               actual_max = np.max(np.abs(x))
+               scale_factor = min(7.0, actual_max * 1.05)  # 10% headroom
+               inverse_scale = 1.0 / scale_factor if scale_factor != 0 else 1.0
    
-#                for elem_idx in range(64):
-#                    actual_elem_idx = start_idx + elem_idx
-#                    vhdl_total = 0
-#                    py_total = 0.0
+               for elem_idx in range(4):
+                   actual_elem_idx = start_idx + elem_idx
+                   vhdl_total = 0
+                   py_total = 0.0
    
-#                    # Keep Weight calculations
-#                    for weight_idx in range(512):  # Input dimension
-#                        x_val = x[0, token_idx, weight_idx] * inverse_scale  # Scale down FP32 input
-#                        w_val = W_proj[actual_elem_idx, weight_idx]
+                   # Keep Weight calculations
+                   for weight_idx in range(512):  # Input dimension
+                       x_val = x[0, token_idx, weight_idx] * inverse_scale  # Scale down FP32 input
+                       w_val = W_proj[actual_elem_idx, weight_idx]
    
-#                        # VHDL-style (Q1.7 fixed-point)
-#                        x_q17 = to_q17(x_val).astype(np.int32)
-#                        w_q17 = to_q17(w_val).astype(np.int32)
-#                        vhdl_total += x_q17 * w_q17
+                       # VHDL-style (Q1.7 fixed-point)
+                       x_q17 = to_q17(x_val).astype(np.int32)
+                       w_q17 = to_q17(w_val).astype(np.int32)
+                       vhdl_total += x_q17 * w_q17
    
-#                        # Python reference (float32) - scale back before accumulation
-#                        py_total += (x_val * scale_factor) * w_val
+                       # Python reference (float32) - scale back before accumulation
+                       py_total += (x_val * scale_factor) * w_val
    
-#                    # Apply Q1.7 scaling and bias (with scale compensation)
-#                    vhdl_scaled = (vhdl_total / (128**2)) * scale_factor
-#                    py_scaled = py_total  # Already scaled back during accumulation
-#                    final_vhdl = vhdl_scaled + bias[actual_elem_idx]
-#                    final_py = py_scaled + bias[actual_elem_idx]
+                   # Apply Q1.7 scaling and bias (with scale compensation)
+                   vhdl_scaled = (vhdl_total / (128**2)) * scale_factor
+                   py_scaled = py_total  # Already scaled back during accumulation
+                   final_vhdl = vhdl_scaled + bias[actual_elem_idx]
+                   final_py = py_scaled + bias[actual_elem_idx]
    
-#                    results.append({
-#                        'elem_idx': actual_elem_idx,
-#                        'vhdl_raw': vhdl_total,
-#                        'vhdl_scaled': vhdl_scaled,
-#                        'vhdl_final': final_vhdl,
-#                        'py_scaled': py_scaled,
-#                        'py_final': final_py,
-#                        'q17_vhdl': to_q17(final_vhdl),
-#                        'q17_py': to_q17(final_py)
-#                    })
-#                    print("-"*150)
-#                    print(f"{actual_elem_idx:8d} | {'VHDL':8s} | {vhdl_total:12d} | {vhdl_scaled:12.4f} | {final_vhdl:12.4f} | {to_q17(final_vhdl):6d}")
-#                    print(f"         | {'Python':8s} |              | {py_scaled:12.4f} | {final_py:12.4f} | {to_q17(final_py):6d} | {abs(to_q17(final_vhdl) - to_q17(final_py)):6d}")
+                   results.append({
+                       'elem_idx': actual_elem_idx,
+                       'vhdl_raw': vhdl_total,
+                       'vhdl_scaled': vhdl_scaled,
+                       'vhdl_final': final_vhdl,
+                       'py_scaled': py_scaled,
+                       'py_final': final_py,
+                       'q17_vhdl': to_q17(final_vhdl),
+                       'q17_py': to_q17(final_py)
+                   })
+                #    print("-"*150)
+                #    print(f"{actual_elem_idx:8d} | {'VHDL':8s} | {vhdl_total:12d} | {vhdl_scaled:12.4f} | {final_vhdl:12.4f} | {to_q17(final_vhdl):6d}")
+                #    print(f"         | {'Python':8s} |              | {py_scaled:12.4f} | {final_py:12.4f} | {to_q17(final_py):6d} | {abs(to_q17(final_vhdl) - to_q17(final_py)):6d}")
    
-#                    # Tiling parameters
-#                    num_tiles = 103
-#                    macs_per_tile = 5
+                   # Tiling parameters
+                   num_tiles = 103
+                   macs_per_tile = 5
    
-#                    # Tiling Calculations
-#                    if elem_idx < 5:
-#                        # print(f"\n{'Tile':5s} | {'MACs':9s} |   {'VHDL Sum':10s} | {'VHDL Accum':12s} | {'Python Accum FP32':12s} | {'Python Accum INT8':12s} | {'Diff':12s}")
-#                        print("-"*150)
+                   # Tiling Calculations
+                   if elem_idx < 5:
+                       # print(f"\n{'Tile':5s} | {'MACs':9s} |   {'VHDL Sum':10s} | {'VHDL Accum':12s} | {'Python Accum FP32':12s} | {'Python Accum INT8':12s} | {'Diff':12s}")
+                    #    print("-"*150)
    
-#                        tile_vhdl_total = 0
-#                        tile_py_total = 0.0
+                       tile_vhdl_total = 0
+                       tile_py_total = 0.0
    
-#                        for tile_idx in range(num_tiles):
-#                            start_mac = tile_idx * macs_per_tile
-#                            end_mac = min((tile_idx + 1) * macs_per_tile, 512)
+                       for tile_idx in range(num_tiles):
+                           start_mac = tile_idx * macs_per_tile
+                           end_mac = min((tile_idx + 1) * macs_per_tile, 512)
    
-#                            # VHDL calculation (int32)
-#                            tile_vhdl = 0
-#                            tile_py = 0.0
+                           # VHDL calculation (int32)
+                           tile_vhdl = 0
+                           tile_py = 0.0
    
-#                            # print(f" {'IN_A INT8':10s} | {'IN_A FP32':12s} |   {'IN_B INT8':10s} | {'IN_B FP32':12s} | {'MAC SUM INT 8':12s} | {'MAC SUM FP32':12s}")
-#                            for weight_idx in range(start_mac, end_mac):
-#                                x_val = x[0, token_idx, weight_idx] * inverse_scale  # Scaled down
-#                                w_val = W_proj[actual_elem_idx, weight_idx]
+                           # print(f" {'IN_A INT8':10s} | {'IN_A FP32':12s} |   {'IN_B INT8':10s} | {'IN_B FP32':12s} | {'MAC SUM INT 8':12s} | {'MAC SUM FP32':12s}")
+                           for weight_idx in range(start_mac, end_mac):
+                               x_val = x[0, token_idx, weight_idx] * inverse_scale  # Scaled down
+                               w_val = W_proj[actual_elem_idx, weight_idx]
    
-#                                # VHDL-style (Q1.7 fixed-point)
-#                                x_q17 = to_q17(x_val).astype(np.int32)
-#                                w_q17 = to_q17(w_val).astype(np.int32)
-#                                mac = x_q17 * w_q17
-#                                tile_vhdl += mac
+                               # VHDL-style (Q1.7 fixed-point)
+                               x_q17 = to_q17(x_val).astype(np.int32)
+                               w_q17 = to_q17(w_val).astype(np.int32)
+                               mac = x_q17 * w_q17
+                               tile_vhdl += mac
    
-#                                # Python reference (float32) - scale back before accumulation
-#                                mac_py = (x_val * scale_factor) * w_val
-#                                tile_py += mac_py
+                               # Python reference (float32) - scale back before accumulation
+                               mac_py = (x_val * scale_factor) * w_val
+                               tile_py += mac_py
    
-#                                # print(f"{x_q17 :12.4f} | {x_val:12.4f} | "
-#                                #       f"{w_q17 :12.4f} | {w_val:12.4f} | "
-#                                #       f"{mac :12.4f} | {mac_py:12.4f} | "
-#                                #       f"{abs(mac - (mac_py * scale_factor) / 128):12.4f}")
+                               # print(f"{x_q17 :12.4f} | {x_val:12.4f} | "
+                               #       f"{w_q17 :12.4f} | {w_val:12.4f} | "
+                               #       f"{mac :12.4f} | {mac_py:12.4f} | "
+                               #       f"{abs(mac - (mac_py * scale_factor) / 128):12.4f}")
    
-#                            tile_vhdl_total += tile_vhdl
-#                            tile_py_total += tile_py
-#                            # print(f"\n{tile_idx:5d} | [{start_mac:3d}-{end_mac-1:3d}] | "
-#                            #       f"{tile_vhdl :12.4f} | {tile_vhdl_total:12.4f} | "
-#                            #       f" {tile_py_total:12.4f} | {round(tile_py_total * scale_factor):12.4f} |"
-#                            #       f" {round(abs(tile_vhdl_total - round(tile_py_total * scale_factor)) / 128):12.4f}")
-
+                           tile_vhdl_total += tile_vhdl
+                           tile_py_total += tile_py
+                           # print(f"\n{tile_idx:5d} | [{start_mac:3d}-{end_mac-1:3d}] | "
+                           #       f"{tile_vhdl :12.4f} | {tile_vhdl_total:12.4f} | "
+                           #       f" {tile_py_total:12.4f} | {round(tile_py_total * scale_factor):12.4f} |"
+                           #       f" {round(abs(tile_vhdl_total - round(tile_py_total * scale_factor)) / 128):12.4f}")
+    
+    print("\n=== Multi-Head Projection Results ===")
+    # Note: Needs to be transposed for the calculation to match VHDL since module is already uses transposed weights.
     # Full projections (single large matrix multiply)
     q_proj = x @ Wq_full.T  # [batch, seq, num_heads * head_dim]
     k_proj = x @ Wk_full.T 
     v_proj = x @ Wv_full.T 
 
+    # # DEBUG: First Token Processing Only
+    # q_proj = first_token @ Wq_full.T  # [batch, seq, num_heads * head_dim]
+    # k_proj = first_token @ Wk_full.T 
+    # v_proj = first_token @ Wv_full.T 
+
     intermediates['q_proj'] = q_proj
     intermediates['k_proj'] = k_proj
     intermediates['v_proj'] = v_proj
+
     
     # Reshape into heads
     q_heads = q_proj.reshape(batch_s, seq_l, num_heads, head_dim).transpose(0, 2, 1, 3)
     k_heads = k_proj.reshape(batch_s, seq_l, num_heads, head_dim).transpose(0, 2, 1, 3)
     v_heads = v_proj.reshape(batch_s, seq_l, num_heads, head_dim).transpose(0, 2, 1, 3)
+
+    # # DEBUG: First Token Processing Only
+    # # Reshape into heads
+    # q_heads = q_proj.reshape(batch_s, tok_amount, num_heads, head_dim).transpose(0, 2, 1, 3)
+    # k_heads = k_proj.reshape(batch_s, tok_amount, num_heads, head_dim).transpose(0, 2, 1, 3)
+    # v_heads = v_proj.reshape(batch_s, tok_amount, num_heads, head_dim).transpose(0, 2, 1, 3)
     
     all_head_outputs = []
     for i in range(num_heads):
@@ -357,10 +322,43 @@ def multi_head_attention_forward(x: np.ndarray, attn, Wq_full: np.ndarray, Wk_fu
         intermediates['k_heads'].append(k_h)
         intermediates['v_heads'].append(v_h)
         
-        # Scaled dot-product attention
-        attn_scores = q_h @ k_h.transpose(0, 2, 1) / np.sqrt(head_dim)
+        for t in range(seq_l):
+            print(f"\n── Head {i} • Token {t} ──")
+            print(f"Q[{t}] (Head {i}, row vector before Kᵀ):",
+                  np.round(q_h[0, t, :] * 128**2 * S_TOK).astype(int))
+            print(f"K[{t}] (Head {i}, row vector before transpose):",
+                  np.round(k_h[0, t, :] * 128**2 * S_TOK).astype(int))
+            print(f"Kᵀ[:,{t}] (Head {i}, column after transpose):",
+                  np.round(k_h[0, :, :].T[:, t] * 128**2 * S_TOK).astype(int))
+
+            q_h_quant = np.floor((q_h[0, t, :] * 128**2 * S_TOK) // 256)
+            k_h_quant = np.floor((k_h[0, t, :] * 128**2 * S_TOK) // 256)
+
+            print(f"Q[{t}] Quantized (Head {i}):", q_h_quant.astype(int))
+            print(f"K[{t}] Quantized (Head {i}):", k_h_quant.astype(int))
+
+        # # Scaled dot-product attention
+        # print(f"Q Head Scaled {i}: ",np.round(q_h * 128**2 * S_TOK).astype(int))
+        # print(f"K Head Scaled {i}: ",np.round(k_h * 128**2 * S_TOK).astype(int))
+        # print(f"K^T Head {i}: ",np.round(k_h.transpose(0, 2, 1) * 128**2 * S_TOK).astype(int))
+
+        # q_h_quant = np.floor((q_h * 128**2 * S_TOK) // 256)
+        # k_h_quant = np.floor((k_h * 128**2 * S_TOK) // 256)
+
+        # print(f"Q Head Scaled -> Quantized {i}: ",q_h_quant)
+        # print(f"K Head Scaled -> Quantized {i}: ",k_h_quant)
+
+        sys.exit(0)
+        
+        # attn_scores = q_h @ k_h.transpose(0, 2, 1) / np.sqrt(head_dim)
+        attn_scores = (q_h @ k_h.transpose(0, 2, 1) ) / np.sqrt(head_dim)
+        attn_scores_quant = (q_h_quant @ k_h_quant.transpose(0, 2, 1) ) / np.sqrt(head_dim)
         attn_probs = torch.softmax(torch.from_numpy(attn_scores), dim=-1).numpy()
         head_out = attn_probs @ v_h
+
+        print(f"Attention Output FP32", attn_scores[0, :4])
+        print(f"Attention Output INT8", attn_scores_quant[0, :4] )
+        # sys.exit(0)
         
         intermediates['attention_scores'].append(attn_scores)
         intermediates['attention_probs'].append(attn_probs)

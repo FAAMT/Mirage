@@ -31,7 +31,7 @@ package types_pkg is
     -- QKV Proj Bram Constants
     constant QKV_BRAM_DATA_W   : integer := 16;
     constant QKV_BRAM_ELEM     : integer := 3 * TOK_CONTEXT * NUM_HEADS * HEAD_DIM;
-    constant SCORE_BRAM_DATA_W : integer := 18;
+    constant SCORE_BRAM_DATA_W : integer := 21;
     -- Type Declarations
     type signed_vector is array (natural range <>) of signed(MM_IN_DATA_W - 1 downto 0);
     type int8_gemm_array is array (natural range <>, natural range <>) of signed(MM_IN_DATA_W - 1 downto 0);

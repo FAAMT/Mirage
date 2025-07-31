@@ -1,0 +1,126 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Mon Jul 14 11:16:41 2025
+[*]
+[dumpfile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/modules/mha_core/qkv_proj_calc/qkv_proj_calc.ghw"
+[dumpfile_mtime] "Mon Jul 14 11:16:41 2025"
+[dumpfile_size] 72678895
+[savefile] "/Users/faamt/Desktop/Nomadic Inc/Mirage/modules/mha_core/qkv_proj_calc/qkv_proj_calc.gtkw"
+[timestart] 495104100000
+[size] 1728 1005
+[pos] 0 59
+*-24.847591 495184400000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[markername] AA
+[markername] BB
+[markername] CC
+[markername] DD
+[markername] EE
+[markername] FF
+[markername] GG
+[markername] HH
+[markername] II
+[markername] JJ
+[markername] KK
+[markername] LL
+[markername] MM
+[markername] NN
+[markername] OO
+[markername] PP
+[markername] QQ
+[markername] RR
+[markername] SS
+[markername] TT
+[markername] UU
+[markername] VV
+[markername] WW
+[markername] XX
+[markername] YY
+[markername] ZZ
+[treeopen] top.
+[treeopen] top.qkv_proj_calc_tb.
+[treeopen] top.qkv_proj_calc_tb.gemm_array.
+[treeopen] top.qkv_proj_calc_tb.uut.
+[sst_width] 255
+[signals_width] 267
+[sst_expanded] 1
+[sst_vpaned_height] 641
+@800200
+-Clk & rst
+@28
+top.qkv_proj_calc_tb.uut.clk
+top.qkv_proj_calc_tb.uut.rst
+@1000200
+-Clk & rst
+@800200
+-Port Signals
+@28
+top.qkv_proj_calc_tb.uut.start
+top.qkv_proj_calc_tb.uut.done
+@1000200
+-Port Signals
+@800200
+-BRAM Signals
+@420
+[color] 6
+top.qkv_proj_calc_tb.uut.bram_wr
+[color] 6
+top.qkv_proj_calc_tb.uut.bram_addr
+[color] 6
+#{top.qkv_proj_calc_tb.bram_data_in[7:0]} top.qkv_proj_calc_tb.bram_data_in[7] top.qkv_proj_calc_tb.bram_data_in[6] top.qkv_proj_calc_tb.bram_data_in[5] top.qkv_proj_calc_tb.bram_data_in[4] top.qkv_proj_calc_tb.bram_data_in[3] top.qkv_proj_calc_tb.bram_data_in[2] top.qkv_proj_calc_tb.bram_data_in[1] top.qkv_proj_calc_tb.bram_data_in[0]
+[color] 6
+#{top.qkv_proj_calc_tb.uut.bram_data_out_i[7:0]} top.qkv_proj_calc_tb.uut.bram_data_out_i[7] top.qkv_proj_calc_tb.uut.bram_data_out_i[6] top.qkv_proj_calc_tb.uut.bram_data_out_i[5] top.qkv_proj_calc_tb.uut.bram_data_out_i[4] top.qkv_proj_calc_tb.uut.bram_data_out_i[3] top.qkv_proj_calc_tb.uut.bram_data_out_i[2] top.qkv_proj_calc_tb.uut.bram_data_out_i[1] top.qkv_proj_calc_tb.uut.bram_data_out_i[0]
+@1000200
+-BRAM Signals
+@800200
+-State Signals
+@420
+[color] 3
+top.qkv_proj_calc_tb.uut.state
+[color] 3
+top.qkv_proj_calc_tb.uut.prev_state
+@28
+[color] 3
+top.qkv_proj_calc_tb.uut.start_gemm
+top.qkv_proj_calc_tb.uut.fetch_gemm
+[color] 3
+top.qkv_proj_calc_tb.uut.done_gemm
+@420
+[color] 3
+top.qkv_proj_calc_tb.uut.tile_h_pass
+[color] 3
+top.qkv_proj_calc_tb.uut.tile_w_pass
+[color] 3
+top.qkv_proj_calc_tb.uut.base_addr_qkv
+@1000200
+-State Signals
+@800601
+-ACCUM
+@421
+[color] 2
+#{top.qkv_proj_calc_tb.gemm_array.accum[0][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[0][31] top.qkv_proj_calc_tb.gemm_array.accum[0][30] top.qkv_proj_calc_tb.gemm_array.accum[0][29] top.qkv_proj_calc_tb.gemm_array.accum[0][28] top.qkv_proj_calc_tb.gemm_array.accum[0][27] top.qkv_proj_calc_tb.gemm_array.accum[0][26] top.qkv_proj_calc_tb.gemm_array.accum[0][25] top.qkv_proj_calc_tb.gemm_array.accum[0][24] top.qkv_proj_calc_tb.gemm_array.accum[0][23] top.qkv_proj_calc_tb.gemm_array.accum[0][22] top.qkv_proj_calc_tb.gemm_array.accum[0][21] top.qkv_proj_calc_tb.gemm_array.accum[0][20] top.qkv_proj_calc_tb.gemm_array.accum[0][19] top.qkv_proj_calc_tb.gemm_array.accum[0][18] top.qkv_proj_calc_tb.gemm_array.accum[0][17] top.qkv_proj_calc_tb.gemm_array.accum[0][16] top.qkv_proj_calc_tb.gemm_array.accum[0][15] top.qkv_proj_calc_tb.gemm_array.accum[0][14] top.qkv_proj_calc_tb.gemm_array.accum[0][13] top.qkv_proj_calc_tb.gemm_array.accum[0][12] top.qkv_proj_calc_tb.gemm_array.accum[0][11] top.qkv_proj_calc_tb.gemm_array.accum[0][10] top.qkv_proj_calc_tb.gemm_array.accum[0][9] top.qkv_proj_calc_tb.gemm_array.accum[0][8] top.qkv_proj_calc_tb.gemm_array.accum[0][7] top.qkv_proj_calc_tb.gemm_array.accum[0][6] top.qkv_proj_calc_tb.gemm_array.accum[0][5] top.qkv_proj_calc_tb.gemm_array.accum[0][4] top.qkv_proj_calc_tb.gemm_array.accum[0][3] top.qkv_proj_calc_tb.gemm_array.accum[0][2] top.qkv_proj_calc_tb.gemm_array.accum[0][1] top.qkv_proj_calc_tb.gemm_array.accum[0][0]
+[color] 3
+#{top.qkv_proj_calc_tb.gemm_array.accum[1][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[1][31] top.qkv_proj_calc_tb.gemm_array.accum[1][30] top.qkv_proj_calc_tb.gemm_array.accum[1][29] top.qkv_proj_calc_tb.gemm_array.accum[1][28] top.qkv_proj_calc_tb.gemm_array.accum[1][27] top.qkv_proj_calc_tb.gemm_array.accum[1][26] top.qkv_proj_calc_tb.gemm_array.accum[1][25] top.qkv_proj_calc_tb.gemm_array.accum[1][24] top.qkv_proj_calc_tb.gemm_array.accum[1][23] top.qkv_proj_calc_tb.gemm_array.accum[1][22] top.qkv_proj_calc_tb.gemm_array.accum[1][21] top.qkv_proj_calc_tb.gemm_array.accum[1][20] top.qkv_proj_calc_tb.gemm_array.accum[1][19] top.qkv_proj_calc_tb.gemm_array.accum[1][18] top.qkv_proj_calc_tb.gemm_array.accum[1][17] top.qkv_proj_calc_tb.gemm_array.accum[1][16] top.qkv_proj_calc_tb.gemm_array.accum[1][15] top.qkv_proj_calc_tb.gemm_array.accum[1][14] top.qkv_proj_calc_tb.gemm_array.accum[1][13] top.qkv_proj_calc_tb.gemm_array.accum[1][12] top.qkv_proj_calc_tb.gemm_array.accum[1][11] top.qkv_proj_calc_tb.gemm_array.accum[1][10] top.qkv_proj_calc_tb.gemm_array.accum[1][9] top.qkv_proj_calc_tb.gemm_array.accum[1][8] top.qkv_proj_calc_tb.gemm_array.accum[1][7] top.qkv_proj_calc_tb.gemm_array.accum[1][6] top.qkv_proj_calc_tb.gemm_array.accum[1][5] top.qkv_proj_calc_tb.gemm_array.accum[1][4] top.qkv_proj_calc_tb.gemm_array.accum[1][3] top.qkv_proj_calc_tb.gemm_array.accum[1][2] top.qkv_proj_calc_tb.gemm_array.accum[1][1] top.qkv_proj_calc_tb.gemm_array.accum[1][0]
+[color] 4
+#{top.qkv_proj_calc_tb.gemm_array.accum[2][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[2][31] top.qkv_proj_calc_tb.gemm_array.accum[2][30] top.qkv_proj_calc_tb.gemm_array.accum[2][29] top.qkv_proj_calc_tb.gemm_array.accum[2][28] top.qkv_proj_calc_tb.gemm_array.accum[2][27] top.qkv_proj_calc_tb.gemm_array.accum[2][26] top.qkv_proj_calc_tb.gemm_array.accum[2][25] top.qkv_proj_calc_tb.gemm_array.accum[2][24] top.qkv_proj_calc_tb.gemm_array.accum[2][23] top.qkv_proj_calc_tb.gemm_array.accum[2][22] top.qkv_proj_calc_tb.gemm_array.accum[2][21] top.qkv_proj_calc_tb.gemm_array.accum[2][20] top.qkv_proj_calc_tb.gemm_array.accum[2][19] top.qkv_proj_calc_tb.gemm_array.accum[2][18] top.qkv_proj_calc_tb.gemm_array.accum[2][17] top.qkv_proj_calc_tb.gemm_array.accum[2][16] top.qkv_proj_calc_tb.gemm_array.accum[2][15] top.qkv_proj_calc_tb.gemm_array.accum[2][14] top.qkv_proj_calc_tb.gemm_array.accum[2][13] top.qkv_proj_calc_tb.gemm_array.accum[2][12] top.qkv_proj_calc_tb.gemm_array.accum[2][11] top.qkv_proj_calc_tb.gemm_array.accum[2][10] top.qkv_proj_calc_tb.gemm_array.accum[2][9] top.qkv_proj_calc_tb.gemm_array.accum[2][8] top.qkv_proj_calc_tb.gemm_array.accum[2][7] top.qkv_proj_calc_tb.gemm_array.accum[2][6] top.qkv_proj_calc_tb.gemm_array.accum[2][5] top.qkv_proj_calc_tb.gemm_array.accum[2][4] top.qkv_proj_calc_tb.gemm_array.accum[2][3] top.qkv_proj_calc_tb.gemm_array.accum[2][2] top.qkv_proj_calc_tb.gemm_array.accum[2][1] top.qkv_proj_calc_tb.gemm_array.accum[2][0]
+[color] 5
+#{top.qkv_proj_calc_tb.gemm_array.accum[3][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[3][31] top.qkv_proj_calc_tb.gemm_array.accum[3][30] top.qkv_proj_calc_tb.gemm_array.accum[3][29] top.qkv_proj_calc_tb.gemm_array.accum[3][28] top.qkv_proj_calc_tb.gemm_array.accum[3][27] top.qkv_proj_calc_tb.gemm_array.accum[3][26] top.qkv_proj_calc_tb.gemm_array.accum[3][25] top.qkv_proj_calc_tb.gemm_array.accum[3][24] top.qkv_proj_calc_tb.gemm_array.accum[3][23] top.qkv_proj_calc_tb.gemm_array.accum[3][22] top.qkv_proj_calc_tb.gemm_array.accum[3][21] top.qkv_proj_calc_tb.gemm_array.accum[3][20] top.qkv_proj_calc_tb.gemm_array.accum[3][19] top.qkv_proj_calc_tb.gemm_array.accum[3][18] top.qkv_proj_calc_tb.gemm_array.accum[3][17] top.qkv_proj_calc_tb.gemm_array.accum[3][16] top.qkv_proj_calc_tb.gemm_array.accum[3][15] top.qkv_proj_calc_tb.gemm_array.accum[3][14] top.qkv_proj_calc_tb.gemm_array.accum[3][13] top.qkv_proj_calc_tb.gemm_array.accum[3][12] top.qkv_proj_calc_tb.gemm_array.accum[3][11] top.qkv_proj_calc_tb.gemm_array.accum[3][10] top.qkv_proj_calc_tb.gemm_array.accum[3][9] top.qkv_proj_calc_tb.gemm_array.accum[3][8] top.qkv_proj_calc_tb.gemm_array.accum[3][7] top.qkv_proj_calc_tb.gemm_array.accum[3][6] top.qkv_proj_calc_tb.gemm_array.accum[3][5] top.qkv_proj_calc_tb.gemm_array.accum[3][4] top.qkv_proj_calc_tb.gemm_array.accum[3][3] top.qkv_proj_calc_tb.gemm_array.accum[3][2] top.qkv_proj_calc_tb.gemm_array.accum[3][1] top.qkv_proj_calc_tb.gemm_array.accum[3][0]
+[color] 6
+#{top.qkv_proj_calc_tb.gemm_array.accum[4][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[4][31] top.qkv_proj_calc_tb.gemm_array.accum[4][30] top.qkv_proj_calc_tb.gemm_array.accum[4][29] top.qkv_proj_calc_tb.gemm_array.accum[4][28] top.qkv_proj_calc_tb.gemm_array.accum[4][27] top.qkv_proj_calc_tb.gemm_array.accum[4][26] top.qkv_proj_calc_tb.gemm_array.accum[4][25] top.qkv_proj_calc_tb.gemm_array.accum[4][24] top.qkv_proj_calc_tb.gemm_array.accum[4][23] top.qkv_proj_calc_tb.gemm_array.accum[4][22] top.qkv_proj_calc_tb.gemm_array.accum[4][21] top.qkv_proj_calc_tb.gemm_array.accum[4][20] top.qkv_proj_calc_tb.gemm_array.accum[4][19] top.qkv_proj_calc_tb.gemm_array.accum[4][18] top.qkv_proj_calc_tb.gemm_array.accum[4][17] top.qkv_proj_calc_tb.gemm_array.accum[4][16] top.qkv_proj_calc_tb.gemm_array.accum[4][15] top.qkv_proj_calc_tb.gemm_array.accum[4][14] top.qkv_proj_calc_tb.gemm_array.accum[4][13] top.qkv_proj_calc_tb.gemm_array.accum[4][12] top.qkv_proj_calc_tb.gemm_array.accum[4][11] top.qkv_proj_calc_tb.gemm_array.accum[4][10] top.qkv_proj_calc_tb.gemm_array.accum[4][9] top.qkv_proj_calc_tb.gemm_array.accum[4][8] top.qkv_proj_calc_tb.gemm_array.accum[4][7] top.qkv_proj_calc_tb.gemm_array.accum[4][6] top.qkv_proj_calc_tb.gemm_array.accum[4][5] top.qkv_proj_calc_tb.gemm_array.accum[4][4] top.qkv_proj_calc_tb.gemm_array.accum[4][3] top.qkv_proj_calc_tb.gemm_array.accum[4][2] top.qkv_proj_calc_tb.gemm_array.accum[4][1] top.qkv_proj_calc_tb.gemm_array.accum[4][0]
+[color] 7
+#{top.qkv_proj_calc_tb.gemm_array.accum[5][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[5][31] top.qkv_proj_calc_tb.gemm_array.accum[5][30] top.qkv_proj_calc_tb.gemm_array.accum[5][29] top.qkv_proj_calc_tb.gemm_array.accum[5][28] top.qkv_proj_calc_tb.gemm_array.accum[5][27] top.qkv_proj_calc_tb.gemm_array.accum[5][26] top.qkv_proj_calc_tb.gemm_array.accum[5][25] top.qkv_proj_calc_tb.gemm_array.accum[5][24] top.qkv_proj_calc_tb.gemm_array.accum[5][23] top.qkv_proj_calc_tb.gemm_array.accum[5][22] top.qkv_proj_calc_tb.gemm_array.accum[5][21] top.qkv_proj_calc_tb.gemm_array.accum[5][20] top.qkv_proj_calc_tb.gemm_array.accum[5][19] top.qkv_proj_calc_tb.gemm_array.accum[5][18] top.qkv_proj_calc_tb.gemm_array.accum[5][17] top.qkv_proj_calc_tb.gemm_array.accum[5][16] top.qkv_proj_calc_tb.gemm_array.accum[5][15] top.qkv_proj_calc_tb.gemm_array.accum[5][14] top.qkv_proj_calc_tb.gemm_array.accum[5][13] top.qkv_proj_calc_tb.gemm_array.accum[5][12] top.qkv_proj_calc_tb.gemm_array.accum[5][11] top.qkv_proj_calc_tb.gemm_array.accum[5][10] top.qkv_proj_calc_tb.gemm_array.accum[5][9] top.qkv_proj_calc_tb.gemm_array.accum[5][8] top.qkv_proj_calc_tb.gemm_array.accum[5][7] top.qkv_proj_calc_tb.gemm_array.accum[5][6] top.qkv_proj_calc_tb.gemm_array.accum[5][5] top.qkv_proj_calc_tb.gemm_array.accum[5][4] top.qkv_proj_calc_tb.gemm_array.accum[5][3] top.qkv_proj_calc_tb.gemm_array.accum[5][2] top.qkv_proj_calc_tb.gemm_array.accum[5][1] top.qkv_proj_calc_tb.gemm_array.accum[5][0]
+[color] 1
+#{top.qkv_proj_calc_tb.gemm_array.accum[6][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[6][31] top.qkv_proj_calc_tb.gemm_array.accum[6][30] top.qkv_proj_calc_tb.gemm_array.accum[6][29] top.qkv_proj_calc_tb.gemm_array.accum[6][28] top.qkv_proj_calc_tb.gemm_array.accum[6][27] top.qkv_proj_calc_tb.gemm_array.accum[6][26] top.qkv_proj_calc_tb.gemm_array.accum[6][25] top.qkv_proj_calc_tb.gemm_array.accum[6][24] top.qkv_proj_calc_tb.gemm_array.accum[6][23] top.qkv_proj_calc_tb.gemm_array.accum[6][22] top.qkv_proj_calc_tb.gemm_array.accum[6][21] top.qkv_proj_calc_tb.gemm_array.accum[6][20] top.qkv_proj_calc_tb.gemm_array.accum[6][19] top.qkv_proj_calc_tb.gemm_array.accum[6][18] top.qkv_proj_calc_tb.gemm_array.accum[6][17] top.qkv_proj_calc_tb.gemm_array.accum[6][16] top.qkv_proj_calc_tb.gemm_array.accum[6][15] top.qkv_proj_calc_tb.gemm_array.accum[6][14] top.qkv_proj_calc_tb.gemm_array.accum[6][13] top.qkv_proj_calc_tb.gemm_array.accum[6][12] top.qkv_proj_calc_tb.gemm_array.accum[6][11] top.qkv_proj_calc_tb.gemm_array.accum[6][10] top.qkv_proj_calc_tb.gemm_array.accum[6][9] top.qkv_proj_calc_tb.gemm_array.accum[6][8] top.qkv_proj_calc_tb.gemm_array.accum[6][7] top.qkv_proj_calc_tb.gemm_array.accum[6][6] top.qkv_proj_calc_tb.gemm_array.accum[6][5] top.qkv_proj_calc_tb.gemm_array.accum[6][4] top.qkv_proj_calc_tb.gemm_array.accum[6][3] top.qkv_proj_calc_tb.gemm_array.accum[6][2] top.qkv_proj_calc_tb.gemm_array.accum[6][1] top.qkv_proj_calc_tb.gemm_array.accum[6][0]
+[color] 2
+#{top.qkv_proj_calc_tb.gemm_array.accum[7][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[7][31] top.qkv_proj_calc_tb.gemm_array.accum[7][30] top.qkv_proj_calc_tb.gemm_array.accum[7][29] top.qkv_proj_calc_tb.gemm_array.accum[7][28] top.qkv_proj_calc_tb.gemm_array.accum[7][27] top.qkv_proj_calc_tb.gemm_array.accum[7][26] top.qkv_proj_calc_tb.gemm_array.accum[7][25] top.qkv_proj_calc_tb.gemm_array.accum[7][24] top.qkv_proj_calc_tb.gemm_array.accum[7][23] top.qkv_proj_calc_tb.gemm_array.accum[7][22] top.qkv_proj_calc_tb.gemm_array.accum[7][21] top.qkv_proj_calc_tb.gemm_array.accum[7][20] top.qkv_proj_calc_tb.gemm_array.accum[7][19] top.qkv_proj_calc_tb.gemm_array.accum[7][18] top.qkv_proj_calc_tb.gemm_array.accum[7][17] top.qkv_proj_calc_tb.gemm_array.accum[7][16] top.qkv_proj_calc_tb.gemm_array.accum[7][15] top.qkv_proj_calc_tb.gemm_array.accum[7][14] top.qkv_proj_calc_tb.gemm_array.accum[7][13] top.qkv_proj_calc_tb.gemm_array.accum[7][12] top.qkv_proj_calc_tb.gemm_array.accum[7][11] top.qkv_proj_calc_tb.gemm_array.accum[7][10] top.qkv_proj_calc_tb.gemm_array.accum[7][9] top.qkv_proj_calc_tb.gemm_array.accum[7][8] top.qkv_proj_calc_tb.gemm_array.accum[7][7] top.qkv_proj_calc_tb.gemm_array.accum[7][6] top.qkv_proj_calc_tb.gemm_array.accum[7][5] top.qkv_proj_calc_tb.gemm_array.accum[7][4] top.qkv_proj_calc_tb.gemm_array.accum[7][3] top.qkv_proj_calc_tb.gemm_array.accum[7][2] top.qkv_proj_calc_tb.gemm_array.accum[7][1] top.qkv_proj_calc_tb.gemm_array.accum[7][0]
+[color] 3
+#{top.qkv_proj_calc_tb.gemm_array.accum[8][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[8][31] top.qkv_proj_calc_tb.gemm_array.accum[8][30] top.qkv_proj_calc_tb.gemm_array.accum[8][29] top.qkv_proj_calc_tb.gemm_array.accum[8][28] top.qkv_proj_calc_tb.gemm_array.accum[8][27] top.qkv_proj_calc_tb.gemm_array.accum[8][26] top.qkv_proj_calc_tb.gemm_array.accum[8][25] top.qkv_proj_calc_tb.gemm_array.accum[8][24] top.qkv_proj_calc_tb.gemm_array.accum[8][23] top.qkv_proj_calc_tb.gemm_array.accum[8][22] top.qkv_proj_calc_tb.gemm_array.accum[8][21] top.qkv_proj_calc_tb.gemm_array.accum[8][20] top.qkv_proj_calc_tb.gemm_array.accum[8][19] top.qkv_proj_calc_tb.gemm_array.accum[8][18] top.qkv_proj_calc_tb.gemm_array.accum[8][17] top.qkv_proj_calc_tb.gemm_array.accum[8][16] top.qkv_proj_calc_tb.gemm_array.accum[8][15] top.qkv_proj_calc_tb.gemm_array.accum[8][14] top.qkv_proj_calc_tb.gemm_array.accum[8][13] top.qkv_proj_calc_tb.gemm_array.accum[8][12] top.qkv_proj_calc_tb.gemm_array.accum[8][11] top.qkv_proj_calc_tb.gemm_array.accum[8][10] top.qkv_proj_calc_tb.gemm_array.accum[8][9] top.qkv_proj_calc_tb.gemm_array.accum[8][8] top.qkv_proj_calc_tb.gemm_array.accum[8][7] top.qkv_proj_calc_tb.gemm_array.accum[8][6] top.qkv_proj_calc_tb.gemm_array.accum[8][5] top.qkv_proj_calc_tb.gemm_array.accum[8][4] top.qkv_proj_calc_tb.gemm_array.accum[8][3] top.qkv_proj_calc_tb.gemm_array.accum[8][2] top.qkv_proj_calc_tb.gemm_array.accum[8][1] top.qkv_proj_calc_tb.gemm_array.accum[8][0]
+[color] 4
+#{top.qkv_proj_calc_tb.gemm_array.accum[9][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[9][31] top.qkv_proj_calc_tb.gemm_array.accum[9][30] top.qkv_proj_calc_tb.gemm_array.accum[9][29] top.qkv_proj_calc_tb.gemm_array.accum[9][28] top.qkv_proj_calc_tb.gemm_array.accum[9][27] top.qkv_proj_calc_tb.gemm_array.accum[9][26] top.qkv_proj_calc_tb.gemm_array.accum[9][25] top.qkv_proj_calc_tb.gemm_array.accum[9][24] top.qkv_proj_calc_tb.gemm_array.accum[9][23] top.qkv_proj_calc_tb.gemm_array.accum[9][22] top.qkv_proj_calc_tb.gemm_array.accum[9][21] top.qkv_proj_calc_tb.gemm_array.accum[9][20] top.qkv_proj_calc_tb.gemm_array.accum[9][19] top.qkv_proj_calc_tb.gemm_array.accum[9][18] top.qkv_proj_calc_tb.gemm_array.accum[9][17] top.qkv_proj_calc_tb.gemm_array.accum[9][16] top.qkv_proj_calc_tb.gemm_array.accum[9][15] top.qkv_proj_calc_tb.gemm_array.accum[9][14] top.qkv_proj_calc_tb.gemm_array.accum[9][13] top.qkv_proj_calc_tb.gemm_array.accum[9][12] top.qkv_proj_calc_tb.gemm_array.accum[9][11] top.qkv_proj_calc_tb.gemm_array.accum[9][10] top.qkv_proj_calc_tb.gemm_array.accum[9][9] top.qkv_proj_calc_tb.gemm_array.accum[9][8] top.qkv_proj_calc_tb.gemm_array.accum[9][7] top.qkv_proj_calc_tb.gemm_array.accum[9][6] top.qkv_proj_calc_tb.gemm_array.accum[9][5] top.qkv_proj_calc_tb.gemm_array.accum[9][4] top.qkv_proj_calc_tb.gemm_array.accum[9][3] top.qkv_proj_calc_tb.gemm_array.accum[9][2] top.qkv_proj_calc_tb.gemm_array.accum[9][1] top.qkv_proj_calc_tb.gemm_array.accum[9][0]
+[color] 5
+#{top.qkv_proj_calc_tb.gemm_array.accum[10][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[10][31] top.qkv_proj_calc_tb.gemm_array.accum[10][30] top.qkv_proj_calc_tb.gemm_array.accum[10][29] top.qkv_proj_calc_tb.gemm_array.accum[10][28] top.qkv_proj_calc_tb.gemm_array.accum[10][27] top.qkv_proj_calc_tb.gemm_array.accum[10][26] top.qkv_proj_calc_tb.gemm_array.accum[10][25] top.qkv_proj_calc_tb.gemm_array.accum[10][24] top.qkv_proj_calc_tb.gemm_array.accum[10][23] top.qkv_proj_calc_tb.gemm_array.accum[10][22] top.qkv_proj_calc_tb.gemm_array.accum[10][21] top.qkv_proj_calc_tb.gemm_array.accum[10][20] top.qkv_proj_calc_tb.gemm_array.accum[10][19] top.qkv_proj_calc_tb.gemm_array.accum[10][18] top.qkv_proj_calc_tb.gemm_array.accum[10][17] top.qkv_proj_calc_tb.gemm_array.accum[10][16] top.qkv_proj_calc_tb.gemm_array.accum[10][15] top.qkv_proj_calc_tb.gemm_array.accum[10][14] top.qkv_proj_calc_tb.gemm_array.accum[10][13] top.qkv_proj_calc_tb.gemm_array.accum[10][12] top.qkv_proj_calc_tb.gemm_array.accum[10][11] top.qkv_proj_calc_tb.gemm_array.accum[10][10] top.qkv_proj_calc_tb.gemm_array.accum[10][9] top.qkv_proj_calc_tb.gemm_array.accum[10][8] top.qkv_proj_calc_tb.gemm_array.accum[10][7] top.qkv_proj_calc_tb.gemm_array.accum[10][6] top.qkv_proj_calc_tb.gemm_array.accum[10][5] top.qkv_proj_calc_tb.gemm_array.accum[10][4] top.qkv_proj_calc_tb.gemm_array.accum[10][3] top.qkv_proj_calc_tb.gemm_array.accum[10][2] top.qkv_proj_calc_tb.gemm_array.accum[10][1] top.qkv_proj_calc_tb.gemm_array.accum[10][0]
+[color] 6
+#{top.qkv_proj_calc_tb.gemm_array.accum[11][31:0]} top.qkv_proj_calc_tb.gemm_array.accum[11][31] top.qkv_proj_calc_tb.gemm_array.accum[11][30] top.qkv_proj_calc_tb.gemm_array.accum[11][29] top.qkv_proj_calc_tb.gemm_array.accum[11][28] top.qkv_proj_calc_tb.gemm_array.accum[11][27] top.qkv_proj_calc_tb.gemm_array.accum[11][26] top.qkv_proj_calc_tb.gemm_array.accum[11][25] top.qkv_proj_calc_tb.gemm_array.accum[11][24] top.qkv_proj_calc_tb.gemm_array.accum[11][23] top.qkv_proj_calc_tb.gemm_array.accum[11][22] top.qkv_proj_calc_tb.gemm_array.accum[11][21] top.qkv_proj_calc_tb.gemm_array.accum[11][20] top.qkv_proj_calc_tb.gemm_array.accum[11][19] top.qkv_proj_calc_tb.gemm_array.accum[11][18] top.qkv_proj_calc_tb.gemm_array.accum[11][17] top.qkv_proj_calc_tb.gemm_array.accum[11][16] top.qkv_proj_calc_tb.gemm_array.accum[11][15] top.qkv_proj_calc_tb.gemm_array.accum[11][14] top.qkv_proj_calc_tb.gemm_array.accum[11][13] top.qkv_proj_calc_tb.gemm_array.accum[11][12] top.qkv_proj_calc_tb.gemm_array.accum[11][11] top.qkv_proj_calc_tb.gemm_array.accum[11][10] top.qkv_proj_calc_tb.gemm_array.accum[11][9] top.qkv_proj_calc_tb.gemm_array.accum[11][8] top.qkv_proj_calc_tb.gemm_array.accum[11][7] top.qkv_proj_calc_tb.gemm_array.accum[11][6] top.qkv_proj_calc_tb.gemm_array.accum[11][5] top.qkv_proj_calc_tb.gemm_array.accum[11][4] top.qkv_proj_calc_tb.gemm_array.accum[11][3] top.qkv_proj_calc_tb.gemm_array.accum[11][2] top.qkv_proj_calc_tb.gemm_array.accum[11][1] top.qkv_proj_calc_tb.gemm_array.accum[11][0]
+@1000601
+-ACCUM
+[pattern_trace] 1
+[pattern_trace] 0
