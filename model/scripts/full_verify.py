@@ -12,10 +12,10 @@ from transformers.modeling_outputs import BaseModelOutput
 from verify_func import (
     load_quantized_weights,
     to_q17,
+    to_q17_sf,
     to_q117,
     from_q17,
     compute_taylor_q345,
-    calculate_projection,
     multi_head_attention_forward,
     ffn_custom_verbose,
     write_q17_weights
@@ -31,7 +31,11 @@ CONFIG = {
 print("\n Loading FP32 Encoder & Tokenizer")
 print("────────────────────────────────────────────")
 DIRECTION   = "en-ar"
-WEIGHTS_DIR = Path("./weights")
+WEIGHTS_DIR = Path("../weights")
+
+# Token Scale Factor
+S_TOK = 0.1747814076030969          # <- from token dump (use per-token if it varies)
+Q17   = 128                         # 2⁷
 
 # ─────────────────────────────────────── FP-32 REFERENCE MODEL ────────────────────────────────────────
 model = AutoModelForSeq2SeqLM.from_pretrained(CONFIG["model_name"], torch_dtype=torch.float32)
@@ -85,7 +89,7 @@ hidden_np = combined_embeddings_np
 
 combined_embeddings = hidden_np                       # alias for clarity
 # Convert to Q1.7 format (int8 with 7 fractional bits)
-combined_embeddings_q17 = np.clip(combined_embeddings * 128, -128, 127).astype(np.int8)
+combined_embeddings_q17 = to_q17_sf(combined_embeddings, Q17, S_TOK)
 
 print("\n🔍 Combined Embeddings (Token + Positional)")
 print("───────────────────────────────────────────")
@@ -121,8 +125,6 @@ for idx, layer in enumerate(model.model.encoder.layers):
     NUM_HEADS = 8
     HEAD_DIM = 64
     D_MODEL = 512
-    
-    # Load QKV and projections - corrected shapes
 
     # Bias Extraction
     Bo_model = attn.out_proj.bias.detach().numpy()
@@ -197,47 +199,76 @@ for idx, layer in enumerate(model.model.encoder.layers):
         head_dim=head_dim,
         return_intermediates=True,
     )
-    
-    # ─────────────────────────── Q × Kᵀ  MAC TRACE  (Layer‑0) ───────────────────────────
-    #
-    # Produces, for each head and each token, the first four MAC contributions of the
-    # Q·Kᵀ dot product, the cumulative sum over those four dims, and the final
-    # scaled dot product used for attention scores.
-    #
-    # Assumes:
-    #   • `inter` dict returned by multi_head_attention_forward
-    #   • `num_heads`, `head_dim`, `original_tokens` or `tok_ids`
-    #   • layer index (`idx`) already in scope  (we only print for idx == 0)
-    #
-    if idx == 0:                                                   # keep log small
-        q_heads = inter["q_heads"]   # list[num_heads] → (B,T,D)
-        k_heads = inter["k_heads"]   # list[num_heads] → (B,T,D)
-        seq_len = q_heads[0].shape[1]
 
-        print(f"\n🔍 Layer 0 • Q×Kᵀ partial MAC trace (first 4 dims)")
-        rt = range                       # alias
+    # sys.exit(0)  
 
-        for t in rt(seq_len):            # query token index
-            print(f"\n── Token {t} ──")
-            for h in rt(num_heads):
-                q_vec = q_heads[h][0, t]                      # (D,)
-                print(f"  == Head {h} ==")
-
-                # Compare against first four *keys* only (j = 0‥3)
-                for j in rt(min(4, seq_len)):                 # key token index
-                    k_vec = k_heads[h][0, j]                  # (D,)
-                    partial = q_vec[:4] * k_vec[:4]           # first 4 MACs
-                    cum_sum = np.add.accumulate(partial)      # running sum
-                    full_dot = np.dot(q_vec, k_vec)           # all‑dim dot
-                    scaled   = full_dot / np.sqrt(head_dim)   # scale factor
-
-                    # ── pretty print ───────────────────────────────────────────────
-                    print(f"    • q{t}·k{j}:")
-                    print(f"        MACs   : {to_q17(partial)}")
-                    print(f"        CumSum : {to_q17(cum_sum)}")
-                    print(f"        Σ Q1.7 : {to_q17(full_dot)}")
-                    print(f"        Scaled Q1.17: {to_q117(scaled)}")
-
+        # ─────────────────────────── Q × Kᵀ  MAC TRACE  (Layer‑0) ───────────────────────────
+        #
+        # Produces, for each head and each token, the first four MAC contributions of the
+        # Q·Kᵀ dot product, the cumulative sum over those four dims, and the final
+        # scaled dot product used for attention scores.
+        #
+        # Assumes:
+        #   • `inter` dict returned by multi_head_attention_forward
+        #   • `num_heads`, `head_dim`, `original_tokens` or `tok_ids`
+        #   • layer index (`idx`) already in scope  (we only print for idx == 0)
+        #
+    # if idx == 0:
+    #     q_heads = inter["q_heads"]   # list[num_heads] → (B,T,D)
+    #     k_heads = inter["k_heads"]   # list[num_heads] → (B,T,D)
+    #     seq_len = q_heads[0].shape[1]
+    #     print(f"\n🔍 Layer 0 • Q×Kᵀ partial MAC trace (FP32 vs INT8)")
+    #     rt = range                       # alias
+    #     for t in rt(seq_len):            # query token index
+    #         print(f"\n── Token {t} ──")
+    #         for h in rt(num_heads):
+    #             q_vec = q_heads[h][0, t]                      # (D,)
+    #             k_vec = k_heads[h][0, t]                      # (D,)
+    #             print(f"Q_VEC_H{h}_T{t}: ", q_vec)
+    #             print(f"K_VEC_H{h}_T{t}: ", k_vec)
+    #             print(f"  == Head {h} ==")
+    #             print(f"    Q vector length: {len(q_vec)}")  # <-- Added length print
+    #             print(f"    K vector length: {len(k_vec)}")  # <-- Added length print
+    #             q_vec_int8 = to_q17_sf(q_vec ,Q17,S_TOK)
+    #             print(f"  == Head {h} ==")
+    #             # print(f"    Q (FP32 first 4): {q_vec[:4]}")
+    #             print(f"    Q (INT8 first 4): {q_vec_int8[:4]}")
+    #             k_vec = k_heads[h][0, t]                  # (D,)
+    #             k_vec_int8 = to_q17_sf(k_vec ,Q17,S_TOK)
+    #             # print(f"    K{t} (FP32 first 4): {k_vec[:4]}")
+    #             print(f"    K{t} (INT8 first 4): {k_vec_int8[:4]}")
+    #             # FP32 calculation
+    #             partial_fp32 = q_vec[:4] * k_vec[:4]           # first 4 MACs
+    #             cum_sum_fp32 = np.add.accumulate(partial_fp32)  # running sum
+    #             # Two-pass INT8 calculation
+    #             # Pass 1: First 60 elements
+    #             pass1_int8 = q_vec_int8[:60] * k_vec_int8[:60]
+    #             sum_pass1 = np.sum(pass1_int8)
+    #             # Pass 2: Last 4 elements (zero-padded to 60)
+    #             pass2_int8 = np.zeros(60, dtype=np.int32)
+    #             pass2_int8[:4] = q_vec_int8[60:] * k_vec_int8[60:]
+    #             sum_pass2 = np.sum(pass2_int8)
+    #             full_dot_int8 = int( np.dot(q_vec_int8.astype(np.int32),k_vec_int8.astype(np.int32)))
+    #             full_dot_fp32 = np.dot(q_vec, k_vec)           # all‑dim dot
+    #             # Scale factors
+    #             scale = 1 / np.sqrt(head_dim)
+    #             scaled_fp32 = full_dot_fp32 * scale
+    #             scaled_int8 = (full_dot_int8 * (S_TOK**2) * scale) / (Q17 * Q17)
+    #             # ── pretty print ───────────────────────────────────────────────
+    #             print(f"    • q{t}·k{t}:")
+    #             # print("      FP32:")
+    #             # print(f"        MACs   : {partial_fp32}")
+    #             # print(f"        CumSum : {cum_sum_fp32}")
+    #             # print(f"        Σ      : {full_dot_fp32}")
+    #             # print(f"        Scaled : {scaled_fp32}")
+                
+    #             print("      INT8 (Two-pass):")
+    #             print(f"        Pass1 Sum (60): {sum_pass1}")
+    #             print(f"        Pass2 Sum (4) : {sum_pass2}")
+    #             print(f"        Σ Q1.7 : {full_dot_int8}")
+    #             print(f"        Scaled : {scaled_int8}")
+    #             print(f"        Scale Factor: {scale}")
+                
     # —— MHA Output ——
     print("\nMHA Final Output (per‑token • per‑head)")
     seq_len = inter['v_proj'].shape[1]        # == number of tokens
