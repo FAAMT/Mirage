@@ -200,8 +200,6 @@ for idx, layer in enumerate(model.model.encoder.layers):
         return_intermediates=True,
     )
 
-    # sys.exit(0)  
-
         # ─────────────────────────── Q × Kᵀ  MAC TRACE  (Layer‑0) ───────────────────────────
         #
         # Produces, for each head and each token, the first four MAC contributions of the
@@ -290,6 +288,7 @@ for idx, layer in enumerate(model.model.encoder.layers):
             print(f"    Attn probs : {attn_probs}      → Q1.17 : {to_q117(attn_probs)}")
             print(f"    Head out   : {head_vec}        → Q1.7  : {to_q17(head_vec)}")
 
+    # sys.exit(0)
 
     # ─────────────────────────────── RESIDUAL + LN (POST-MHA) ───────────────────────────────
     res1      = mha_out + hidden_np

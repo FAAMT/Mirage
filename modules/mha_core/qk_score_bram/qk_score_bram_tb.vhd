@@ -353,4 +353,48 @@ begin
         wait for 10 * clk_period; -- small stabilization
         wait;
     end process;
+
+    -- Process to dump BRAM contents to file
+    dump_bram_proc : process
+        file bram_file      : text;
+        variable line_out   : line;
+        variable bram_value : std_logic_vector(SCORE_BRAM_DATA_W - 1 downto 0);
+    begin
+        wait until score_done = '1';
+        wait for 10 * clk_period;
+
+        file_open(bram_file, "bram_contents.txt", write_mode);
+
+        -- Write header
+        write(line_out, string'("=== BRAM Contents Dump ==="));
+        writeline(bram_file, line_out);
+        writeline(bram_file, line_out); -- blank line
+
+        -- Dump all BRAM addresses with proper labeling
+        for q_token in 0 to 3 loop
+            qk_addr_off_0 <= q_token * 32;
+            qk_bram_rd    <= '1';
+            wait for clk_period;
+            for head in 0 to 7 loop
+                for k_token in 0 to 3 loop
+                    bram_value := qk_data_out(k_token + head * 4);
+
+                    -- Write formatted output
+                    write(line_out, string'("Head "));
+                    write(line_out, head);
+                    write(line_out, string'(" Q_Token "));
+                    write(line_out, q_token);
+                    write(line_out, string'(" K_Token "));
+                    write(line_out, k_token);
+                    write(line_out, string'(": "));
+                    write(line_out, to_integer(signed(bram_value)));
+                    writeline(bram_file, line_out);
+                end loop;
+            end loop;
+            writeline(bram_file, line_out); -- blank line between heads
+        end loop;
+
+        file_close(bram_file);
+        wait;
+    end process;
 end architecture;

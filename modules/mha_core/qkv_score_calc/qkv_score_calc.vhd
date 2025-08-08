@@ -79,12 +79,9 @@ architecture rtl of qkv_score_calc is
 
     signal bram_scores   : bram_scores_type;
     signal bram_data_out : bram_proj_type(0 to TILE_W * TILE_H - 1, 0 to 1);
-    -- signal addr_off_0    : integer range 0 to QKV_BRAM_ELEM - 1 := 0;
-    -- signal addr_off_1    : integer range 0 to QKV_BRAM_ELEM - 1 := 0;
-    signal addr_off_0 : integer := 0;
-    signal addr_off_1 : integer := 0;
-    signal addr_score : integer := 0;
-    signal addr_score : integer := 0;
+    signal addr_off_0    : integer := 0;
+    signal addr_off_1    : integer := 0;
+    signal addr_score    : integer := 0;
 
     -- Add these signals to your architecture
     type addr_array is array(0 to 11, 0 to 4) of integer range 0 to 191;
@@ -323,8 +320,8 @@ begin
         if tok_q_iter >= 0 and tok_q_iter < TOK_CONTEXT then
             if qk_iter >= 0 and qk_iter < NUM_HEADS then
                 if tok_k_iter >= 0 and tok_k_iter < TOK_CONTEXT then
-                    addr_off_0 <= TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1535 * tok_q_iter;
-                    addr_off_1 <= HEAD_DIM + TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1535 * tok_k_iter;
+                    addr_off_0 <= TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1536 * tok_q_iter;
+                    addr_off_1 <= HEAD_DIM + TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1536 * tok_k_iter;
                 end if;
             end if;
         end if;

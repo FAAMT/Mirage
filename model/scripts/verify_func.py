@@ -322,49 +322,80 @@ def multi_head_attention_forward(x: np.ndarray, attn, Wq_full: np.ndarray, Wk_fu
         intermediates['k_heads'].append(k_h)
         intermediates['v_heads'].append(v_h)
         
-        for t in range(seq_l):
-            print(f"\n── Head {i} • Token {t} ──")
-            print(f"Q[{t}] (Head {i}, row vector before Kᵀ):",
-                  np.round(q_h[0, t, :] * 128**2 * S_TOK).astype(int))
-            print(f"K[{t}] (Head {i}, row vector before transpose):",
-                  np.round(k_h[0, t, :] * 128**2 * S_TOK).astype(int))
-            print(f"Kᵀ[:,{t}] (Head {i}, column after transpose):",
-                  np.round(k_h[0, :, :].T[:, t] * 128**2 * S_TOK).astype(int))
+        # for t in range(seq_l):
+            # print(f"\n── Head {i} • Token {t} ──")
+            # print(f"Q[{t}] (Head {i}, row vector before Kᵀ):",
+            #       np.round(q_h[0, t, :] * 128**2 * S_TOK).astype(int))
+            # print(f"K[{t}] (Head {i}, row vector before transpose):",
+            #       np.round(k_h[0, t, :] * 128**2 * S_TOK).astype(int))
+            # print(f"Kᵀ[:,{t}] (Head {i}, column after transpose):",
+            #       np.round(k_h[0, :, :].T[:, t] * 128**2 * S_TOK).astype(int))
 
-            q_h_quant = np.floor((q_h[0, t, :] * 128**2 * S_TOK) // 256)
-            k_h_quant = np.floor((k_h[0, t, :] * 128**2 * S_TOK) // 256)
+            # q_h_quant = np.floor((q_h[0, t, :] * 128**2 * S_TOK) // 256)
+            # k_h_quant = np.floor((k_h[0, t, :] * 128**2 * S_TOK) // 256)
 
-            print(f"Q[{t}] Quantized (Head {i}):", q_h_quant.astype(int))
-            print(f"K[{t}] Quantized (Head {i}):", k_h_quant.astype(int))
+            # print(f"Q[{t}] Quantized (Head {i}):", q_h_quant.astype(int))
+            # print(f"K[{t}] Quantized (Head {i}):", k_h_quant.astype(int))
 
-        # # Scaled dot-product attention
-        # print(f"Q Head Scaled {i}: ",np.round(q_h * 128**2 * S_TOK).astype(int))
-        # print(f"K Head Scaled {i}: ",np.round(k_h * 128**2 * S_TOK).astype(int))
-        # print(f"K^T Head {i}: ",np.round(k_h.transpose(0, 2, 1) * 128**2 * S_TOK).astype(int))
+            # # Scaled dot-product attention
+            # print(f"Q Head Scaled {i}: ",np.round(q_h * 128**2 * S_TOK).astype(int))
+            # print(f"K Head Scaled {i}: ",np.round(k_h * 128**2 * S_TOK).astype(int))
+            # print(f"K^T Head {i}: ",np.round(k_h.transpose(0, 2, 1) * 128**2 * S_TOK).astype(int))
 
-        # q_h_quant = np.floor((q_h * 128**2 * S_TOK) // 256)
-        # k_h_quant = np.floor((k_h * 128**2 * S_TOK) // 256)
+            # q_h_quant = np.floor((q_h * 128**2 * S_TOK) // 256)
+            # k_h_quant = np.floor((k_h * 128**2 * S_TOK) // 256)
 
-        # print(f"Q Head Scaled -> Quantized {i}: ",q_h_quant)
-        # print(f"K Head Scaled -> Quantized {i}: ",k_h_quant)
+            # print(f"Q Head Scaled -> Quantized {i}: ",q_h_quant)
+            # print(f"K Head Scaled -> Quantized {i}: ",k_h_quant)
 
-        sys.exit(0)
+        q_h_quant = np.floor((q_h* 128**2 * S_TOK) // 256)
+        k_h_quant = np.floor((k_h* 128**2 * S_TOK) // 256)
+
+        # Print quantized Q and K arrays
+        # print("\n=== Quantized Query Vectors ===")
+        # for t in range(q_h_quant.shape[1]):
+        #     print(f"Head {i} Token {t} Q:", q_h_quant[0, t, :].astype(int))
         
-        # attn_scores = q_h @ k_h.transpose(0, 2, 1) / np.sqrt(head_dim)
+        # print("\n=== Quantized Key Vectors ===")
+        # for t in range(k_h_quant.shape[1]):
+        #     print(f"Head {i} Token {t} K:", k_h_quant[0, t, :].astype(int))
+
         attn_scores = (q_h @ k_h.transpose(0, 2, 1) ) / np.sqrt(head_dim)
-        attn_scores_quant = (q_h_quant @ k_h_quant.transpose(0, 2, 1) ) / np.sqrt(head_dim)
+        attn_scores_quant = (q_h_quant @ k_h_quant.transpose(0, 2, 1) )
+        
+        # Print quantized attention scores with head and token information
+        print(f"\n=== Head {i} Quantized Attention Scores ===")
+        batch_size, seq_len, _ = attn_scores_quant.shape
+        for b in range(batch_size):
+            for t1 in range(4):
+                for t2 in range(4):
+                    print(f"Query Token {t1} * Key Token {t2}: {attn_scores_quant[b, t1, t2]}")
+                    
+        attn_scores_quant = attn_scores_quant / np.sqrt(head_dim)  
         attn_probs = torch.softmax(torch.from_numpy(attn_scores), dim=-1).numpy()
-        head_out = attn_probs @ v_h
+        attn_probs_quant = torch.softmax(torch.from_numpy(attn_scores_quant), dim=-1).numpy()
 
-        print(f"Attention Output FP32", attn_scores[0, :4])
-        print(f"Attention Output INT8", attn_scores_quant[0, :4] )
-        # sys.exit(0)
+        head_out = attn_probs @ v_h
+        head_out_quant = attn_probs_quant @ v_h
+        np.set_printoptions(suppress=True, precision=6, floatmode='fixed')
+        print(f"\n")
+        print(f"Attention Prob FP32 \n", attn_probs)
+        print(f"\n")
+        print(f"Attention Prob INT8 \n", (attn_probs_quant).astype(int))
+
+        print(f"\n")
+        print(f"Attention Full FP32 \n", head_out)
+        print(f"\n")
+        print(f"Attention Full INT8 \n", (head_out_quant))
+
+      
+    sys.exit(0)
         
-        intermediates['attention_scores'].append(attn_scores)
-        intermediates['attention_probs'].append(attn_probs)
-        intermediates['head_outputs'].append(head_out)
+        # intermediates['attention_scores'].append(attn_scores)
+        # intermediates['attention_probs'].append(attn_probs)
+        # intermediates['head_outputs'].append(head_out)
         
-        all_head_outputs.append(head_out)
+        # all_head_outputs.append(head_out)
     
     # Concatenate head outputs
     if num_heads > 1:
