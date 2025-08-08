@@ -32,6 +32,7 @@ package types_pkg is
     constant QKV_BRAM_DATA_W   : integer := 16;
     constant QKV_BRAM_ELEM     : integer := 3 * TOK_CONTEXT * NUM_HEADS * HEAD_DIM;
     constant SCORE_BRAM_DATA_W : integer := 21;
+    constant SCORE_BRAM_ELEM   : integer := TOK_CONTEXT * TOK_CONTEXT * NUM_HEADS;
     -- Type Declarations
     type signed_vector is array (natural range <>) of signed(MM_IN_DATA_W - 1 downto 0);
     type int8_gemm_array is array (natural range <>, natural range <>) of signed(MM_IN_DATA_W - 1 downto 0);
@@ -39,6 +40,9 @@ package types_pkg is
     type bram_proj_type is array(natural range <>, natural range <>) of std_logic_vector(QKV_BRAM_DATA_W - 1 downto 0);
     type quantizer_input_array is array(0 to TILE_W * TILE_H - 1) of std_logic_vector(QKV_BRAM_DATA_W - 1 downto 0);
     type quantizer_output_array is array(0 to TILE_W * TILE_H - 1) of std_logic_vector(MM_IN_DATA_W - 1 downto 0);
+    -- Array type for QK^T (Score) bram storage 4*4*8 -> 128 scores per layer
+    type bram_score_type is array(0 to SCORE_BRAM_ELEM - 1) of signed(SCORE_BRAM_DATA_W - 1 downto 0);
+    type bram_data_out_type is array(0 to TOK_CONTEXT * NUM_HEADS - 1) of std_logic_vector(SCORE_BRAM_DATA_W - 1 downto 0);
 
     -- Function Declarations
     function flatten_signed_vector(vec : signed_vector) return std_logic_vector;

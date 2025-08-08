@@ -1,3 +1,10 @@
+-- =============================================================================
+--  File      : qk_score_calc.vhd
+--  Author    : Fahad Tajiki
+--  Date      : 20/07/2025
+--  Purpose   : 
+-- ============================================================================
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
@@ -30,7 +37,13 @@ entity qkv_score_calc is
         -- Matrix Mult Data Interface
         input_a  : out int8_gemm_array(0 to TILE_H - 1, 0 to TILE_W - 1);
         input_b  : out int8_gemm_array(0 to TILE_H - 1, 0 to TILE_W - 1);
-        output_d : in std_logic_vector(32 * TILE_H - 1 downto 0)
+        output_d : in std_logic_vector(32 * TILE_H - 1 downto 0);
+
+        -- Score BRAM Signals
+        qk_iter    : out integer;
+        tok_q_iter : out integer;
+        tok_k_iter : out integer
+
     );
 end entity;
 
@@ -61,16 +74,17 @@ architecture rtl of qkv_score_calc is
     signal fetch_reg  : std_logic;
     signal start_max  : std_logic;
     signal pause_gemm : std_logic;
-    signal tok_iter   : integer := 0;
-    signal qk_iter    : integer := 0;
     signal v_iter     : integer := 0;
     signal pass_iter  : integer := 0;
 
     signal bram_scores   : bram_scores_type;
     signal bram_data_out : bram_proj_type(0 to TILE_W * TILE_H - 1, 0 to 1);
-    signal addr_off_0    : integer := 0;
-    signal addr_off_1    : integer := 0;
-    signal addr_score    : integer := 0;
+    -- signal addr_off_0    : integer range 0 to QKV_BRAM_ELEM - 1 := 0;
+    -- signal addr_off_1    : integer range 0 to QKV_BRAM_ELEM - 1 := 0;
+    signal addr_off_0 : integer := 0;
+    signal addr_off_1 : integer := 0;
+    signal addr_score : integer := 0;
+    signal addr_score : integer := 0;
 
     -- Add these signals to your architecture
     type addr_array is array(0 to 11, 0 to 4) of integer range 0 to 191;
@@ -146,12 +160,14 @@ begin
             start_gemm <= '0';
             clear_gemm <= '0';
             pause_gemm <= '0';
-            -- Loop Signals
             -- Reset Loop Iters
-            tok_iter  <= 0;
-            qk_iter   <= 0;
-            v_iter    <= 0;
-            pass_iter <= 0;
+            tok_q_iter <= 0;
+            tok_k_iter <= 0;
+            qk_iter    <= 0;
+            v_iter     <= 0;
+            pass_iter  <= 0;
+
+            bram_scores <= (others => (others => '0'));
 
             bram_scores <= (others => (others => '0'));
 
@@ -163,10 +179,11 @@ begin
                     -----------------------------------------------------------------
                 when idle =>
                     -- Reset Loop Iters
-                    tok_iter  <= 0;
-                    qk_iter   <= 0;
-                    v_iter    <= 0;
-                    pass_iter <= 0;
+                    tok_q_iter <= 0;
+                    tok_k_iter <= 0;
+                    qk_iter    <= 0;
+                    v_iter     <= 0;
+                    pass_iter  <= 0;
 
                     -- Reset MAC Controls
                     start_gemm <= '0';
@@ -191,13 +208,39 @@ begin
                     clear_gemm <= '0';
 
                     if pass_iter = 1 then
+                        -- Reset Score Sum
+                        score_sum := to_signed(0, SCORE_DATA_W);
+
                         if start_gemm = '0' and done_gemm = '1' then
                             pass_iter  <= 0;
-                            qk_iter    <= qk_iter + 1;
                             clear_gemm <= '1';
 
-                            -- Reset Score Sum
-                            score_sum := to_signed(0, SCORE_DATA_W);
+                            -- Q[i] * K^T[j][h] Arithmetic Process
+                            -- Total: 4*4*8 -> 128 Elements
+                            -- K^T[j] for 0 to 3 (Token Indexing)
+                            if tok_k_iter = TOK_CONTEXT - 1 then
+                                tok_k_iter <= 0;
+
+                                -- K^T[h] for 0 to 7 (Head Indexing)
+                                if qk_iter = NUM_HEADS - 1 then
+                                    qk_iter <= 0;
+
+                                    -- Q[i] for 0 to 3 (Token Indexing)
+                                    if tok_q_iter = TOK_CONTEXT - 1 then
+                                        tok_q_iter <= 0;
+                                        state      <= idle;
+                                        done       <= '1';
+
+                                    elsif tok_q_iter < TOK_CONTEXT - 1 then
+                                        tok_q_iter <= tok_q_iter + 1;
+                                    end if;
+                                elsif qk_iter < NUM_HEADS - 1 then
+                                    qk_iter <= qk_iter + 1;
+                                end if;
+                            elsif tok_k_iter < TOK_CONTEXT - 1 then
+                                tok_k_iter <= tok_k_iter + 1;
+
+                            end if;
 
                         elsif start_gemm = '0' and done_gemm = '0' then
                             start_gemm <= '1';
@@ -207,22 +250,8 @@ begin
                     elsif pass_iter < 1 then
                         if start_gemm = '0' and done_gemm = '1' then
                             pass_iter <= pass_iter + 1;
-
                         elsif start_gemm = '0' and done_gemm = '0' then
-                            if qk_iter < NUM_HEADS then
-                                start_gemm <= '1';
-
-                            elsif qk_iter = NUM_HEADS then
-                                if tok_iter = TOK_CONTEXT - 1 then
-                                    -- Scores Calculated Cond.
-                                    state    <= idle;
-                                    done     <= '1';
-                                    tok_iter <= 0;
-                                else
-                                    tok_iter <= tok_iter + 1;
-                                    qk_iter  <= 0;
-                                end if;
-                            end if;
+                            start_gemm <= '1';
                         else
                             start_gemm <= '0';
                         end if;
@@ -265,7 +294,7 @@ begin
 
                         -- Assign the result based on qk_iter
                         if addr_score > 0 then
-                            bram_scores(addr_score - 1) <= score_sum;
+                            -- bram_scores(addr_score - 1) <= score_sum;
                         end if;
                     end if;
 
@@ -286,16 +315,19 @@ begin
     end process;
 
     -- Assign Addr Offsets Data
-    addr_off_assign : process (state, tok_iter, qk_iter, v_iter, pass_iter)
+    addr_off_assign : process (state, tok_q_iter, tok_k_iter, qk_iter, v_iter, pass_iter)
+        variable addr_assign_0 : integer := 0;
+        variable addr_assign_1 : integer := 0;
     begin
-        -- Q & K Proj. Access Pattern
-        if qk_iter < NUM_HEADS then
-            addr_off_0 <= TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1535 * tok_iter;
-            addr_off_1 <= HEAD_DIM + TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1535 * tok_iter;
+        -- Q & K Proj. access Pattern
+        if tok_q_iter >= 0 and tok_q_iter < TOK_CONTEXT then
+            if qk_iter >= 0 and qk_iter < NUM_HEADS then
+                if tok_k_iter >= 0 and tok_k_iter < TOK_CONTEXT then
+                    addr_off_0 <= TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1535 * tok_q_iter;
+                    addr_off_1 <= HEAD_DIM + TILE_W * TILE_H * pass_iter + 192 * qk_iter + 1535 * tok_k_iter;
+                end if;
+            end if;
         end if;
-
-        -- Score Access Pattern
-        addr_score <= tok_iter * NUM_HEADS + qk_iter;
     end process;
 
 end architecture;
