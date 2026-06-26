@@ -36,7 +36,7 @@ entity qk_score_bram is
         addr_off_1 : in integer;
         -- IO Data Stream 
         bram_data_in  : in std_logic_vector(32 * TILE_H - 1 downto 0);
-        bram_data_out : out bram_data_out_type
+        bram_data_out : out score_io_type
     );
 end entity;
 
@@ -47,7 +47,7 @@ architecture rtl of qk_score_bram is
     signal fetch_ctr  : integer    := 0;
     signal batch_iter : integer    := 0;
     -- Block RAM array for QKV data
-    signal bram_score : bram_score_type;
+    signal bram_score : bram_scores_type;
     -- Address for accessing QKV bram
     signal bram_score_addr : integer range 0 to SCORE_BRAM_ELEM - 1 := 0;
 

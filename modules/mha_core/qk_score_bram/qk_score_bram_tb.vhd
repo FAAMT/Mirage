@@ -30,7 +30,7 @@ architecture behavior of qk_score_bram_tb is
     signal qk_addr_off_0 : integer                                    := 0;
     signal qk_addr_off_1 : integer                                    := 0;
     signal qk_data_in    : std_logic_vector(32 * TILE_H - 1 downto 0) := (others => '0');
-    signal qk_data_out   : bram_data_out_type;
+    signal qk_data_out   : score_io_type;
     signal qk_bram_rd    : std_logic := '0';
     signal qk_iter_i     : integer;
     signal tok_q_iter_i  : integer;

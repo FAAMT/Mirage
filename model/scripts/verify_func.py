@@ -386,7 +386,7 @@ def multi_head_attention_forward(x: np.ndarray, attn, Wq_full: np.ndarray, Wk_fu
         print(f"\n")
         print(f"Attention Full FP32 \n", head_out)
         print(f"\n")
-        print(f"Attention Full INT8 \n", (head_out_quant))
+        print(f"Attention Full INT8 \n", (head_out_quant * 2**8))
 
       
     sys.exit(0)

@@ -41,8 +41,8 @@ package types_pkg is
     type quantizer_input_array is array(0 to TILE_W * TILE_H - 1) of std_logic_vector(QKV_BRAM_DATA_W - 1 downto 0);
     type quantizer_output_array is array(0 to TILE_W * TILE_H - 1) of std_logic_vector(MM_IN_DATA_W - 1 downto 0);
     -- Array type for QK^T (Score) bram storage 4*4*8 -> 128 scores per layer
-    type bram_score_type is array(0 to SCORE_BRAM_ELEM - 1) of signed(SCORE_BRAM_DATA_W - 1 downto 0);
-    type bram_data_out_type is array(0 to TOK_CONTEXT * NUM_HEADS - 1) of std_logic_vector(SCORE_BRAM_DATA_W - 1 downto 0);
+    type bram_scores_type is array(0 to SCORE_BRAM_ELEM - 1) of signed(SCORE_BRAM_DATA_W - 1 downto 0);
+    type score_io_type is array(0 to TOK_CONTEXT * NUM_HEADS - 1) of signed(SCORE_BRAM_DATA_W - 1 downto 0);
 
     -- Function Declarations
     function flatten_signed_vector(vec : signed_vector) return std_logic_vector;
