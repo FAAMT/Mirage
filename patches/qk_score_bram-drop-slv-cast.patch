@@ -1,0 +1,23 @@
+Drop the spurious std_logic_vector() cast in qk_score_bram's BRAM read process.
+
+score_io_type elements are `signed` (types_pkg.vhd:48), so converting the
+signed source to std_logic_vector before assigning to a signed target is a
+type error. Removing the cast makes the file analyze and elaborate cleanly
+(verified with GHDL 4.1.0, --std=08).
+
+Apply from the package root:
+    patch -p1 -d rtl_excluded < patches/qk_score_bram-drop-slv-cast.patch
+then move rtl_excluded/qk_score_bram.vhd into rtl/mirage/ and uncomment the
+matching line in tcl/synth_utilization.tcl.
+
+--- a/qk_score_bram.vhd
++++ b/qk_score_bram.vhd
+@@ -60,7 +60,7 @@
+     process (addr_off_0, bram_score)
+     begin
+         for i in 0 to TOK_CONTEXT * NUM_HEADS - 1 loop
+-            bram_data_out(i) <= std_logic_vector(bram_score(addr_off_0 + i));
++            bram_data_out(i) <= bram_score(addr_off_0 + i);
+         end loop;
+     end process;
+ 

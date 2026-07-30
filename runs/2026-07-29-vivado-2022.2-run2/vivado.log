@@ -1,0 +1,271 @@
+#-----------------------------------------------------------
+# Vivado v2022.2 (64-bit)
+# SW Build 3671981 on Fri Oct 14 04:59:54 MDT 2022
+# IP Build 3669848 on Fri Oct 14 08:30:02 MDT 2022
+# Start of session at: Wed Jul 29 23:33:44 2026
+# Process ID: 78331
+# Current directory: /home/REDACTED/Downloads/mirage-vivado-2026-07-29
+# Command line: vivado -mode batch -source tcl/synth_utilization.tcl  -log my_vivado.log -journal my_vivado.jou
+# Log file: /home/REDACTED/Downloads/mirage-vivado-2026-07-29/vivado.log
+# Journal file: /home/REDACTED/Downloads/mirage-vivado-2026-07-29/my_vivado.jou
+# Running On: REDACTED-HOST, OS: Linux, CPU Frequency: 2004.860 MHz, CPU Physical cores: 16, Host memory: 33265 MB
+#-----------------------------------------------------------
+source tcl/synth_utilization.tcl
+# set part xc7z007sclg400-1  ;
+# set root [file normalize [file dirname [info script]]/..]
+# file mkdir $root/reports
+# puts "Vivado version: [version -short]"
+Vivado version: 2022.2
+# puts "Target part   : $part"
+Target part   : xc7z007sclg400-1
+# puts ""
+
+# puts "If phase 0 below reports VHDL-2008 parse errors, that is a Vivado"
+If phase 0 below reports VHDL-2008 parse errors, that is a Vivado
+# puts "version limit, not a design problem -- these files analyse cleanly under"
+version limit, not a design problem -- these files analyse cleanly under
+# puts "GHDL 4.1.0. Vivado's VHDL-2008 synthesis support is partial and weaker in"
+GHDL 4.1.0. Vivado's VHDL-2008 synthesis support is partial and weaker in
+# puts "2020 than 2022. Report the phase-0 errors rather than editing the RTL."
+2020 than 2022. Report the phase-0 errors rather than editing the RTL.
+# puts ""
+
+# set srcs [list \
+#     $root/rtl/pkgs/types_pkg.vhd \
+#     $root/rtl/pkgs/types_pkg_body.vhd \
+#     $root/rtl/outputs/rc2_hardening.vhd \
+#     $root/rtl/mirage/gemm_array.vhd \
+#     $root/rtl/mirage/quantizer.vhd \
+#     $root/rtl/mirage/qkv_proj_bram.vhd \
+#     $root/rtl/mirage/qk_score_bram.vhd \
+#     $root/rtl/mirage/qkv_proj_calc.vhd \
+#     $root/rtl/mirage/qkv_score_calc.vhd \
+#     $root/rtl/mirage/multi_head.vhd \
+#     $root/rtl/mirage/taylor_exp.vhd \
+#     $root/rtl/mirage/ffn.vhd \
+#     $root/rtl/outputs/smx_cache.vhd \
+#     $root/rtl/outputs/smx_v_calc.vhd \
+#     $root/rtl/outputs/smx_core.vhd \
+#     $root/rtl/outputs/weight_stream_ctrl.vhd \
+#     $root/rtl/integration/mirage_sizing_container.vhd \
+# ]
+# set tops [list \
+#     {gemm_array         root} \
+#     {quantizer          child-of-qkv_score_calc} \
+#     {qkv_proj_bram      child-of-qkv_score_calc} \
+#     {qk_score_bram      root} \
+#     {qkv_proj_calc      root} \
+#     {qkv_score_calc     root} \
+#     {multi_head         root} \
+#     {taylor_exp         root} \
+#     {ffn                root} \
+#     {smx_cache          child-of-smx_core} \
+#     {smx_v_calc         child-of-smx_core} \
+#     {smx_core           root} \
+#     {weight_stream_ctrl root} \
+# ]
+# proc util_row {str pat} {
+#     foreach line [split $str "\n"] {
+#         if {[string match "|*$pat*|*" $line]} {
+#             set f [split $line "|"]
+#             if {[llength $f] > 2} {
+#                 set v [string trim [lindex $f 2]]
+#                 if {[string is double -strict $v]} { return $v }
+#             }
+#         }
+#     }
+#     return "-"
+# }
+# proc grab {top} {
+#     set u [report_utilization -return_string]
+#     return [list [util_row $u "Slice LUTs"] \
+#                  [util_row $u "Slice Registers"] \
+#                  [util_row $u "DSPs"] \
+#                  [util_row $u "Block RAM Tile"]]
+# }
+# read_vhdl -vhdl2008 $srcs
+# set summary {}
+# puts "\n=============== \[phase 0\] RTL elaboration check ==============="
+
+=============== [phase 0] RTL elaboration check ===============
+# if {[catch {
+#         synth_design -rtl -name rtl_check -top mirage_sizing_container -part $part
+#     } err]} {
+#     puts "\n>>> PHASE 0 FAILED -- Vivado could not elaborate the sources."
+#     puts ">>> These files analyse and elaborate cleanly under GHDL 4.1.0 --std=08,"
+#     puts ">>> so this is almost certainly a VHDL-2008 support gap in [version -short]."
+#     puts ">>> Send these errors back rather than editing the RTL:\n"
+#     puts $err
+#     puts "\n>>> Continuing to phase 1 anyway: individual modules may still"
+#     puts ">>> synthesise even if the container does not."
+#     catch { close_design }
+# } else {
+#     puts ">>> Phase 0 OK -- Vivado elaborates the full source set."
+#     close_design
+# }
+Command: synth_design -rtl -name rtl_check -top mirage_sizing_container -part xc7z007sclg400-1
+Starting synth_design
+INFO: [Device 21-403] Loading part xc7z007sclg400-1
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 1953.121 ; gain = 370.719 ; free physical = 23170 ; free virtual = 60428
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'mirage_sizing_container' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/integration/mirage_sizing_container.vhd:162]
+INFO: [Synth 8-638] synthesizing module 'gemm_array' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:27]
+WARNING: [Synth 8-614] signal 'computing' is read in the process but is not in the sensitivity list [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:91]
+INFO: [Synth 8-256] done synthesizing module 'gemm_array' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:27]
+INFO: [Synth 8-638] synthesizing module 'qkv_score_calc' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:50]
+INFO: [Synth 8-638] synthesizing module 'qkv_proj_bram' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:43]
+	Parameter DATA_W bound to: 16 - type: integer 
+WARNING: [Synth 8-614] signal 'tok_count' is read in the process but is not in the sensitivity list [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:78]
+INFO: [Synth 8-256] done synthesizing module 'qkv_proj_bram' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:43]
+INFO: [Synth 8-638] synthesizing module 'quantizer' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/quantizer.vhd:24]
+	Parameter NUM_QUANTIZERS bound to: 60 - type: integer 
+	Parameter INPUT_WIDTH bound to: 16 - type: integer 
+	Parameter OUTPUT_WIDTH bound to: 8 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'quantizer' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/quantizer.vhd:24]
+INFO: [Synth 8-256] done synthesizing module 'qkv_score_calc' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:50]
+INFO: [Synth 8-638] synthesizing module 'qk_score_bram' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'qk_score_bram' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:43]
+INFO: [Synth 8-638] synthesizing module 'taylor_exp' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:32]
+INFO: [Synth 8-256] done synthesizing module 'taylor_exp' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:32]
+INFO: [Synth 8-638] synthesizing module 'smx_core' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_core.vhd:51]
+INFO: [Synth 8-638] synthesizing module 'smx_cache' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_cache.vhd:51]
+	Parameter NUM_HEADS bound to: 8 - type: integer 
+	Parameter MAX_TOK bound to: 16 - type: integer 
+	Parameter EXP_W bound to: 32 - type: integer 
+	Parameter SUM_W bound to: 48 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'smx_cache' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_cache.vhd:51]
+INFO: [Synth 8-638] synthesizing module 'smx_v_calc' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_v_calc.vhd:55]
+	Parameter MAX_TOK bound to: 16 - type: integer 
+	Parameter HEAD_DIM bound to: 64 - type: integer 
+	Parameter EXP_W bound to: 32 - type: integer 
+	Parameter SUM_W bound to: 48 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'smx_v_calc' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_v_calc.vhd:55]
+INFO: [Synth 8-256] done synthesizing module 'smx_core' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_core.vhd:51]
+INFO: [Synth 8-638] synthesizing module 'qkv_proj_calc' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_calc.vhd:40]
+INFO: [Synth 8-256] done synthesizing module 'qkv_proj_calc' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_calc.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'multi_head' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/multi_head.vhd:39]
+INFO: [Synth 8-256] done synthesizing module 'multi_head' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/multi_head.vhd:39]
+INFO: [Synth 8-638] synthesizing module 'ffn' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/ffn.vhd:40]
+INFO: [Synth 8-256] done synthesizing module 'ffn' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/ffn.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'weight_stream_ctrl' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/weight_stream_ctrl.vhd:56]
+INFO: [Synth 8-256] done synthesizing module 'weight_stream_ctrl' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/weight_stream_ctrl.vhd:56]
+INFO: [Synth 8-256] done synthesizing module 'mirage_sizing_container' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/integration/mirage_sizing_container.vhd:162]
+WARNING: [Synth 8-6014] Unused sequential element v_iter_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:188]
+WARNING: [Synth 8-6014] Unused sequential element pause_gemm_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:183]
+WARNING: [Synth 8-6014] Unused sequential element delay_ctr_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:180]
+WARNING: [Synth 8-6014] Unused sequential element batch_iter_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:147]
+WARNING: [Synth 8-6014] Unused sequential element fetch_ctr_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:148]
+WARNING: [Synth 8-6014] Unused sequential element start_max_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:102]
+WARNING: [Synth 8-6014] Unused sequential element start_taylor_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:103]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[0] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[1] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[2] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[3] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[4] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[5] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[6] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[7] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[8] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[9] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[10] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[11] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[12] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[13] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[14] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[15] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[16] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[17] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[18] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[19] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[20] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[21] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[22] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[23] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[24] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[25] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[26] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[27] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[28] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[29] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[30] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[31] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[0] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[1] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[2] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[3] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[4] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[5] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[6] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[7] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[8] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[9] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[10] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[11] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[12] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[13] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[14] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[15] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[16] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[17] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[18] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[19] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[20] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[21] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[22] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[23] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[24] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[25] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[26] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[27] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[28] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[29] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[30] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[31] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[0] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[1] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[2] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[3] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[4] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[5] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[6] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[7] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[8] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[9] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[10] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[11] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[12] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[13] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[14] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[15] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[16] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[17] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[18] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[19] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[20] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[21] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[22] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[23] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[24] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[25] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[26] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[27] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[28] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+INFO: [Common 17-14] Message 'Synth 8-6014' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+WARNING: [Synth 8-3848] Net done_taylor in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:64]
+WARNING: [Synth 8-3848] Net bram_rd in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:23]
+WARNING: [Synth 8-3848] Net addr_off_0 in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:24]
+WARNING: [Synth 8-3848] Net data_out in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:28]
+WARNING: [Synth 8-4767] Trying to implement RAM 'bram_qkv_reg' in registers. Block RAM or DRAM implementation is not possible; see log for reasons.
+Reason is one or more of the following :
+	1: RAM has too many ports (16). Maximum supported = 16. 
+	2: Unable to determine number of words or word size in RAM. 
+	3: No valid read/write found for RAM. 
+ERROR: [Synth 8-3391] Unable to infer a block/distributed RAM for 'bram_qkv_reg' because the memory pattern used is not supported. Failed to dissolve the memory into bits because the number of bits (786440) is too large. Use 'set_param synth.elaboration.rodinMoreOptions {rt::set_parameter dissolveMemorySizeLimit 786440}' to allow the memory to be dissolved into individual bits
+WARNING: [Synth 8-4767] Trying to implement RAM 'bram_qkv_reg' in registers. Block RAM or DRAM implementation is not possible; see log for reasons.
+Reason is one or more of the following :
+	1: RAM has too many ports (16). Maximum supported = 16. 
+	2: Unable to determine number of words or word size in RAM. 
+	3: No valid read/write found for RAM. 
+ERROR: [Synth 8-3391] Unable to infer a block/distributed RAM for 'bram_qkv_reg' because the memory pattern used is not supported. Failed to dissolve the memory into bits because the number of bits (786440) is too large. Use 'set_param synth.elaboration.rodinMoreOptions {rt::set_parameter dissolveMemorySizeLimit 786440}' to allow the memory to be dissolved into individual bits

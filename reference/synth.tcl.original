@@ -1,0 +1,29 @@
+# W11 synth/P&R batch script — run by a human with Vivado (see reports/w11-postsynth-timing.md)
+# usage: vivado -mode batch -source outputs/synth.tcl
+
+set part xc7z007sclg400-1
+set root [file normalize [file dirname [info script]]/..]
+
+read_vhdl -vhdl2008 [glob $root/Mirage/modules/pkgs/types_pkg*.vhd]
+read_vhdl -vhdl2008 $root/Mirage/modules/gemm_array/gemm_array.vhd
+read_vhdl -vhdl2008 $root/Mirage/modules/quantizer/quantizer.vhd
+read_vhdl -vhdl2008 [glob $root/Mirage/modules/mha_core/*/*.vhd]
+read_vhdl -vhdl2008 [glob $root/Mirage/modules/smx_core/*.vhd]
+read_vhdl -vhdl2008 [glob $root/Mirage/modules/smx_core/taylor_exp/*.vhd]
+read_vhdl -vhdl2008 $root/Mirage/modules/ffn_core/ffn.vhd
+read_vhdl -vhdl2008 [glob $root/outputs/*.vhd]
+
+# NOTE: upstream fixes required before this elaborates (W1/W3/W5/W7 reports)
+synth_design -top encoder_layer -part $part
+opt_design
+place_design
+route_design
+
+report_timing_summary -file $root/reports/w11-timing-summary.rpt
+report_utilization  -file $root/reports/w11-utilization.rpt
+report_utilization -hierarchical -file $root/reports/w11-utilization-hier.rpt
+
+# functional netlist for HW sim clause
+write_vhdl -mode funcsim $root/outputs/netlist_funcsim.vhd
+write_sdf $root/outputs/netlist_funcsim.sdf
+write_bitstream -force $root/outputs/mirage_w11.bit

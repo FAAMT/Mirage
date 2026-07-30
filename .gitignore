@@ -1,0 +1,10 @@
+# Vivado run state — regenerable, and embeds host identifiers
+reports/*.rpt
+reports/*.log
+reports/*.jou
+reports/summary.csv
+*.vds
+*.pb
+.Xil/
+__pycache__/
+work-obj*.cf

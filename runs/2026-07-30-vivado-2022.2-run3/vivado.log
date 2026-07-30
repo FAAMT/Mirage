@@ -1,0 +1,976 @@
+#-----------------------------------------------------------
+# Vivado v2022.2 (64-bit)
+# SW Build 3671981 on Fri Oct 14 04:59:54 MDT 2022
+# IP Build 3669848 on Fri Oct 14 08:30:02 MDT 2022
+# Start of session at: Thu Jul 30 01:54:45 2026
+# Process ID: 163588
+# Current directory: /home/REDACTED/Downloads/mirage-vivado-2026-07-29
+# Command line: vivado -mode batch -source tcl/synth_utilization.tcl  -log my_vivado.log -journal my_vivado.jou
+# Log file: /home/REDACTED/Downloads/mirage-vivado-2026-07-29/vivado.log
+# Journal file: /home/REDACTED/Downloads/mirage-vivado-2026-07-29/my_vivado.jou
+# Running On: REDACTED-HOST, OS: Linux, CPU Frequency: 1789.388 MHz, CPU Physical cores: 16, Host memory: 33265 MB
+#-----------------------------------------------------------
+source tcl/synth_utilization.tcl
+# set part xc7z007sclg400-1  ;
+# set root [file normalize [file dirname [info script]]/..]
+# file mkdir $root/reports
+# puts "Vivado version: [version -short]"
+Vivado version: 2022.2
+# puts "Target part   : $part"
+Target part   : xc7z007sclg400-1
+# puts ""
+
+# puts "If phase 0 below reports VHDL-2008 parse errors, that is a Vivado"
+If phase 0 below reports VHDL-2008 parse errors, that is a Vivado
+# puts "version limit, not a design problem -- these files analyse cleanly under"
+version limit, not a design problem -- these files analyse cleanly under
+# puts "GHDL 4.1.0. Vivado's VHDL-2008 synthesis support is partial and weaker in"
+GHDL 4.1.0. Vivado's VHDL-2008 synthesis support is partial and weaker in
+# puts "2020 than 2022. Report the phase-0 errors rather than editing the RTL."
+2020 than 2022. Report the phase-0 errors rather than editing the RTL.
+# puts ""
+
+# set srcs [list \
+#     $root/rtl/pkgs/types_pkg.vhd \
+#     $root/rtl/pkgs/types_pkg_body.vhd \
+#     $root/rtl/outputs/rc2_hardening.vhd \
+#     $root/rtl/mirage/gemm_array.vhd \
+#     $root/rtl/mirage/quantizer.vhd \
+#     $root/rtl/mirage/qkv_proj_bram.vhd \
+#     $root/rtl/mirage/qk_score_bram.vhd \
+#     $root/rtl/mirage/qkv_proj_calc.vhd \
+#     $root/rtl/mirage/qkv_score_calc.vhd \
+#     $root/rtl/mirage/multi_head.vhd \
+#     $root/rtl/mirage/taylor_exp.vhd \
+#     $root/rtl/mirage/ffn.vhd \
+#     $root/rtl/outputs/smx_cache.vhd \
+#     $root/rtl/outputs/smx_v_calc.vhd \
+#     $root/rtl/outputs/smx_core.vhd \
+#     $root/rtl/outputs/weight_stream_ctrl.vhd \
+#     $root/rtl/integration/mirage_sizing_container.vhd \
+#     $root/rtl/integration/mirage_sizing_subset.vhd \
+# ]
+# set tops [list \
+#     {gemm_array         root} \
+#     {quantizer          child-of-qkv_score_calc} \
+#     {qkv_proj_bram      child-of-qkv_score_calc} \
+#     {qk_score_bram      root} \
+#     {qkv_score_calc     root} \
+#     {taylor_exp         root} \
+#     {smx_cache          child-of-smx_core} \
+#     {smx_v_calc         child-of-smx_core} \
+#     {smx_core           root} \
+#     {weight_stream_ctrl root} \
+# ]
+# set blocked [list \
+#     {ffn           {bram_hlw/olw/proj 2.2 Mb, 60 read ports}} \
+#     {multi_head    {bram_qkv 786 kb, 60 read ports}} \
+#     {qkv_proj_calc {bram_qkv 786 kb, 60 read ports}} \
+# ]
+# proc util_row {str pat} {
+#     foreach line [split $str "\n"] {
+#         if {[string match "|*$pat*|*" $line]} {
+#             set f [split $line "|"]
+#             if {[llength $f] > 2} {
+#                 set v [string trim [lindex $f 2]]
+#                 if {[string is double -strict $v]} { return $v }
+#             }
+#         }
+#     }
+#     return "-"
+# }
+# proc grab {top} {
+#     set u [report_utilization -return_string]
+#     return [list [util_row $u "Slice LUTs"] \
+#                  [util_row $u "Slice Registers"] \
+#                  [util_row $u "DSPs"] \
+#                  [util_row $u "Block RAM Tile"]]
+# }
+# read_vhdl -vhdl2008 $srcs
+# set summary {}
+# puts "\n=============== \[phase 0\] RTL elaboration check ==============="
+
+=============== [phase 0] RTL elaboration check ===============
+# if {[catch {
+#         synth_design -rtl -name rtl_check -top mirage_sizing_subset -part $part
+#     } err]} {
+#     puts "\n>>> PHASE 0 FAILED -- Vivado could not elaborate the sources."
+#     puts ">>> These files analyse and elaborate cleanly under GHDL 4.1.0 --std=08,"
+#     puts ">>> so this is almost certainly a VHDL-2008 support gap in [version -short]."
+#     puts ">>> Send these errors back rather than editing the RTL:\n"
+#     puts $err
+#     puts "\n>>> Continuing to phase 1 anyway: individual modules may still"
+#     puts ">>> synthesise even if the container does not."
+#     catch { close_design }
+# } else {
+#     puts ">>> Phase 0 OK -- Vivado elaborates the full source set."
+#     close_design
+# }
+Command: synth_design -rtl -name rtl_check -top mirage_sizing_subset -part xc7z007sclg400-1
+Starting synth_design
+INFO: [Device 21-403] Loading part xc7z007sclg400-1
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 1952.426 ; gain = 371.719 ; free physical = 395 ; free virtual = 6980
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'mirage_sizing_subset' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/integration/mirage_sizing_subset.vhd:102]
+INFO: [Synth 8-638] synthesizing module 'gemm_array' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:27]
+WARNING: [Synth 8-614] signal 'computing' is read in the process but is not in the sensitivity list [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:91]
+INFO: [Synth 8-256] done synthesizing module 'gemm_array' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:27]
+INFO: [Synth 8-638] synthesizing module 'qkv_score_calc' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:50]
+INFO: [Synth 8-638] synthesizing module 'qkv_proj_bram' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:43]
+	Parameter DATA_W bound to: 16 - type: integer 
+WARNING: [Synth 8-614] signal 'tok_count' is read in the process but is not in the sensitivity list [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:78]
+INFO: [Synth 8-256] done synthesizing module 'qkv_proj_bram' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:43]
+INFO: [Synth 8-638] synthesizing module 'quantizer' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/quantizer.vhd:24]
+	Parameter NUM_QUANTIZERS bound to: 60 - type: integer 
+	Parameter INPUT_WIDTH bound to: 16 - type: integer 
+	Parameter OUTPUT_WIDTH bound to: 8 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'quantizer' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/quantizer.vhd:24]
+INFO: [Synth 8-256] done synthesizing module 'qkv_score_calc' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:50]
+INFO: [Synth 8-638] synthesizing module 'qk_score_bram' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'qk_score_bram' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:43]
+INFO: [Synth 8-638] synthesizing module 'taylor_exp' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:32]
+INFO: [Synth 8-256] done synthesizing module 'taylor_exp' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:32]
+INFO: [Synth 8-638] synthesizing module 'smx_core' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_core.vhd:51]
+INFO: [Synth 8-638] synthesizing module 'smx_cache' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_cache.vhd:51]
+	Parameter NUM_HEADS bound to: 8 - type: integer 
+	Parameter MAX_TOK bound to: 16 - type: integer 
+	Parameter EXP_W bound to: 32 - type: integer 
+	Parameter SUM_W bound to: 48 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'smx_cache' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_cache.vhd:51]
+INFO: [Synth 8-638] synthesizing module 'smx_v_calc' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_v_calc.vhd:55]
+	Parameter MAX_TOK bound to: 16 - type: integer 
+	Parameter HEAD_DIM bound to: 64 - type: integer 
+	Parameter EXP_W bound to: 32 - type: integer 
+	Parameter SUM_W bound to: 48 - type: integer 
+INFO: [Synth 8-256] done synthesizing module 'smx_v_calc' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_v_calc.vhd:55]
+INFO: [Synth 8-256] done synthesizing module 'smx_core' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/smx_core.vhd:51]
+INFO: [Synth 8-638] synthesizing module 'weight_stream_ctrl' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/weight_stream_ctrl.vhd:56]
+INFO: [Synth 8-256] done synthesizing module 'weight_stream_ctrl' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/outputs/weight_stream_ctrl.vhd:56]
+INFO: [Synth 8-256] done synthesizing module 'mirage_sizing_subset' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/integration/mirage_sizing_subset.vhd:102]
+WARNING: [Synth 8-6014] Unused sequential element v_iter_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:188]
+WARNING: [Synth 8-6014] Unused sequential element pause_gemm_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:183]
+WARNING: [Synth 8-6014] Unused sequential element delay_ctr_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_score_calc.vhd:180]
+WARNING: [Synth 8-6014] Unused sequential element batch_iter_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:147]
+WARNING: [Synth 8-6014] Unused sequential element fetch_ctr_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qk_score_bram.vhd:148]
+WARNING: [Synth 8-6014] Unused sequential element start_max_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:102]
+WARNING: [Synth 8-6014] Unused sequential element start_taylor_reg was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:103]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[0] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[1] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[2] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[3] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[4] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[5] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[6] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[7] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[8] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[9] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[10] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[11] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[12] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[13] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[14] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[15] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[16] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[17] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[18] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[19] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[20] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[21] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[22] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[23] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[24] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[25] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[26] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[27] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[28] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[29] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[30] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element max_val_reg[31] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:145]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[0] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[1] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[2] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[3] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[4] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[5] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[6] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[7] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[8] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[9] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[10] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[11] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[12] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[13] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[14] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[15] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[16] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[17] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[18] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[19] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[20] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[21] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[22] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[23] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[24] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[25] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[26] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[27] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[28] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[29] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[30] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_reg[31] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:190]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[0] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[1] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[2] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[3] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[4] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[5] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[6] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[7] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[8] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[9] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[10] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[11] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[12] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[13] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[14] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[15] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[16] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[17] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[18] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[19] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[20] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[21] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[22] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[23] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[24] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[25] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[26] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[27] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+WARNING: [Synth 8-6014] Unused sequential element z_diff_sq_reg[28] was removed.  [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:191]
+INFO: [Common 17-14] Message 'Synth 8-6014' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+WARNING: [Synth 8-3848] Net done_taylor in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:64]
+WARNING: [Synth 8-3848] Net bram_rd in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:23]
+WARNING: [Synth 8-3848] Net addr_off_0 in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:24]
+WARNING: [Synth 8-3848] Net data_out in module/entity taylor_exp does not have driver. [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/taylor_exp.vhd:28]
+WARNING: [Synth 8-7129] Port start in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row_valid in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][20] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][19] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][18] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][17] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][16] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][15] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][14] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][13] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][12] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][11] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][10] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][9] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][8] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][7] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][6] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][5] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][4] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][3] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][2] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][1] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[0][0] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][20] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][19] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][18] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][17] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][16] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][15] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][14] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][13] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][12] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][11] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][10] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][9] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][8] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][7] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][6] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][5] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][4] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][3] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][2] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][1] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[1][0] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][20] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][19] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][18] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][17] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][16] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][15] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][14] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][13] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][12] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][11] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][10] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][9] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][8] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][7] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][6] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][5] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][4] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][3] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][2] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][1] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[2][0] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][20] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][19] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][18] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][17] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][16] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][15] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][14] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][13] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][12] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][11] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][10] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][9] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][8] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][7] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][6] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][5] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][4] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][3] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][2] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][1] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[3][0] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][20] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][19] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][18] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][17] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][16] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][15] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][14] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][13] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][12] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][11] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][10] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][9] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][8] in module smx_core is either unconnected or has no load
+WARNING: [Synth 8-7129] Port score_row[4][7] in module smx_core is either unconnected or has no load
+INFO: [Common 17-14] Message 'Synth 8-7129' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:03:50 ; elapsed = 00:03:58 . Memory (MB): peak = 6704.723 ; gain = 5124.016 ; free physical = 1316 ; free virtual = 3885
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:03:52 ; elapsed = 00:04:00 . Memory (MB): peak = 6704.723 ; gain = 5124.016 ; free physical = 1406 ; free virtual = 3907
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:03:52 ; elapsed = 00:04:00 . Memory (MB): peak = 6704.723 ; gain = 5124.016 ; free physical = 1406 ; free virtual = 3907
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 6704.723 ; gain = 0.000 ; free physical = 837 ; free virtual = 3492
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Completed Processing XDC Constraints
+
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 2290 ; free virtual = 3559
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+RTL Elaboration Complete:  : Time (s): cpu = 00:06:21 ; elapsed = 00:05:50 . Memory (MB): peak = 8108.223 ; gain = 6527.516 ; free physical = 4784 ; free virtual = 6048
+29 Infos, 206 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:06:25 ; elapsed = 00:06:34 . Memory (MB): peak = 8108.223 ; gain = 6779.688 ; free physical = 4792 ; free virtual = 6056
+>>> Phase 0 OK -- Vivado elaborates the full source set.
+# foreach entry $tops {
+#     lassign $entry top kind
+#     puts "\n=============== \[phase 1\] $top ==============="
+#     if {[catch { synth_design -mode out_of_context -top $top -part $part } err]} {
+#         puts "SYNTH FAILED for $top:\n$err"
+#         lappend summary [list $top $kind FAILED - - - -]
+#         catch { close_design }
+#         continue
+#     }
+#     report_utilization -file $root/reports/util_$top.rpt
+#     lappend summary [concat [list $top $kind OK] [grab $top]]
+#     close_design
+# }
+
+=============== [phase 1] gemm_array ===============
+Command: synth_design -mode out_of_context -top gemm_array -part xc7z007sclg400-1
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:04 ; elapsed = 00:00:04 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5414 ; free virtual = 6776
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1665.184; parent = 1495.817; children = 169.366
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9072.449; parent = 8076.211; children = 996.238
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'gemm_array' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:27]
+WARNING: [Synth 8-614] signal 'computing' is read in the process but is not in the sensitivity list [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:91]
+INFO: [Synth 8-256] done synthesizing module 'gemm_array' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:27]
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5498 ; free virtual = 6807
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1665.184; parent = 1495.817; children = 169.366
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9072.449; parent = 8076.211; children = 996.238
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5443 ; free virtual = 6746
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1665.184; parent = 1495.817; children = 169.366
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9072.449; parent = 8076.211; children = 996.238
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z007sclg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5428 ; free virtual = 6746
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1665.184; parent = 1495.817; children = 169.366
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9084.371; parent = 8080.129; children = 1004.242
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[0]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[1]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[2]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[3]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[4]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[5]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[6]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[7]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[8]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[9]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[10]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+WARNING: [Synth 8-327] inferring latch for variable 'accum_val_reg[11]' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/gemm_array.vhd:68]
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5421 ; free virtual = 6749
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1665.184; parent = 1495.817; children = 194.172
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9270.734; parent = 8080.129; children = 1190.605
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Registers : 
+	                1 Bit    Registers := 1     
++---Muxes : 
+	   2 Input    1 Bit        Muxes := 1     
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 66 (col length:40)
+BRAMs: 100 (col length: RAMB18 40 RAMB36 20)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:09 ; elapsed = 00:00:38 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1338 ; free virtual = 2704
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5666.978; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:09 ; elapsed = 00:00:39 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1364 ; free virtual = 2736
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5667.884; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:10 ; elapsed = 00:00:40 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1349 ; free virtual = 2715
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5669.496; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:13 ; elapsed = 00:00:43 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1364 ; free virtual = 2731
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:13 ; elapsed = 00:00:43 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1339 ; free virtual = 2713
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:13 ; elapsed = 00:00:43 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1336 ; free virtual = 2723
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:13 ; elapsed = 00:00:43 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1331 ; free virtual = 2725
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:13 ; elapsed = 00:00:43 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1374 ; free virtual = 2782
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:13 ; elapsed = 00:00:44 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1334 ; free virtual = 2750
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+-------+------+
+|      |Cell   |Count |
++------+-------+------+
+|1     |CARRY4 |  1056|
+|2     |LUT1   |    48|
+|3     |LUT2   |  2558|
+|4     |LUT3   |   780|
+|5     |LUT4   |  1512|
+|6     |LUT5   |   360|
+|7     |LUT6   |  1560|
+|8     |FDCE   |   385|
+|9     |LD     |   240|
++------+-------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:13 ; elapsed = 00:00:44 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 1329 ; free virtual = 2752
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5672.204; parent = 1495.817; children = 4276.577
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 16972.031; parent = 8080.129; children = 8895.820
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 14 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:16 ; elapsed = 00:00:46 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5568 ; free virtual = 6953
+Synthesis Optimization Complete : Time (s): cpu = 00:00:16 ; elapsed = 00:00:46 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5560 ; free virtual = 6951
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00.05 ; elapsed = 00:00:00.05 . Memory (MB): peak = 8108.223 ; gain = 0.000 ; free physical = 5546 ; free virtual = 6946
+INFO: [Netlist 29-17] Analyzing 1296 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+WARNING: [Netlist 29-101] Netlist 'gemm_array' is not ideal for floorplanning, since the cellview 'gemm_array' contains a large number of primitives.  Please consider enabling hierarchy in synthesis if you want to do floorplanning.
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 8116.227 ; gain = 0.000 ; free physical = 5481 ; free virtual = 6895
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 240 instances were transformed.
+  LD => LDCE: 240 instances
+
+Synth Design complete, checksum: 830175aa
+INFO: [Common 17-83] Releasing license: Synthesis
+12 Infos, 15 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:18 ; elapsed = 00:00:48 . Memory (MB): peak = 8116.227 ; gain = 8.004 ; free physical = 5670 ; free virtual = 7070
+
+=============== [phase 1] quantizer ===============
+Command: synth_design -mode out_of_context -top quantizer -part xc7z007sclg400-1
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:04 ; elapsed = 00:00:04 . Memory (MB): peak = 8124.230 ; gain = 8.004 ; free physical = 5206 ; free virtual = 6593
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9087.457; parent = 8124.234; children = 963.223
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'quantizer' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/quantizer.vhd:24]
+INFO: [Synth 8-256] done synthesizing module 'quantizer' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/quantizer.vhd:24]
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8124.230 ; gain = 8.004 ; free physical = 5309 ; free virtual = 6691
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9087.457; parent = 8124.234; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8124.230 ; gain = 8.004 ; free physical = 5294 ; free virtual = 6691
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9087.457; parent = 8124.234; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z007sclg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5289 ; free virtual = 6693
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:05 ; elapsed = 00:00:06 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5230 ; free virtual = 6651
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 66 (col length:40)
+BRAMs: 100 (col length: RAMB18 40 RAMB36 20)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+WARNING: [Synth 8-3330] design quantizer has an empty top module
+WARNING: [Synth 8-7129] Port data_in[0][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[0][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[1][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[2][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[3][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[4][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[5][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[6][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[7][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[8][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[9][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[10][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][4] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][3] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][2] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][1] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[11][0] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[12][7] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[12][6] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[12][5] in module quantizer is either unconnected or has no load
+WARNING: [Synth 8-7129] Port data_in[12][4] in module quantizer is either unconnected or has no load
+INFO: [Common 17-14] Message 'Synth 8-7129' appears 100 times and further instances of the messages will be disabled. Use the Tcl command set_msg_config to change the current settings.
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5312 ; free virtual = 6702
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+No constraint files found.
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5308 ; free virtual = 6712
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:06 ; elapsed = 00:00:07 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5298 ; free virtual = 6716
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5403 ; free virtual = 6794
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5403 ; free virtual = 6800
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5403 ; free virtual = 6807
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5433 ; free virtual = 6830
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5438 ; free virtual = 6841
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5438 ; free virtual = 6848
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++-+-----+------+
+| |Cell |Count |
++-+-----+------+
++-+-----+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:09 ; elapsed = 00:00:10 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5435 ; free virtual = 6853
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1600.174; parent = 1430.671; children = 169.503
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9095.461; parent = 8132.238; children = 963.223
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 482 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 8132.234 ; gain = 16.008 ; free physical = 5427 ; free virtual = 6852
+Synthesis Optimization Complete : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 8132.242 ; gain = 16.008 ; free physical = 5422 ; free virtual = 6853
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 8132.242 ; gain = 0.000 ; free physical = 5407 ; free virtual = 6846
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 8132.242 ; gain = 0.000 ; free physical = 5501 ; free virtual = 6954
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Synth Design complete, checksum: 6ddc1e66
+INFO: [Common 17-83] Releasing license: Synthesis
+23 Infos, 117 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:13 ; elapsed = 00:00:11 . Memory (MB): peak = 8132.242 ; gain = 16.016 ; free physical = 5601 ; free virtual = 7061
+
+=============== [phase 1] qkv_proj_bram ===============
+Command: synth_design -mode out_of_context -top qkv_proj_bram -part xc7z007sclg400-1
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:04 ; elapsed = 00:00:04 . Memory (MB): peak = 8132.242 ; gain = 0.000 ; free physical = 5333 ; free virtual = 6727
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.504; parent = 1421.939; children = 169.564
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9135.340; parent = 8132.238; children = 1003.102
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'qkv_proj_bram' [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:43]
+WARNING: [Synth 8-614] signal 'tok_count' is read in the process but is not in the sensitivity list [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:78]
+INFO: [Synth 8-256] done synthesizing module 'qkv_proj_bram' (0#1) [/home/REDACTED/Downloads/mirage-vivado-2026-07-29/rtl/mirage/qkv_proj_bram.vhd:43]
+WARNING: [Synth 8-7129] Port bram_rd in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[12] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[11] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[10] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[9] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[8] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[7] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[6] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[5] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[4] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[3] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[2] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[1] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port bram_addr[0] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[31] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[30] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[29] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[28] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[27] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[26] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[25] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[24] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[23] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[22] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[21] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[20] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[19] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[18] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[17] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[16] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[15] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[14] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_0[13] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[31] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[30] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[29] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[28] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[27] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[26] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[25] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[24] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[23] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[22] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[21] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[20] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[19] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[18] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[17] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[16] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[15] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[14] in module qkv_proj_bram is either unconnected or has no load
+WARNING: [Synth 8-7129] Port addr_off_1[13] in module qkv_proj_bram is either unconnected or has no load
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:04:27 ; elapsed = 00:04:35 . Memory (MB): peak = 8132.242 ; gain = 0.000 ; free physical = 2458 ; free virtual = 3937
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5627.336; parent = 5457.771; children = 169.565
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9135.340; parent = 8132.238; children = 1003.102
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:04:42 ; elapsed = 00:04:52 . Memory (MB): peak = 8132.242 ; gain = 0.000 ; free physical = 2766 ; free virtual = 4245
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5627.336; parent = 5457.771; children = 169.565
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9135.340; parent = 8132.238; children = 1003.102
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z007sclg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:04:42 ; elapsed = 00:04:52 . Memory (MB): peak = 8152.160 ; gain = 19.918 ; free physical = 2795 ; free virtual = 4289
+Synthesis current peak Physical Memory [PSS] (MB): peak = 5627.336; parent = 5457.771; children = 169.565
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 9163.270; parent = 8152.164; children = 1011.105
+---------------------------------------------------------------------------------
