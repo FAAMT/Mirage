@@ -301,11 +301,44 @@ bit travelling alongside. `scale` and `rq_shift` are constant for a whole
 op, so nothing else needs to travel. Cost: three extra cycles per 32-lane
 writeback against a `k_len` up to 512; throughput stays one lane per cycle.
 
-**This fix is inferred, not confirmed.** The log carries only the summary;
-`reports_v2/impl_timing_summary.rpt` has the actual path and I have not
-seen it. The reasoning is strong — that cone is the deepest logic in the
-design by inspection — but the next run should be checked against the
-report, not assumed.
+**Confirmed against `impl_timing_summary.rpt`.** The worst path is:
+
+```
+Source:      mac/lanes[25].lane/preg_reg/CLK     (DSP48E1 accumulator)
+Destination: seq/out_data_reg[5]/S
+Data Path:   18.689ns  (logic 7.999  route 10.690)
+Logic Levels: 24  (CARRY4=14 LUT6=3 LUT4=3 LUT3=2 MUXF7=1 LUT2=1)
+```
+
+and **all ten worst paths share that source and destination family** — 536
+failing endpoints, one cone. Three things the report showed that inspection
+alone had not:
+
+1. **14 CARRY4 levels.** Part of the 19×48 multiply was implemented in
+   *fabric*, because DSPs were saturated at 67/66. The DSP bug was also
+   causing the timing failure; fixing it frees 32 DSPs so that multiply
+   stays hard. The two problems were one problem.
+2. **`requant` was on the path.** `> 127` and `< -128` on a 48-bit
+   accumulator are two ~12-deep carry chains. Replaced by `sat8`, which
+   tests whether the top 41 bits are all copies of the sign bit — an
+   OR-reduce and an AND-reduce, about two LUT levels. Verified equivalent
+   to the arithmetic clamp on 6,213 inputs including every value in
+   [−1024, 1023] and both clamp edges (`rtl_v2/pkg/sat8_tb.vhd`); a
+   mutation dropping the negative in-range case produces exactly 128
+   mismatches, so the test is not vacuous.
+3. **Two barrel shifters, not one.** `out_data` and `out_wide` each applied
+   `>> rq_shift` to the same value. Now shifted once into a shared pipeline
+   register.
+
+Writeback is therefore five stages: lane select, multiply, fixed Q16 shift,
+the variable requant shift, then the saturating narrow. Four extra cycles
+per 32-lane writeback.
+
+**Route delay was 57% of the path**, which no amount of pipelining fixes
+directly — but a design at 13.7% LUT with 32 fewer DSPs gives the placer far
+more freedom, so it should improve on its own. If WNS is still negative and
+route-dominated after this, the honest lever is the clock: 18.7 ns implies
+~53 MHz, and the plan's 100 MHz was already a fallback from 125.
 
 ### One warning left open
 

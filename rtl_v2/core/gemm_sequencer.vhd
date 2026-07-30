@@ -43,7 +43,7 @@
 -- Both the activation buffer and the weight window are synchronous-read
 -- BRAM: data arrives one cycle after the address. So mac_en and mac_clr are
 -- issued one cycle behind the address generator, via *_d1, to line up with
--- the data they belong to. mac_lane then adds its own 3-stage pipeline,
+-- the data they belong to. mac_lane then adds its own 2-stage pipeline,
 -- which S_FLUSH covers.
 -- =====================================================================
 
@@ -160,11 +160,13 @@ architecture rtl of gemm_sequencer is
     --                                and a SECOND >> rq_shift for out_wide
     --
     -- a multi-DSP multiply followed by two 48-bit variable barrel shifters
-    -- and a saturating compare. Now four stages. `scale` and `rq_shift` are
+    -- and a saturating compare. Now FIVE stages: lane select, multiply,
+    -- fixed Q16 shift, the variable requant shift (once, shared by both
+    -- outputs), then the saturating narrow. `scale` and `rq_shift` are
     -- constant for a whole op, so only the address and a valid bit have to
     -- travel with the data.
     --
-    -- Cost: three extra cycles per 32-lane writeback, against a k_len of up
+    -- Cost: four extra cycles per 32-lane writeback, against a k_len of up
     -- to 512. Throughput stays one lane per cycle.
     signal wb1_acc  : acc_t                                 := (others => '0');
     signal wb1_addr : unsigned(ACT_AW - 1 downto 0)         := (others => '0');
@@ -175,6 +177,9 @@ architecture rtl of gemm_sequencer is
     signal wb3_nar  : acc_t                                 := (others => '0');
     signal wb3_addr : unsigned(ACT_AW - 1 downto 0)         := (others => '0');
     signal wb3_v    : std_logic                             := '0';
+    signal wb4_sh   : acc_t                                 := (others => '0');
+    signal wb4_addr : unsigned(ACT_AW - 1 downto 0)         := (others => '0');
+    signal wb4_v    : std_logic                             := '0';
     signal wb_drain : unsigned(1 downto 0)                  := (others => '0');
 
 begin
@@ -218,6 +223,7 @@ begin
                 wb1_v      <= '0';
                 wb2_v      <= '0';
                 wb3_v      <= '0';
+                wb4_v      <= '0';
                 wb_drain   <= (others => '0');
             else
                 -- defaults, overridden per state. out_we is NOT defaulted
@@ -309,10 +315,10 @@ begin
 
                     when S_WB_DRAIN =>
                         -- Stop issuing and let the last beat traverse
-                        -- stages 2, 3 and 4. Leaving early would drop the
+                        -- stages 2 through 5. Leaving early would drop the
                         -- final lane's write.
                         wb1_v <= '0';
-                        if wb_drain = 2 then
+                        if wb_drain = 3 then
                             state <= S_NEXT;
                         else
                             wb_drain <= wb_drain + 1;
@@ -364,14 +370,20 @@ begin
                 wb3_addr <= wb2_addr;
                 wb3_v    <= wb2_v;
 
-                -- stage 4: the variable requantisation shift and the
-                -- saturating narrow to int8
-                out_data  <= requant(wb3_nar, to_integer(unsigned(rq_shift)));
-                out_wide  <= resize(shift_right(wb3_nar,
-                                                to_integer(unsigned(rq_shift))),
-                                    SCORE_W);
-                out_waddr <= std_logic_vector(wb3_addr);
-                out_we    <= wb3_v;
+                -- stage 4: the variable requantisation shift, done ONCE.
+                -- out_data and out_wide both need the same shifted value,
+                -- and computing it in each of them built two 48-bit barrel
+                -- shifters in the same cycle.
+                wb4_sh   <= shift_right(wb3_nar, to_integer(unsigned(rq_shift)));
+                wb4_addr <= wb3_addr;
+                wb4_v    <= wb3_v;
+
+                -- stage 5: saturating narrow for the activation path, plain
+                -- truncate for the score path
+                out_data  <= sat8(wb4_sh);
+                out_wide  <= resize(wb4_sh, SCORE_W);
+                out_waddr <= std_logic_vector(wb4_addr);
+                out_we    <= wb4_v;
             end if;
         end if;
     end process;

@@ -237,10 +237,25 @@ set is otherwise acceptable to 2022.2. It aborts after the first failing unit,
 which is why the same defect in `qkv_score_calc.vhd` and `weight_stream_ctrl.vhd`
 went unreported — the lint gate found those.
 
-Logs in `runs/` have had the host name, owner, PID and memory size scrubbed, and
-two regenerable Vivado artifacts removed: `vivado.pb` (a binary message DB that
+Logs have had the host name, owner, PID and memory size scrubbed, and two
+regenerable Vivado artifacts removed: `vivado.pb` (a binary message DB that
 embedded the hostname) and `project.wdf` (webtalk usage telemetry — a project
 UUID plus tool-usage counters, dropped before this went to a remote).
+
+That scrubbing was applied to `runs/` only at first, and the root `vivado.log`
+escaped it — it reached the remote in the first push carrying both a username
+and the machine name from Vivado's report header. **Run
+`./tools/scrub_check.sh` before every push.** It has no `head` and no match
+limit, it prints a per-pattern verdict so silence is evidence rather than an
+artefact of paging, and it covers the two header forms Vivado uses to name
+the build machine, bare asset-tag hostnames, home paths, IPs, MACs, emails,
+assigned credentials, key blocks, provider tokens and license servers. Exit
+code 1 means do not push.
+
+The script is necessarily excluded from its own scan, since it spells out the
+patterns it hunts for. Nothing else is exempt — if a document needs to
+discuss one of these formats, word it around the literal string rather than
+adding an exemption.
 
 ## Verified before shipping
 

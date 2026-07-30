@@ -210,6 +210,10 @@ package mirage_v2_pkg is
     -- because it was a constant shift and therefore pure rewiring.
     function requant(acc : acc_t; shift : natural) return act_t;
 
+    -- Saturating narrow to int8 with NO shift, for a datapath that has
+    -- already shifted. Avoids a wide comparator -- see the body.
+    function sat8(v : acc_t) return act_t;
+
     -- idx * stride, as a w-bit address. ALWAYS use this instead of writing
     -- `idx * stride` directly, because numeric_std's
     --
@@ -241,19 +245,38 @@ package body mirage_v2_pkg is
         return signed(bus_v((lane + 1) * WGT_W - 1 downto lane * WGT_W));
     end function;
 
-    function requant(acc : acc_t; shift : natural) return act_t is
-        variable sh  : acc_t;
-        constant HI  : integer := 127;
-        constant LO  : integer := -128;
+    function sat8(v : acc_t) return act_t is
+        constant TOPW : natural := ACC_W - ACT_W + 1;   -- 41 bits
+        variable top  : signed(TOPW - 1 downto 0);
     begin
-        sh := shift_right(acc, shift);
-        if sh > to_signed(HI, ACC_W) then
-            return to_signed(HI, ACT_W);
-        elsif sh < to_signed(LO, ACC_W) then
-            return to_signed(LO, ACT_W);
+        -- Saturate WITHOUT a wide comparator. v fits in int8 exactly when
+        -- bits ACC_W-1 downto ACT_W-1 are all copies of the sign bit, so
+        -- this is an all-zeros / all-ones test -- an OR-reduce and an
+        -- AND-reduce, about two LUT levels -- instead of the two 48-bit
+        -- carry chains that `> 127` and `< -128` synthesise to.
+        --
+        -- Run 6's worst path (-9.485 ns, 24 logic levels, 14 of them
+        -- CARRY4) ran from a DSP accumulator through this function to
+        -- out_data, and every one of the ten worst paths ended here.
+        top := v(ACC_W - 1 downto ACT_W - 1);
+        if top = 0 or top = -1 then
+            -- in range, so the low ACT_W bits are already the two's
+            -- complement value (the test above proved the sign bits agree)
+            return v(ACT_W - 1 downto 0);
+        elsif v(ACC_W - 1) = '0' then
+            return to_signed(127, ACT_W);
         else
-            return resize(sh, ACT_W);
+            return to_signed(-128, ACT_W);
         end if;
+    end function;
+
+    function requant(acc : acc_t; shift : natural) return act_t is
+    begin
+        -- Shift and saturate in one expression. gemm_sequencer does NOT use
+        -- this -- it needs the shifted value for out_wide as well, so it
+        -- shifts once into its own pipeline register and calls sat8. Kept
+        -- for anything that wants the whole operation combinationally.
+        return sat8(shift_right(acc, shift));
     end function;
 
     function addr_mul(idx : unsigned; stride : natural; w : positive)
