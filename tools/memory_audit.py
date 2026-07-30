@@ -35,6 +35,12 @@ Vivado reported.
 """
 import re, sys, glob, pathlib
 
+# Which tree to audit: default v1's rtl/, `--v2` for the re-architecture.
+if "--v2" in sys.argv:
+    SRC_GLOB, PKG_GLOB = "rtl_v2/**/*.vhd", "rtl_v2/pkg/*.vhd"
+else:
+    SRC_GLOB, PKG_GLOB = "rtl/**/*.vhd", "rtl/pkgs/*.vhd"
+
 DEV = dict(name="xc7z007sclg400-1", ramb36=50, bram_bits=50 * 36 * 1024, ff=28800, lut=14400)
 # Vivado's default dissolveMemorySizeLimit. NOTE: the "786440" in the error
 # message is the value you would have to RAISE the limit to, not the current
@@ -102,12 +108,12 @@ def array_types(txt):
 # them (qk_score_bram's bram_scores_type is). Collect package types first so
 # module-level signals of those types are not missed.
 PKG = {}
-for pkg in glob.glob("rtl/pkgs/*.vhd"):
+for pkg in glob.glob(PKG_GLOB):
     PKG.update(array_types(pathlib.Path(pkg).read_text()))
 
 rows = []
-for path in sorted(glob.glob("rtl/**/*.vhd", recursive=True)):
-    if "/pkgs/" in path:
+for path in sorted(glob.glob(SRC_GLOB, recursive=True)):
+    if "/pkgs/" in path or "/pkg/" in path:
         continue
     txt = pathlib.Path(path).read_text()
     # module-local type declarations shadow/extend the package ones

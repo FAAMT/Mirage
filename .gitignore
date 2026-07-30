@@ -8,3 +8,8 @@ reports/summary.csv
 .Xil/
 __pycache__/
 work-obj*.cf
+reports_v2/*.rpt
+reports_v2/*.log
+reports_v2/*.jou
+reports_v2/*.dcp
+reports_v2/summary_v2.csv
