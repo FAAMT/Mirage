@@ -1,0 +1,1976 @@
+-
+source tcl/synth_v2.tcl
+# set part xc7z007sclg400-1
+# set root [file normalize [file dirname [info script]]/..]
+# set rpt  $root/reports_v2
+# file mkdir $rpt
+# puts "Vivado version: [version -short]"
+Vivado version: 2022.2
+# puts "Target part   : $part"
+Target part   : xc7z007sclg400-1
+# puts ""
+
+# set srcs [list \
+#     $root/rtl_v2/pkg/mirage_v2_pkg.vhd \
+#     $root/rtl_v2/prim/bram_sdp.vhd \
+#     $root/rtl_v2/prim/mac_lane.vhd \
+#     $root/rtl_v2/core/mac_array.vhd \
+#     $root/rtl_v2/core/weight_window.vhd \
+#     $root/rtl_v2/core/exp_rom.vhd \
+#     $root/rtl_v2/core/recip_rom.vhd \
+#     $root/rtl_v2/core/softmax_unit.vhd \
+#     $root/rtl_v2/core/stage_engine.vhd \
+#     $root/rtl_v2/core/gemm_sequencer.vhd \
+#     $root/rtl_v2/ctrl/layer_ctrl.vhd \
+#     $root/rtl_v2/top/encoder_layer.vhd \
+# ]
+# proc util_row {str pat} {
+#     foreach line [split $str "\n"] {
+#         if {[string match "|*$pat*|*" $line]} {
+#             set f [split $line "|"]
+#             if {[llength $f] > 2} {
+#                 set v [string trim [lindex $f 2]]
+#                 if {[string is double -strict $v]} { return $v }
+#             }
+#         }
+#     }
+#     return "-"
+# }
+# read_vhdl -vhdl2008 $srcs
+# read_xdc $root/xdc/encoder_layer.xdc
+# puts "\n=============== \[phase 0\] elaborate ==============="
+
+=============== [phase 0] elaborate ===============
+# if {[catch { synth_design -rtl -name rtl_v2 -top encoder_layer -part $part } err]} {
+#     puts ">>> PHASE 0 FAILED. These sources analyse and elaborate cleanly under"
+#     puts ">>> GHDL 4.1.0 --std=08 and report zero readable-out-port sites under"
+#     puts ">>> --std=93, so this is a Vivado VHDL-2008 gap, not a design fault."
+#     puts ">>> Send the errors back rather than editing the RTL.\n"
+#     puts $err
+#     catch { close_design }
+# } else {
+#     puts ">>> phase 0 OK"
+#     close_design
+# }
+Command: synth_design -rtl -name rtl_v2 -top encoder_layer -part xc7z007sclg400-1
+Starting synth_design
+INFO: [Device 21-403] Loading part xc7z007sclg400-1
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 1952.211 ; gain = 369.719 ; free physical = 21074 ; free virtual = 59163
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 8 - type: integer 
+	Parameter ADDR_W bound to: 16 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'weight_window' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized0' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 32 - type: integer 
+	Parameter ADDR_W bound to: 10 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized0' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-256] done synthesizing module 'weight_window' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'stage_engine' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-256] done synthesizing module 'stage_engine' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-638] synthesizing module 'mac_array' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'mac_lane' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_lane' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_array' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'gemm_sequencer' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-256] done synthesizing module 'gemm_sequencer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized1' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 21 - type: integer 
+	Parameter ADDR_W bound to: 11 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized1' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'softmax_unit' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'exp_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'exp_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'softmax_unit' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'recip_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-256] done synthesizing module 'recip_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'layer_ctrl' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'encoder_layer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+WARNING: [Synth 8-6014] Unused sequential element act_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:115]
+WARNING: [Synth 8-6014] Unused sequential element w_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:187]
+WARNING: [Synth 8-6014] Unused sequential element v1_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:98]
+WARNING: [Synth 8-6014] Unused sequential element sc_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:262]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2030.180 ; gain = 447.688 ; free physical = 21003 ; free virtual = 59121
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2047.992 ; gain = 465.500 ; free physical = 20998 ; free virtual = 59123
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2047.992 ; gain = 465.500 ; free physical = 20998 ; free virtual = 59123
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:00.04 . Memory (MB): peak = 2047.992 ; gain = 0.000 ; free physical = 21005 ; free virtual = 59137
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:34]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:36]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:38]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:41]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:43]
+Finished Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/encoder_layer_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/encoder_layer_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Completed Processing XDC Constraints
+
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2207.742 ; gain = 0.000 ; free physical = 20904 ; free virtual = 59029
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+RTL Elaboration Complete:  : Time (s): cpu = 00:00:05 ; elapsed = 00:00:05 . Memory (MB): peak = 2207.742 ; gain = 625.250 ; free physical = 20900 ; free virtual = 59032
+32 Infos, 9 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:08 ; elapsed = 00:00:48 . Memory (MB): peak = 2207.742 ; gain = 879.422 ; free physical = 20900 ; free virtual = 59032
+>>> phase 0 OK
+# puts "\n=============== \[phase 1\] synth_design ==============="
+
+=============== [phase 1] synth_design ===============
+# if {[catch { synth_design -top encoder_layer -part $part -flatten_hierarchy none } err]} {
+#     puts ">>> SYNTHESIS FAILED:\n$err"
+#     exit 1
+# }
+Command: synth_design -top encoder_layer -part xc7z007sclg400-1 -flatten_hierarchy none
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2207.742 ; gain = 0.000 ; free physical = 20663 ; free virtual = 58768
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3210.418; parent = 2175.730; children = 1034.688
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 8 - type: integer 
+	Parameter ADDR_W bound to: 16 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'weight_window' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized0' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 32 - type: integer 
+	Parameter ADDR_W bound to: 10 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized0' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-256] done synthesizing module 'weight_window' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'stage_engine' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-256] done synthesizing module 'stage_engine' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-638] synthesizing module 'mac_array' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'mac_lane' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_lane' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_array' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'gemm_sequencer' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-256] done synthesizing module 'gemm_sequencer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized1' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 21 - type: integer 
+	Parameter ADDR_W bound to: 11 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized1' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'softmax_unit' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'exp_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'exp_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'softmax_unit' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'recip_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-256] done synthesizing module 'recip_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'layer_ctrl' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'encoder_layer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+WARNING: [Synth 8-6014] Unused sequential element act_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:115]
+WARNING: [Synth 8-6014] Unused sequential element w_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:187]
+WARNING: [Synth 8-6014] Unused sequential element v1_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:98]
+WARNING: [Synth 8-6014] Unused sequential element sc_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:262]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2207.742 ; gain = 0.000 ; free physical = 20735 ; free virtual = 58868
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3210.418; parent = 2175.730; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2207.742 ; gain = 0.000 ; free physical = 20715 ; free virtual = 58855
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3210.418; parent = 2175.730; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2207.742 ; gain = 0.000 ; free physical = 20715 ; free virtual = 58855
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3210.418; parent = 2175.730; children = 1034.688
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:00.04 ; elapsed = 00:00:00.04 . Memory (MB): peak = 2207.742 ; gain = 0.000 ; free physical = 20713 ; free virtual = 58868
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:34]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:36]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:38]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:41]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:43]
+Finished Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/encoder_layer_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/encoder_layer_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2255.559 ; gain = 0.000 ; free physical = 20661 ; free virtual = 58787
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Constraint Validation Runtime : Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2255.559 ; gain = 0.000 ; free physical = 20661 ; free virtual = 58787
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20859 ; free virtual = 58964
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3258.234; parent = 2223.547; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z007sclg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20859 ; free virtual = 58965
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3258.234; parent = 2223.547; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20859 ; free virtual = 58964
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3258.234; parent = 2223.547; children = 1034.688
+---------------------------------------------------------------------------------
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'stage_engine'
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'layer_ctrl'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                  s_idle |                              001 |                               00
+                  s_read |                              010 |                               01
+                   s_fin |                              100 |                               10
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'one-hot' in module 'stage_engine'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                  s_idle |                         00000001 |                              000
+                 s_setup |                         00000010 |                              001
+                  s_copy |                         00000100 |                              100
+                  s_smax |                         00001000 |                              101
+                   s_run |                         00010000 |                              010
+                  s_wait |                         00100000 |                              011
+               s_advance |                         01000000 |                              110
+                  s_done |                         10000000 |                              111
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'one-hot' in module 'layer_ctrl'
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20870 ; free virtual = 59018
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3258.234; parent = 2223.547; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   2 Input   32 Bit       Adders := 1     
+	   3 Input   27 Bit       Adders := 1     
+	   3 Input   23 Bit       Adders := 1     
+	   2 Input   16 Bit       Adders := 8     
+	   3 Input   16 Bit       Adders := 2     
+	   2 Input   11 Bit       Adders := 1     
+	   2 Input   10 Bit       Adders := 2     
+	   2 Input    7 Bit       Adders := 4     
+	   2 Input    6 Bit       Adders := 1     
+	   2 Input    5 Bit       Adders := 7     
+	   2 Input    4 Bit       Adders := 1     
+	   2 Input    3 Bit       Adders := 2     
+	   2 Input    2 Bit       Adders := 1     
++---Registers : 
+	               32 Bit    Registers := 18    
+	               21 Bit    Registers := 3     
+	               18 Bit    Registers := 2     
+	               16 Bit    Registers := 9     
+	               11 Bit    Registers := 3     
+	               10 Bit    Registers := 3     
+	                8 Bit    Registers := 35    
+	                7 Bit    Registers := 2     
+	                6 Bit    Registers := 1     
+	                5 Bit    Registers := 6     
+	                4 Bit    Registers := 2     
+	                3 Bit    Registers := 4     
+	                2 Bit    Registers := 1     
+	                1 Bit    Registers := 88    
++---Multipliers : 
+	              19x48  Multipliers := 1     
++---RAMs : 
+	             512K Bit	(65536 X 8 bit)          RAMs := 1     
+	              42K Bit	(2048 X 21 bit)          RAMs := 1     
+	              32K Bit	(1024 X 32 bit)          RAMs := 16    
++---ROMs : 
+	                    ROMs := 2     
++---Muxes : 
+	   2 Input   48 Bit        Muxes := 32    
+	   2 Input   32 Bit        Muxes := 10    
+	   2 Input   31 Bit        Muxes := 1     
+	   2 Input   25 Bit        Muxes := 1     
+	   2 Input   24 Bit        Muxes := 1     
+	   2 Input   21 Bit        Muxes := 3     
+	   2 Input   18 Bit        Muxes := 1     
+	   2 Input   16 Bit        Muxes := 8     
+	   3 Input   16 Bit        Muxes := 2     
+	   7 Input   16 Bit        Muxes := 4     
+	   9 Input   16 Bit        Muxes := 2     
+	   9 Input   12 Bit        Muxes := 1     
+	   2 Input   11 Bit        Muxes := 1     
+	   4 Input   10 Bit        Muxes := 1     
+	   7 Input   10 Bit        Muxes := 1     
+	   2 Input   10 Bit        Muxes := 1     
+	   2 Input    8 Bit        Muxes := 4     
+	   8 Input    8 Bit        Muxes := 1     
+	   6 Input    8 Bit        Muxes := 1     
+	  15 Input    8 Bit        Muxes := 1     
+	   2 Input    7 Bit        Muxes := 4     
+	   3 Input    7 Bit        Muxes := 2     
+	   7 Input    6 Bit        Muxes := 1     
+	   7 Input    5 Bit        Muxes := 2     
+	   2 Input    5 Bit        Muxes := 2     
+	   8 Input    5 Bit        Muxes := 2     
+	   9 Input    5 Bit        Muxes := 1     
+	   2 Input    4 Bit        Muxes := 2     
+	   8 Input    4 Bit        Muxes := 2     
+	   9 Input    4 Bit        Muxes := 1     
+	   2 Input    3 Bit        Muxes := 4     
+	   7 Input    3 Bit        Muxes := 2     
+	   3 Input    3 Bit        Muxes := 1     
+	   8 Input    3 Bit        Muxes := 1     
+	   2 Input    2 Bit        Muxes := 2     
+	   2 Input    1 Bit        Muxes := 34    
+	   3 Input    1 Bit        Muxes := 6     
+	   7 Input    1 Bit        Muxes := 13    
+	  15 Input    1 Bit        Muxes := 2     
+	   6 Input    1 Bit        Muxes := 2     
+	   8 Input    1 Bit        Muxes := 10    
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 66 (col length:40)
+BRAMs: 100 (col length: RAMB18 40 RAMB36 20)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is: ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP ARG, operation Mode is: A*B.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: Generating DSP ARG, operation Mode is: A*B.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: Generating DSP ARG, operation Mode is: (PCIN>>17)+A*B.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: operator ARG is absorbed into DSP ARG.
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:11 ; elapsed = 00:00:11 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20845 ; free virtual = 58953
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1591.497; parent = 1338.427; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3258.234; parent = 2223.547; children = 1034.688
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-3323] Resources of type DSP have been overutilized. Used = 67, Available = 66. Use report_utilization command for details.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is (post resource management): (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP preg_reg, operation Mode is (post resource management): ((C:0x0) or P)+A:B.
+DSP Report: register preg_reg is absorbed into DSP preg_reg.
+DSP Report: operator p_1_out is absorbed into DSP preg_reg.
+DSP Report: Generating DSP ARG, operation Mode is (post resource management): A*B.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: Generating DSP ARG, operation Mode is (post resource management): (PCIN>>17)+A*B.
+DSP Report: operator ARG is absorbed into DSP ARG.
+DSP Report: operator ARG is absorbed into DSP ARG.
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Block RAM: Preliminary Mapping Report (see note below)
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|Module Name               | RTL Object | PORT A (Depth x Width) | W | R | PORT B (Depth x Width) | W | R | Ports driving FF | RAMB18 | RAMB36 | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|act_mem                   | ram_reg    | 64 K x 8(READ_FIRST)   | W |   | 64 K x 8(WRITE_FIRST)  |   | R | Port A and B     | 0      | 16     | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|score_mem                 | ram_reg    | 2 K x 21(READ_FIRST)   | W |   | 2 K x 21(WRITE_FIRST)  |   | R | Port A and B     | 1      | 1      | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+
+Note: The table above is a preliminary report that shows the Block RAMs at the current stage of the synthesis flow. Some Block RAMs may be reimplemented as non Block RAM primitives later in the synthesis flow. Multiple instantiated Block RAMs are reported only once. 
+
+DSP: Preliminary Mapping Report (see note below. The ' indicates corresponding REG is set)
++---------------+--------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|Module Name    | DSP Mapping        | A Size | B Size | C Size | D Size | P Size | AREG | BREG | CREG | DREG | ADREG | MREG | PREG | 
++---------------+--------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|mac_lane       | (A2*B2)'           | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | ((C:0x0) or P)+A:B | 30     | 18     | 18     | -      | 48     | 0    | 0    | 0    | -    | -     | 0    | 1    | 
+|gemm_sequencer | A*B                | 19     | 14     | -      | -      | 48     | 0    | 0    | -    | -    | -     | 0    | 0    | 
+|gemm_sequencer | A*B                | 19     | 18     | -      | -      | 48     | 0    | 0    | -    | -    | -     | 0    | 0    | 
+|gemm_sequencer | (PCIN>>17)+A*B     | 19     | 18     | -      | -      | 48     | 0    | 0    | -    | -    | -     | 0    | 0    | 
++---------------+--------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+
+Note: The table above is a preliminary report that shows the DSPs inferred at the current stage of the synthesis flow. Some DSP may be reimplemented as non DSP primitives later in the synthesis flow. Multiple instantiated DSPs are reported only once.
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:15 ; elapsed = 00:00:16 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20758 ; free virtual = 58880
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1715.648; parent = 1462.609; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3258.234; parent = 2223.547; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:23 ; elapsed = 00:00:24 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20566 ; free virtual = 58683
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1797.840; parent = 1544.801; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3273.523; parent = 2238.836; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Block RAM: Final Mapping Report
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|Module Name               | RTL Object | PORT A (Depth x Width) | W | R | PORT B (Depth x Width) | W | R | Ports driving FF | RAMB18 | RAMB36 | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|act_mem                   | ram_reg    | 64 K x 8(READ_FIRST)   | W |   | 64 K x 8(WRITE_FIRST)  |   | R | Port A and B     | 0      | 16     | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|score_mem                 | ram_reg    | 2 K x 21(READ_FIRST)   | W |   | 2 K x 21(WRITE_FIRST)  |   | R | Port A and B     | 1      | 1      | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_0 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_1 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_2 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_3 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_4 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_5 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_6 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_7 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[0].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[0].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[1].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[1].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[2].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[2].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[3].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[3].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[4].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[4].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[5].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[5].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[6].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[6].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[7].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[7].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance score_mem/ram_reg_0 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance score_mem/ram_reg_1 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance smx/exp_tbl/q_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance recip/q_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:24 ; elapsed = 00:00:25 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20569 ; free virtual = 58698
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1801.840; parent = 1548.801; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3273.523; parent = 2238.836; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:26 ; elapsed = 00:00:27 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20665 ; free virtual = 58782
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1802.270; parent = 1549.230; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3273.523; parent = 2238.836; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:26 ; elapsed = 00:00:27 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20665 ; free virtual = 58782
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1802.270; parent = 1549.230; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3273.523; parent = 2238.836; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:26 ; elapsed = 00:00:28 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20665 ; free virtual = 58794
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1802.570; parent = 1549.531; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3273.523; parent = 2238.836; children = 1034.688
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+DSP Final Report (the ' indicates corresponding REG is set)
++---------------+--------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|Module Name    | DSP Mapping  | A Size | B Size | C Size | D Size | P Size | AREG | BREG | CREG | DREG | ADREG | MREG | PREG | 
++---------------+--------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'     | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | Dynamic      | -      | -      | -      | -      | 48     | -    | -    | -    | -    | -     | 0    | 1    | 
+|gemm_sequencer | A*B          | 18     | 17     | -      | -      | 48     | 0    | 0    | -    | -    | -     | 0    | 0    | 
+|gemm_sequencer | PCIN>>17+A*B | 18     | 17     | -      | -      | 48     | 0    | 0    | -    | -    | -     | 0    | 0    | 
++---------------+--------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+---------+------+
+|      |Cell     |Count |
++------+---------+------+
+|1     |BUFG     |     1|
+|2     |CARRY4   |   190|
+|3     |DSP48E1  |    66|
+|6     |LUT1     |    49|
+|7     |LUT2     |   270|
+|8     |LUT3     |   577|
+|9     |LUT4     |   229|
+|10    |LUT5     |   152|
+|11    |LUT6     |   914|
+|12    |MUXF7    |   192|
+|13    |MUXF8    |    12|
+|14    |RAMB18E1 |     1|
+|15    |RAMB36E1 |    35|
+|21    |FDRE     |   446|
+|22    |FDSE     |    20|
+|23    |IBUF     |    79|
+|24    |OBUF     |    12|
++------+---------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:26 ; elapsed = 00:00:28 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20665 ; free virtual = 58795
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1802.633; parent = 1549.594; children = 253.070
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3273.523; parent = 2238.836; children = 1034.688
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 2 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:25 ; elapsed = 00:00:27 . Memory (MB): peak = 2255.559 ; gain = 0.000 ; free physical = 20701 ; free virtual = 58844
+Synthesis Optimization Complete : Time (s): cpu = 00:00:26 ; elapsed = 00:00:28 . Memory (MB): peak = 2255.559 ; gain = 47.816 ; free physical = 20701 ; free virtual = 58844
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:00.03 . Memory (MB): peak = 2255.559 ; gain = 0.000 ; free physical = 20798 ; free virtual = 58949
+INFO: [Netlist 29-17] Analyzing 496 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+Finished Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2268.781 ; gain = 0.000 ; free physical = 20743 ; free virtual = 58887
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Synth Design complete, checksum: 37db268
+INFO: [Common 17-83] Releasing license: Synthesis
+72 Infos, 11 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:29 ; elapsed = 00:00:29 . Memory (MB): peak = 2268.781 ; gain = 61.039 ; free physical = 21027 ; free virtual = 59185
+# report_utilization              -file $rpt/synth_utilization.rpt
+# report_utilization -hierarchical -file $rpt/synth_utilization_hier.rpt
+# write_checkpoint -force $rpt/post_synth.dcp
+INFO: [Timing 38-480] Writing timing data to binary archive.
+INFO: [Common 17-1381] The checkpoint '/home/REDACTED/Downloads/Mirage/reports_v2/post_synth.dcp' has been generated.
+# set u [report_utilization -return_string]
+# set s_lut  [util_row $u "Slice LUTs"]
+# set s_ff   [util_row $u "Slice Registers"]
+# set s_dsp  [util_row $u "DSPs"]
+# set s_bram [util_row $u "Block RAM Tile"]
+# puts "\n>>> POST-SYNTHESIS: LUT $s_lut  FF $s_ff  DSP $s_dsp  RAMB36 $s_bram"
+
+>>> POST-SYNTHESIS: LUT 1969  FF 466  DSP 66  RAMB36 35.5
+# if {$s_dsp == 0} {
+#     puts ">>> WARNING: 0 DSP. use_dsp=\"yes\" on mac_lane's architecture did not"
+#     puts ">>>          take. Check for a Synth 8-x message about USE_DSP."
+# }
+# if {$s_bram == 0} {
+#     puts ">>> WARNING: 0 BRAM. ram_style=\"block\" did not take. Check that"
+#     puts ">>>          bram_sdp was not inlined and its reset-free process kept."
+# }
+# puts "\n=============== \[phase 2\] opt / place / route ==============="
+
+=============== [phase 2] opt / place / route ===============
+# set routed 1
+# if {[catch { opt_design }   err]} { puts ">>> opt_design failed:\n$err";   set routed 0 }
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z007s'
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:00.88 ; elapsed = 00:00:00.56 . Memory (MB): peak = 2364.828 ; gain = 16.008 ; free physical = 20942 ; free virtual = 59115
+
+Starting Cache Timing Information Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Cache Timing Information Task | Checksum: e0d140f8
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:01 . Memory (MB): peak = 2427.656 ; gain = 62.828 ; free physical = 20665 ; free virtual = 58804
+
+Starting Logic Optimization Task
+
+Phase 1 Retarget
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+INFO: [Opt 31-49] Retargeted 0 cell(s).
+Phase 1 Retarget | Checksum: 19e59020a
+
+Time (s): cpu = 00:00:00.18 ; elapsed = 00:00:00.1 . Memory (MB): peak = 2639.594 ; gain = 0.000 ; free physical = 20438 ; free virtual = 58591
+INFO: [Opt 31-389] Phase Retarget created 0 cells and removed 0 cells
+
+Phase 2 Constant propagation
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Phase 2 Constant propagation | Checksum: 1b1efd134
+
+Time (s): cpu = 00:00:00.22 ; elapsed = 00:00:00.13 . Memory (MB): peak = 2639.594 ; gain = 0.000 ; free physical = 20428 ; free virtual = 58588
+INFO: [Opt 31-389] Phase Constant propagation created 26 cells and removed 79 cells
+
+Phase 3 Sweep
+Phase 3 Sweep | Checksum: 13c3da37e
+
+Time (s): cpu = 00:00:00.3 ; elapsed = 00:00:00.22 . Memory (MB): peak = 2639.594 ; gain = 0.000 ; free physical = 20442 ; free virtual = 58587
+INFO: [Opt 31-389] Phase Sweep created 0 cells and removed 0 cells
+
+Phase 4 BUFG optimization
+Phase 4 BUFG optimization | Checksum: 13c3da37e
+
+Time (s): cpu = 00:00:00.39 ; elapsed = 00:00:00.26 . Memory (MB): peak = 2671.609 ; gain = 32.016 ; free physical = 20442 ; free virtual = 58594
+INFO: [Opt 31-662] Phase BUFG optimization created 0 cells of which 0 are BUFGs and removed 0 cells.
+
+Phase 5 Shift Register Optimization
+INFO: [Opt 31-1064] SRL Remap converted 0 SRLs to 0 registers and converted 0 registers of register chains to 0 SRLs
+Phase 5 Shift Register Optimization | Checksum: 13c3da37e
+
+Time (s): cpu = 00:00:00.39 ; elapsed = 00:00:00.26 . Memory (MB): peak = 2671.609 ; gain = 32.016 ; free physical = 20442 ; free virtual = 58594
+INFO: [Opt 31-389] Phase Shift Register Optimization created 0 cells and removed 0 cells
+
+Phase 6 Post Processing Netlist
+Phase 6 Post Processing Netlist | Checksum: 13c3da37e
+
+Time (s): cpu = 00:00:00.4 ; elapsed = 00:00:00.27 . Memory (MB): peak = 2671.609 ; gain = 32.016 ; free physical = 20442 ; free virtual = 58594
+INFO: [Opt 31-389] Phase Post Processing Netlist created 0 cells and removed 0 cells
+Opt_design Change Summary
+=========================
+
+
+-------------------------------------------------------------------------------------------------------------------------
+|  Phase                        |  #Cells created  |  #Cells Removed  |  #Constrained objects preventing optimizations  |
+-------------------------------------------------------------------------------------------------------------------------
+|  Retarget                     |               0  |               0  |                                              0  |
+|  Constant propagation         |              26  |              79  |                                              0  |
+|  Sweep                        |               0  |               0  |                                              0  |
+|  BUFG optimization            |               0  |               0  |                                              0  |
+|  Shift Register Optimization  |               0  |               0  |                                              0  |
+|  Post Processing Netlist      |               0  |               0  |                                              0  |
+-------------------------------------------------------------------------------------------------------------------------
+
+
+
+Starting Connectivity Check Task
+
+Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2671.609 ; gain = 0.000 ; free physical = 20434 ; free virtual = 58592
+Ending Logic Optimization Task | Checksum: 110550ece
+
+Time (s): cpu = 00:00:00.44 ; elapsed = 00:00:00.31 . Memory (MB): peak = 2671.609 ; gain = 32.016 ; free physical = 20434 ; free virtual = 58592
+
+Starting Power Optimization Task
+INFO: [Pwropt 34-132] Skipping clock gating for clocks with a period < 2.00 ns.
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Running Vector-less Activity Propagation...
+
+Finished Running Vector-less Activity Propagation
+INFO: [Pwropt 34-9] Applying IDT optimizations ...
+INFO: [Pwropt 34-10] Applying ODC optimizations ...
+
+
+Starting PowerOpt Patch Enables Task
+INFO: [Pwropt 34-162] WRITE_MODE attribute of 0 BRAM(s) out of a total of 36 has been updated to save power. Run report_power_opt to get a complete listing of the BRAMs updated.
+INFO: [Pwropt 34-201] Structural ODC has moved 0 WE to EN ports
+Number of BRAM Ports augmented: 17 newly gated: 0 Total Ports: 72
+Number of Flops added for Enable Generation: 4
+
+Ending PowerOpt Patch Enables Task | Checksum: a3d3c8f5
+
+Time (s): cpu = 00:00:00.11 ; elapsed = 00:00:00.09 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20510 ; free virtual = 58682
+Ending Power Optimization Task | Checksum: a3d3c8f5
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:02 . Memory (MB): peak = 2855.672 ; gain = 184.062 ; free physical = 20567 ; free virtual = 58739
+
+Starting Final Cleanup Task
+
+Starting Logic Optimization Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Logic Optimization Task | Checksum: d0bba5d4
+
+Time (s): cpu = 00:00:00.7 ; elapsed = 00:00:00.28 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20412 ; free virtual = 58564
+Ending Final Cleanup Task | Checksum: d0bba5d4
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20597 ; free virtual = 58756
+
+Starting Netlist Obfuscation Task
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20597 ; free virtual = 58756
+Ending Netlist Obfuscation Task | Checksum: d0bba5d4
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20597 ; free virtual = 58756
+INFO: [Common 17-83] Releasing license: Implementation
+23 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:00:10 ; elapsed = 00:00:07 . Memory (MB): peak = 2855.672 ; gain = 506.852 ; free physical = 20597 ; free virtual = 58756
+# if {$routed && [catch { place_design } err]} { puts ">>> place_design failed:\n$err"; set routed 0 }
+Command: place_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+Running DRC as a precondition to command place_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+Starting Placer Task
+INFO: [Place 30-611] Multithreading enabled for place_design using a maximum of 8 CPUs
+
+Phase 1 Placer Initialization
+
+Phase 1.1 Placer Initialization Netlist Sorting
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20566 ; free virtual = 58740
+Phase 1.1 Placer Initialization Netlist Sorting | Checksum: 1331a4c4
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20566 ; free virtual = 58740
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20566 ; free virtual = 58740
+
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device | Checksum: ff682280
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.27 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20592 ; free virtual = 58748
+
+Phase 1.3 Build Placer Netlist Model
+Phase 1.3 Build Placer Netlist Model | Checksum: 1ed92dc3a
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.69 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20623 ; free virtual = 58786
+
+Phase 1.4 Constrain Clocks/Macros
+Phase 1.4 Constrain Clocks/Macros | Checksum: 1ed92dc3a
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.69 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20623 ; free virtual = 58786
+Phase 1 Placer Initialization | Checksum: 1ed92dc3a
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.7 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20623 ; free virtual = 58787
+
+Phase 2 Global Placement
+
+Phase 2.1 Floorplanning
+Phase 2.1 Floorplanning | Checksum: 1cad51e51
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.84 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20732 ; free virtual = 58903
+
+Phase 2.2 Update Timing before SLR Path Opt
+Phase 2.2 Update Timing before SLR Path Opt | Checksum: 1142cb116
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.9 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20764 ; free virtual = 58915
+
+Phase 2.3 Post-Processing in Floorplanning
+Phase 2.3 Post-Processing in Floorplanning | Checksum: 1142cb116
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.91 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20766 ; free virtual = 58917
+
+Phase 2.4 Global Placement Core
+
+Phase 2.4.1 UpdateTiming Before Physical Synthesis
+Phase 2.4.1 UpdateTiming Before Physical Synthesis | Checksum: fb495372
+
+Time (s): cpu = 00:00:12 ; elapsed = 00:00:03 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 21049 ; free virtual = 59200
+
+Phase 2.4.2 Physical Synthesis In Placer
+INFO: [Physopt 32-1035] Found 3 LUTNM shape to break, 413 LUT instances to create LUTNM shape
+INFO: [Physopt 32-1044] Break lutnm for timing: one critical 3, two critical 0, total 3, new lutff created 1
+INFO: [Physopt 32-1138] End 1 Pass. Optimized 202 nets or LUTs. Breaked 3 LUTs, combined 199 existing LUTs and moved 0 existing LUT
+INFO: [Physopt 32-65] No nets found for high-fanout optimization.
+INFO: [Physopt 32-232] Optimized 0 net. Created 0 new instance.
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-456] No candidate cells for DSP register optimization found in the design.
+INFO: [Physopt 32-775] End 2 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-1123] No candidate cells found for Shift Register to Pipeline optimization
+INFO: [Physopt 32-775] End 2 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-677] No candidate cells for Shift Register optimization found in the design
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-526] No candidate cells for BRAM register optimization found in the design
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-846] No candidate cells for URAM register optimization found in the design
+INFO: [Physopt 32-775] End 2 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-949] No candidate nets found for dynamic/static region interface net replication
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20975 ; free virtual = 59183
+
+Summary of Physical Synthesis Optimizations
+============================================
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+|  Optimization                                     |  Added Cells  |  Removed Cells  |  Optimized Cells/Nets  |  Dont Touch  |  Iterations  |  Elapsed   |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+|  LUT Combining                                    |            3  |            199  |                   202  |           0  |           1  |  00:00:00  |
+|  Retime                                           |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Very High Fanout                                 |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  DSP Register                                     |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Shift Register to Pipeline                       |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Shift Register                                   |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  BRAM Register                                    |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  URAM Register                                    |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Dynamic/Static Region Interface Net Replication  |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Total                                            |            3  |            199  |                   202  |           0  |           9  |  00:00:00  |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Phase 2.4.2 Physical Synthesis In Placer | Checksum: 1e362d428
+
+Time (s): cpu = 00:00:12 ; elapsed = 00:00:03 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20931 ; free virtual = 59146
+Phase 2.4 Global Placement Core | Checksum: 1f005bd08
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20921 ; free virtual = 59144
+Phase 2 Global Placement | Checksum: 1f005bd08
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20921 ; free virtual = 59144
+
+Phase 3 Detail Placement
+
+Phase 3.1 Commit Multi Column Macros
+Phase 3.1 Commit Multi Column Macros | Checksum: 1ec86e9a4
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20912 ; free virtual = 59142
+
+Phase 3.2 Commit Most Macros & LUTRAMs
+Phase 3.2 Commit Most Macros & LUTRAMs | Checksum: 229fb600e
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20974 ; free virtual = 59127
+
+Phase 3.3 Area Swap Optimization
+Phase 3.3 Area Swap Optimization | Checksum: 2c9947d03
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20969 ; free virtual = 59129
+
+Phase 3.4 Pipeline Register Optimization
+Phase 3.4 Pipeline Register Optimization | Checksum: 236f590ea
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20969 ; free virtual = 59129
+
+Phase 3.5 Fast Optimization
+Phase 3.5 Fast Optimization | Checksum: 22e8b151b
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:05 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20959 ; free virtual = 59127
+
+Phase 3.6 Small Shape Detail Placement
+Phase 3.6 Small Shape Detail Placement | Checksum: 2f0ce486a
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:06 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20945 ; free virtual = 59099
+
+Phase 3.7 Re-assign LUT pins
+Phase 3.7 Re-assign LUT pins | Checksum: 2107a1a79
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:06 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20935 ; free virtual = 59096
+
+Phase 3.8 Pipeline Register Optimization
+Phase 3.8 Pipeline Register Optimization | Checksum: 165db2ec0
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:06 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20935 ; free virtual = 59096
+
+Phase 3.9 Fast Optimization
+Phase 3.9 Fast Optimization | Checksum: 1327e5be7
+
+Time (s): cpu = 00:00:20 ; elapsed = 00:00:08 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20895 ; free virtual = 59043
+Phase 3 Detail Placement | Checksum: 1327e5be7
+
+Time (s): cpu = 00:00:20 ; elapsed = 00:00:08 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20895 ; free virtual = 59043
+
+Phase 4 Post Placement Optimization and Clean-Up
+
+Phase 4.1 Post Commit Optimization
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+
+Phase 4.1.1 Post Placement Optimization
+Post Placement Optimization Initialization | Checksum: 13e885d4a
+
+Phase 4.1.1.1 BUFG Insertion
+
+Starting Physical Synthesis Task
+
+Phase 1 Physical Synthesis Initialization
+INFO: [Physopt 32-721] Multithreading enabled for phys_opt_design using a maximum of 8 CPUs
+INFO: [Physopt 32-619] Estimated Timing Summary | WNS=-9.675 | TNS=-358.469 |
+Phase 1 Physical Synthesis Initialization | Checksum: 1de484272
+
+Time (s): cpu = 00:00:00.17 ; elapsed = 00:00:00.04 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20878 ; free virtual = 59059
+INFO: [Place 46-56] BUFG insertion identified 0 candidate nets. Inserted BUFG: 0, Replicated BUFG Driver: 0, Skipped due to Placement/Routing Conflicts: 0, Skipped due to Timing Degradation: 0, Skipped due to Illegal Netlist: 0.
+Ending Physical Synthesis Task | Checksum: 149bada48
+
+Time (s): cpu = 00:00:00.19 ; elapsed = 00:00:00.07 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20873 ; free virtual = 59062
+Phase 4.1.1.1 BUFG Insertion | Checksum: 13e885d4a
+
+Time (s): cpu = 00:00:21 ; elapsed = 00:00:09 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20873 ; free virtual = 59062
+
+Phase 4.1.1.2 Post Placement Timing Optimization
+INFO: [Place 30-746] Post Placement Timing Summary WNS=-8.543. For the most accurate timing information please run report_timing.
+Phase 4.1.1.2 Post Placement Timing Optimization | Checksum: 164e96d31
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20850 ; free virtual = 58998
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20850 ; free virtual = 58998
+Phase 4.1 Post Commit Optimization | Checksum: 164e96d31
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20853 ; free virtual = 59008
+
+Phase 4.2 Post Placement Cleanup
+Phase 4.2 Post Placement Cleanup | Checksum: 164e96d31
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20850 ; free virtual = 59011
+
+Phase 4.3 Placer Reporting
+
+Phase 4.3.1 Print Estimated Congestion
+INFO: [Place 30-612] Post-Placement Estimated Congestion 
+ ____________________________________________________
+|           | Global Congestion | Short Congestion  |
+| Direction | Region Size       | Region Size       |
+|___________|___________________|___________________|
+|      North|                2x2|                2x2|
+|___________|___________________|___________________|
+|      South|                2x2|                4x4|
+|___________|___________________|___________________|
+|       East|                1x1|                1x1|
+|___________|___________________|___________________|
+|       West|                2x2|                1x1|
+|___________|___________________|___________________|
+
+Phase 4.3.1 Print Estimated Congestion | Checksum: 164e96d31
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20840 ; free virtual = 59008
+Phase 4.3 Placer Reporting | Checksum: 164e96d31
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20840 ; free virtual = 59008
+
+Phase 4.4 Final Placement Cleanup
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20840 ; free virtual = 59008
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20840 ; free virtual = 59008
+Phase 4 Post Placement Optimization and Clean-Up | Checksum: 118129549
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20836 ; free virtual = 59010
+Ending Placer Task | Checksum: c5e1114f
+
+Time (s): cpu = 00:00:32 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20836 ; free virtual = 59010
+INFO: [Common 17-83] Releasing license: Implementation
+34 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+place_design completed successfully
+place_design: Time (s): cpu = 00:00:33 ; elapsed = 00:00:18 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20829 ; free virtual = 59010
+# if {$routed && [catch { route_design } err]} { puts ">>> route_design failed:\n$err"; set routed 0 }
+Command: route_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z007s'
+Running DRC as a precondition to command route_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+
+Starting Routing Task
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 8 CPUs
+
+Phase 1 Build RT Design
+Checksum: PlaceDB: a4512be7 ConstDB: 0 ShapeSum: 218fe568 RouteDB: 0
+Post Restoration Checksum: NetGraph: 41842d52 NumContArr: ddaedd78 Constraints: 0 Timing: 0
+Phase 1 Build RT Design | Checksum: 11f330aca
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20677 ; free virtual = 58825
+
+Phase 2 Router Initialization
+
+Phase 2.1 Fix Topology Constraints
+Phase 2.1 Fix Topology Constraints | Checksum: 11f330aca
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20641 ; free virtual = 58797
+
+Phase 2.2 Pre Route Cleanup
+Phase 2.2 Pre Route Cleanup | Checksum: 11f330aca
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20633 ; free virtual = 58795
+ Number of Nodes with overlaps = 0
+
+Phase 2.3 Update Timing
+Phase 2.3 Update Timing | Checksum: 15f0d6565
+
+Time (s): cpu = 00:00:08 ; elapsed = 00:00:07 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20602 ; free virtual = 58779
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-8.275 | TNS=-331.495| WHS=-0.138 | THS=-7.968 |
+
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 0 %
+  Global Horizontal Routing Utilization  = 0 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 5048
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 5048
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Phase 2 Router Initialization | Checksum: 20f653459
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:07 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20598 ; free virtual = 58747
+
+Phase 3 Initial Routing
+
+Phase 3.1 Global Routing
+Phase 3.1 Global Routing | Checksum: 20f653459
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:07 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20598 ; free virtual = 58747
+Phase 3 Initial Routing | Checksum: 1a1899760
+
+Time (s): cpu = 00:00:11 ; elapsed = 00:00:07 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20544 ; free virtual = 58701
+INFO: [Route 35-580] Design has 5 pins with tight setup and hold constraints.
+
+The top 5 pins with tight setup and hold constraints:
+
++====================+===================+=====================+
+| Launch Setup Clock | Launch Hold Clock | Pin                 |
++====================+===================+=====================+
+| clk                | clk               | seq/fl_cnt_reg[0]/D |
+| clk                | clk               | seq/fl_cnt_reg[2]/D |
+| clk                | clk               | seq/fl_cnt_reg[1]/D |
+| clk                | clk               | seq/state_reg[1]/D  |
+| clk                | clk               | seq/state_reg[2]/D  |
++--------------------+-------------------+---------------------+
+
+File with complete list of pins: tight_setup_hold_pins.txt
+
+
+Phase 4 Rip-up And Reroute
+
+Phase 4.1 Global Iteration 0
+ Number of Nodes with overlaps = 1982
+ Number of Nodes with overlaps = 1295
+ Number of Nodes with overlaps = 733
+ Number of Nodes with overlaps = 479
+ Number of Nodes with overlaps = 170
+ Number of Nodes with overlaps = 41
+ Number of Nodes with overlaps = 34
+ Number of Nodes with overlaps = 15
+ Number of Nodes with overlaps = 12
+ Number of Nodes with overlaps = 6
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-9.956 | TNS=-1289.511| WHS=N/A    | THS=N/A    |
+
+Phase 4.1 Global Iteration 0 | Checksum: 1459c6dc3
+
+Time (s): cpu = 00:01:07 ; elapsed = 00:00:25 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20350 ; free virtual = 58731
+
+Phase 4.2 Global Iteration 1
+ Number of Nodes with overlaps = 740
+ Number of Nodes with overlaps = 461
+ Number of Nodes with overlaps = 202
+ Number of Nodes with overlaps = 72
+ Number of Nodes with overlaps = 61
+ Number of Nodes with overlaps = 16
+ Number of Nodes with overlaps = 16
+ Number of Nodes with overlaps = 14
+ Number of Nodes with overlaps = 3
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-9.501 | TNS=-1282.543| WHS=N/A    | THS=N/A    |
+
+Phase 4.2 Global Iteration 1 | Checksum: b755e4aa
+
+Time (s): cpu = 00:01:43 ; elapsed = 00:00:41 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20676 ; free virtual = 59082
+
+Phase 4.3 Global Iteration 2
+ Number of Nodes with overlaps = 521
+ Number of Nodes with overlaps = 222
+Phase 4.3 Global Iteration 2 | Checksum: 1d992ec53
+
+Time (s): cpu = 00:01:53 ; elapsed = 00:00:44 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20862 ; free virtual = 59227
+Phase 4 Rip-up And Reroute | Checksum: 1d992ec53
+
+Time (s): cpu = 00:01:53 ; elapsed = 00:00:44 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20854 ; free virtual = 59226
+
+Phase 5 Delay and Skew Optimization
+
+Phase 5.1 Delay CleanUp
+
+Phase 5.1.1 Update Timing
+Phase 5.1.1 Update Timing | Checksum: 1da6afaab
+
+Time (s): cpu = 00:01:54 ; elapsed = 00:00:45 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20859 ; free virtual = 59237
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-9.488 | TNS=-1261.168| WHS=N/A    | THS=N/A    |
+
+ Number of Nodes with overlaps = 0
+Phase 5.1 Delay CleanUp | Checksum: 1ab7c5d38
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20738 ; free virtual = 59102
+
+Phase 5.2 Clock Skew Optimization
+Phase 5.2 Clock Skew Optimization | Checksum: 1ab7c5d38
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20733 ; free virtual = 59104
+Phase 5 Delay and Skew Optimization | Checksum: 1ab7c5d38
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20733 ; free virtual = 59104
+
+Phase 6 Post Hold Fix
+
+Phase 6.1 Hold Fix Iter
+
+Phase 6.1.1 Update Timing
+Phase 6.1.1 Update Timing | Checksum: 18cb39865
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20716 ; free virtual = 59094
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-9.488 | TNS=-980.419| WHS=0.110  | THS=0.000  |
+
+Phase 6.1 Hold Fix Iter | Checksum: 18cb39865
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20716 ; free virtual = 59094
+Phase 6 Post Hold Fix | Checksum: 18cb39865
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20716 ; free virtual = 59094
+
+Phase 7 Route finalize
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 8.12697 %
+  Global Horizontal Routing Utilization  = 6.7261 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 0
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 0
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Congestion Report
+North Dir 1x1 Area, Max Cong = 90.0901%, Congestion bounded by tiles (Lower Left Tile -> Upper Right Tile):
+   INT_R_X7Y73 -> INT_R_X7Y73
+   INT_R_X7Y69 -> INT_R_X7Y69
+South Dir 1x1 Area, Max Cong = 91.8919%, Congestion bounded by tiles (Lower Left Tile -> Upper Right Tile):
+   INT_R_X7Y24 -> INT_R_X7Y24
+   INT_R_X7Y20 -> INT_R_X7Y20
+East Dir 1x1 Area, Max Cong = 82.3529%, No Congested Regions.
+West Dir 1x1 Area, Max Cong = 80.8824%, No Congested Regions.
+
+------------------------------
+Reporting congestion hotspots
+------------------------------
+Direction: North
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 1
+Direction: South
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 1
+Direction: East
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 0
+Direction: West
+----------------
+Congested clusters found at Level 0
+Effective congestion level: 0 Aspect Ratio: 1 Sparse Ratio: 0
+
+Phase 7 Route finalize | Checksum: 1e78a2785
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20707 ; free virtual = 59093
+
+Phase 8 Verifying routed nets
+
+ Verification completed successfully
+Phase 8 Verifying routed nets | Checksum: 1e78a2785
+
+Time (s): cpu = 00:01:57 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20703 ; free virtual = 59095
+
+Phase 9 Depositing Routes
+Phase 9 Depositing Routes | Checksum: 1ef313ca4
+
+Time (s): cpu = 00:01:58 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20693 ; free virtual = 59093
+
+Phase 10 Post Router Timing
+INFO: [Route 35-57] Estimated Timing Summary | WNS=-9.488 | TNS=-980.419| WHS=0.110  | THS=0.000  |
+
+WARNING: [Route 35-328] Router estimated timing not met.
+Resolution: For a complete and accurate timing signoff, report_timing_summary must be run after route_design. Alternatively, route_design can be run with the -timing_summary option to enable a complete timing signoff at the end of route_design.
+Phase 10 Post Router Timing | Checksum: 1ef313ca4
+
+Time (s): cpu = 00:01:58 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20687 ; free virtual = 59094
+INFO: [Route 35-16] Router Completed Successfully
+
+Time (s): cpu = 00:01:58 ; elapsed = 00:00:46 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 20754 ; free virtual = 59160
+
+Routing Is Done.
+INFO: [Common 17-83] Releasing license: Implementation
+14 Infos, 1 Warnings, 0 Critical Warnings and 0 Errors encountered.
+route_design completed successfully
+route_design: Time (s): cpu = 00:01:59 ; elapsed = 00:01:47 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 21157 ; free virtual = 59522
+# puts "\n=============== \[phase 3\] timing + utilisation ==============="
+
+=============== [phase 3] timing + utilisation ===============
+# catch { report_utilization -file $rpt/impl_utilization.rpt }
+# catch { report_timing_summary -delay_type min_max -max_paths 10 \
+#             -file $rpt/impl_timing_summary.rpt }
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+# catch { report_timing -sort_by group -max_paths 20 -path_type summary \
+#             -file $rpt/impl_timing_paths.rpt }
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 20 -nworst 1 -delay_type max -sort_by group.
+# if {$routed} { catch { write_checkpoint -force $rpt/post_route.dcp } }
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Write XDEF Complete: Time (s): cpu = 00:00:00.57 ; elapsed = 00:00:00.22 . Memory (MB): peak = 2855.672 ; gain = 0.000 ; free physical = 21063 ; free virtual = 59471
+INFO: [Common 17-1381] The checkpoint '/home/REDACTED/Downloads/Mirage/reports_v2/post_route.dcp' has been generated.
+# set wns "n/a"
+# if {$routed} {
+#     if {![catch { set wns [get_property SLACK [get_timing_paths -delay_type max]] }]} {
+#         puts ">>> WNS: $wns ns"
+#     }
+# }
+>>> WNS: -9.485 ns
+# set fh [open $rpt/summary_v2.csv w]
+# puts $fh "metric,value,budget,verdict"
+# puts $fh "LUT,$s_lut,12960,[expr {$s_lut ne "-" && $s_lut < 12960 ? "PASS" : "CHECK"}]"
+# puts $fh "FF,$s_ff,28800,-"
+# puts $fh "DSP48E1,$s_dsp,59,[expr {$s_dsp ne "-" && $s_dsp > 0 && $s_dsp < 59 ? "PASS" : "CHECK"}]"
+# puts $fh "RAMB36,$s_bram,47,[expr {$s_bram ne "-" && $s_bram > 0 && $s_bram < 47 ? "PASS" : "CHECK"}]"
+# puts $fh "WNS_ns,$wns,0,[expr {$wns ne "n/a" && $wns >= 0 ? "PASS" : "CHECK"}]"
+# close $fh
+# puts "\n================ MIRAGE v2 ($part) ================"
+
+================ MIRAGE v2 (xc7z007sclg400-1) ================
+# puts [format "  %-10s %10s %10s" metric measured budget]
+  metric       measured     budget
+# puts [format "  %-10s %10s %10s   (plan: <90%)" LUT     $s_lut  12960]
+  LUT              1969      12960   (plan: <90%)
+# puts [format "  %-10s %10s %10s" FF      $s_ff   28800]
+  FF                466      28800
+# puts [format "  %-10s %10s %10s   (plan: <90%)" DSP48E1 $s_dsp  59]
+  DSP48E1            66         59   (plan: <90%)
+# puts [format "  %-10s %10s %10s   (plan: <95%)" RAMB36  $s_bram 47]
+  RAMB36           35.5         47   (plan: <95%)
+# puts [format "  %-10s %10s %10s   (must be >= 0)" WNS_ns  $wns    0]
+  WNS_ns         -9.485          0   (must be >= 0)
+# puts ""
+
+# puts "v1 measured, for comparison: 18182 LUT (126%), 0 BRAM, 2 DSP, no top level."
+v1 measured, for comparison: 18182 LUT (126%), 0 BRAM, 2 DSP, no top level.
+# puts "Reports in reports_v2/, checkpoints post_synth.dcp / post_route.dcp."
+Reports in reports_v2/, checkpoints post_synth.dcp / post_route.dcp.
+# exit
+INFO: [Common 17-206] Exiting Vivado at Thu Jul 30 16:45:00 2026...

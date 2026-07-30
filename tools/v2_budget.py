@@ -221,10 +221,15 @@ print(f"  {'TOTAL':<16}{'':<28}{total_bram:>3} RAMB36  "
 # ---------------------------------------------------------------------
 print("\nDSP BUDGET")
 lanes = CONSTS["N_LANES"]
+# Both figures below are MEASURED from Vivado 2022.2 run 6, not estimated.
+# That run reported 66 DSPs = 32 lanes x 2 + 2, because mac_lane's separate
+# 16-bit product register forced the multiply and the accumulate into two
+# DSPs. mac_lane is now 2-stage, which should make it 1 DSP per lane -- the
+# number to check on the next run.
 print(f"  mac_array         {lanes} x mac_lane (use_dsp=yes)   {lanes:>3} DSP48E1")
 print(f"  gemm_sequencer    scale multiply, {CONSTS['ACC_W']}b x "
-      f"{CONSTS['RECIP_ROM_DW']}b, serialised     ~3 DSP48E1")
-dsp_total = lanes + 3
+      f"{CONSTS['RECIP_ROM_DW']}b, serialised      2 DSP48E1")
+dsp_total = lanes + 2
 print(f"  {'TOTAL':<16}{'':<28}{dsp_total:>3} DSP48E1 "
       f"({dsp_total / DEV['dsp'] * 100:.0f}% of {DEV['dsp']})")
 

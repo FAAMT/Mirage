@@ -63,6 +63,9 @@ begin
     stim : process
         type exp_arr is array (0 to N_LANES - 1) of integer;
         variable expect : exp_arr := (others => 0);
+        -- the sum WITHOUT the final term, so the pipeline depth can be
+        -- pinned rather than merely waited out
+        variable exp_m1 : exp_arr := (others => 0);
         variable seed   : integer := 12345;
         variable av     : integer;
         variable wv     : integer;
@@ -79,6 +82,10 @@ begin
         for k in 0 to K_TEST - 1 loop
             next_rnd(seed, av);
             a  <= to_signed(av, ACT_W);
+
+            if k = K_TEST - 1 then
+                exp_m1 := expect;   -- snapshot before the last term lands
+            end if;
 
             for j in 0 to N_LANES - 1 loop
                 next_rnd(seed, wv);
@@ -103,18 +110,42 @@ begin
         end loop;
 
         -- Flush the lane pipeline. `en` must stay high for the last product
-        -- to reach the accumulator (2 more edges: input reg -> M -> P), but
-        -- the inputs must be ZEROED first -- otherwise stage 1 keeps
-        -- reloading the final a/w and those extra terms accumulate. Driving
-        -- a = 0 makes every flush term 0 * w = 0, so the margin is free.
+        -- to reach the accumulator, but the inputs must be ZEROED first --
+        -- otherwise stage 1 keeps reloading the final a/w and those extra
+        -- terms accumulate. Driving a = 0 makes every flush term 0 * w = 0,
+        -- so the margin is free.
         clr   <= '0';
         a     <= (others => '0');
         w_bus <= (others => '0');
-        for f in 0 to 2 loop
-            wait until rising_edge(clk);
+
+        -- PIN THE PIPELINE DEPTH. The previous version waited three edges
+        -- here, which is generous enough to pass at either depth -- so when
+        -- mac_lane went from 3 stages to 2 (to stop costing two DSPs per
+        -- lane) nothing failed, and gemm_sequencer's flush count had no
+        -- verified basis. Checking the value BEFORE the final edge as well
+        -- makes the depth a tested property.
+        --
+        -- mac_lane is 2 stages: a/w -> areg/breg -> preg. Term k enters the
+        -- input registers at the loop edge that ends iteration k, and lands
+        -- in the accumulator one edge later. So right here the accumulator
+        -- holds terms 0 .. K_TEST-2, and needs exactly ONE more edge.
+        wait for CLK_P / 4;
+        for j in 0 to N_LANES - 1 loop
+            got := to_integer(signed(acc_bus((j + 1) * ACC_W - 1 downto j * ACC_W)));
+            if got /= exp_m1(j) then
+                report "LATENCY: lane " & integer'image(j)
+                     & " one edge before the end should hold the partial sum "
+                     & integer'image(exp_m1(j)) & " but holds "
+                     & integer'image(got)
+                     & " -- mac_lane's depth is not 2 stages"
+                    severity error;
+                errors := errors + 1;
+            end if;
         end loop;
+
+        wait until rising_edge(clk);
+        wait for CLK_P / 4;
         en <= '0';
-        wait for CLK_P;
 
         -- check every lane
         for j in 0 to N_LANES - 1 loop

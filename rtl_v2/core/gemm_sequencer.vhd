@@ -115,7 +115,7 @@ end entity;
 
 architecture rtl of gemm_sequencer is
 
-    type state_t is (S_IDLE, S_MAC, S_FLUSH, S_WB, S_NEXT, S_DONE);
+    type state_t is (S_IDLE, S_MAC, S_FLUSH, S_WB, S_WB_DRAIN, S_NEXT, S_DONE);
     signal state : state_t := S_IDLE;
 
     -- loop counters
@@ -149,6 +149,34 @@ architecture rtl of gemm_sequencer is
     type acc_arr_t is array (0 to N_LANES - 1) of acc_t;
     signal accs : acc_arr_t;
 
+    -- Writeback pipeline.
+    --
+    -- Run 6 measured WNS = -9.485 ns against a 10 ns period with hold met
+    -- (WHS = +0.110) -- a pure setup problem, one cone of logic far too
+    -- deep. S_WB did all of this between two registers:
+    --
+    --   accs(wb_cnt) -> 48x19 multiply -> >> RECIP_FRAC -> >> rq_shift
+    --                -> saturating narrow -> out_data
+    --                                and a SECOND >> rq_shift for out_wide
+    --
+    -- a multi-DSP multiply followed by two 48-bit variable barrel shifters
+    -- and a saturating compare. Now four stages. `scale` and `rq_shift` are
+    -- constant for a whole op, so only the address and a valid bit have to
+    -- travel with the data.
+    --
+    -- Cost: three extra cycles per 32-lane writeback, against a k_len of up
+    -- to 512. Throughput stays one lane per cycle.
+    signal wb1_acc  : acc_t                                 := (others => '0');
+    signal wb1_addr : unsigned(ACT_AW - 1 downto 0)         := (others => '0');
+    signal wb1_v    : std_logic                             := '0';
+    signal wb2_prod : signed(ACC_W + RECIP_ROM_DW downto 0) := (others => '0');
+    signal wb2_addr : unsigned(ACT_AW - 1 downto 0)         := (others => '0');
+    signal wb2_v    : std_logic                             := '0';
+    signal wb3_nar  : acc_t                                 := (others => '0');
+    signal wb3_addr : unsigned(ACT_AW - 1 downto 0)         := (others => '0');
+    signal wb3_v    : std_logic                             := '0';
+    signal wb_drain : unsigned(1 downto 0)                  := (others => '0');
+
 begin
 
     busy    <= busy_i;
@@ -163,8 +191,6 @@ begin
     end generate;
 
     fsm : process (clk)
-        variable scaled_v : signed(ACC_W + RECIP_ROM_DW downto 0);
-        variable narrowed : acc_t;
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -187,12 +213,19 @@ begin
                 w_re       <= '0';
                 out_we     <= '0';
                 out_wide   <= (others => '0');
+                -- the writeback pipeline's valid bits, so nothing is
+                -- written out of a reset
+                wb1_v      <= '0';
+                wb2_v      <= '0';
+                wb3_v      <= '0';
+                wb_drain   <= (others => '0');
             else
-                -- defaults, overridden per state
+                -- defaults, overridden per state. out_we is NOT defaulted
+                -- here -- it is driven only by the writeback pipeline's
+                -- valid bit, after the case statement.
                 done_i <= '0';
                 act_re <= '0';
                 w_re   <= '0';
-                out_we <= '0';
                 en_d1  <= '0';
                 clr_d1 <= '0';
 
@@ -238,16 +271,19 @@ begin
 
                     when S_FLUSH =>
                         -- Drain. Cycle 0 validates the final BRAM fetch; the
-                        -- remaining cycles let it traverse mac_lane's 3
-                        -- stages. en must NOT stay high past cycle 0 --
-                        -- mac_a still holds the last activation and those
-                        -- terms would be accumulated a second time. That
-                        -- exact mistake made the first mac_array testbench
-                        -- fail on 31 of 32 lanes.
+                        -- remaining cycles let it traverse mac_lane's 2
+                        -- stages (A/B registers, then the P accumulator --
+                        -- it was 3 until the second DSP per lane was traced
+                        -- to the separate product register). en must NOT
+                        -- stay high past cycle 0 -- mac_a still holds the
+                        -- last activation and those terms would be
+                        -- accumulated a second time. That exact mistake made
+                        -- the first mac_array testbench fail on 31 of 32
+                        -- lanes.
                         if fl_cnt = 0 then
                             en_d1 <= '1';
                         end if;
-                        if fl_cnt = 4 then
+                        if fl_cnt = 3 then
                             wb_cnt <= (others => '0');
                             state  <= S_WB;
                         else
@@ -255,26 +291,31 @@ begin
                         end if;
 
                     when S_WB =>
-                        -- One lane per cycle through a single requantiser.
+                        -- Stage 1 only: pick the lane and form its address.
+                        -- One lane per cycle through a single requantiser --
                         -- N_LANES = 32 cycles against a k_len up to 512, so
                         -- under 7% overhead for 1/32 of the requantiser area.
-                        out_we   <= '1';
-                        -- scale (Q16) then requantise. One multiplier here,
-                        -- shared across all N_LANES because writeback is
-                        -- serialised.
-                        scaled_v := accs(to_integer(wb_cnt))
-                                    * signed('0' & scale);
-                        narrowed := resize(shift_right(scaled_v, RECIP_FRAC), ACC_W);
-                        out_data <= requant(narrowed, to_integer(unsigned(rq_shift)));
-                        out_wide <= resize(shift_right(narrowed,
-                                                       to_integer(unsigned(rq_shift))),
-                                           SCORE_W);
-                        out_waddr <= std_logic_vector(out_row + out_tile
-                                                      + resize(wb_cnt, ACT_AW));
+                        -- The multiply and requantisation happen in the
+                        -- pipeline below the case statement.
+                        wb1_acc  <= accs(to_integer(wb_cnt));
+                        wb1_addr <= out_row + out_tile + resize(wb_cnt, ACT_AW);
+                        wb1_v    <= '1';
                         if wb_cnt = N_LANES - 1 then
-                            state <= S_NEXT;
+                            wb_drain <= (others => '0');
+                            state    <= S_WB_DRAIN;
                         else
                             wb_cnt <= wb_cnt + 1;
+                        end if;
+
+                    when S_WB_DRAIN =>
+                        -- Stop issuing and let the last beat traverse
+                        -- stages 2, 3 and 4. Leaving early would drop the
+                        -- final lane's write.
+                        wb1_v <= '0';
+                        if wb_drain = 2 then
+                            state <= S_NEXT;
+                        else
+                            wb_drain <= wb_drain + 1;
                         end if;
 
                     when S_NEXT =>
@@ -304,6 +345,33 @@ begin
                         state  <= S_IDLE;
 
                 end case;
+
+                -------------------------------------------------------
+                -- Writeback pipeline, stages 2 to 4.
+                --
+                -- Outside the case so it drains regardless of state, and
+                -- AFTER it so these assignments win over the defaults
+                -- above: out_we is driven by the pipeline's valid bit and
+                -- by nothing else.
+                -------------------------------------------------------
+                -- stage 2: the scale multiply, alone in its own cycle
+                wb2_prod <= wb1_acc * signed('0' & scale);
+                wb2_addr <= wb1_addr;
+                wb2_v    <= wb1_v;
+
+                -- stage 3: the fixed Q16 shift, which is pure rewiring
+                wb3_nar  <= resize(shift_right(wb2_prod, RECIP_FRAC), ACC_W);
+                wb3_addr <= wb2_addr;
+                wb3_v    <= wb2_v;
+
+                -- stage 4: the variable requantisation shift and the
+                -- saturating narrow to int8
+                out_data  <= requant(wb3_nar, to_integer(unsigned(rq_shift)));
+                out_wide  <= resize(shift_right(wb3_nar,
+                                                to_integer(unsigned(rq_shift))),
+                                    SCORE_W);
+                out_waddr <= std_logic_vector(wb3_addr);
+                out_we    <= wb3_v;
             end if;
         end if;
     end process;

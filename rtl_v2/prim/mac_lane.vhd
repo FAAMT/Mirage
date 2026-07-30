@@ -74,15 +74,13 @@ end entity;
 
 architecture rtl of mac_lane is
 
-    signal areg : act_t                                   := (others => '0');
-    signal breg : wgt_t                                   := (others => '0');
-    signal mreg : signed(ACT_W + WGT_W - 1 downto 0)      := (others => '0');
-    signal preg : acc_t                                   := (others => '0');
+    signal areg : act_t := (others => '0');
+    signal breg : wgt_t := (others => '0');
+    signal preg : acc_t := (others => '0');
 
     -- clr has to travel with the data it applies to: it is sampled with
-    -- a/b but acted on two stages later, at the accumulator.
+    -- a/b but acted on one stage later, at the accumulator.
     signal clr_d1 : std_logic := '0';
-    signal clr_d2 : std_logic := '0';
 
     -- Override Vivado's small-multiplier heuristic. This is the line that
     -- turns 0 DSPs into N_LANES DSPs.
@@ -93,6 +91,24 @@ begin
 
     acc <= preg;
 
+    -- TWO stages, not three. An earlier version registered the product in
+    -- its own 16-bit `mreg` between the multiply and the accumulate, which
+    -- reads like the DSP48E1's native A/B -> M -> P pipeline but is not.
+    -- Vivado 2022.2 measured it as TWO DSPs per lane (run 6):
+    --
+    --   mac_lane | (A2*B2)'           |  8 |  8 | 16   <- the multiply
+    --   mac_lane | ((C:0x0) or P)+A:B | 30 | 18 | 48   <- a second DSP,
+    --                                                     used as an adder
+    --
+    -- The DSP's internal M register is the full 43-bit product and is not
+    -- addressable as a 16-bit value, so asking for a 16-bit register forces
+    -- the product out to fabric and into a second DSP's A:B port. 32 lanes
+    -- x 2 + 2 in gemm_sequencer = 66, the entire device, and synthesis
+    -- reported Used = 67, Available = 66.
+    --
+    -- Letting the multiply stay combinational between the input registers
+    -- and the accumulator is the unambiguous single-DSP MACC: A/B regs,
+    -- MREG = 0, P accumulates. The DSP48E1 is built for exactly this.
     mac_proc : process (clk)
     begin
         if rising_edge(clk) then
@@ -102,15 +118,11 @@ begin
                 breg   <= b;
                 clr_d1 <= clr;
 
-                -- stage 2: multiplier register (DSP M)
-                mreg   <= areg * breg;
-                clr_d2 <= clr_d1;
-
-                -- stage 3: accumulator (DSP P)
-                if clr_d2 = '1' then
-                    preg <= resize(mreg, ACC_W);
+                -- stage 2: accumulator (DSP P), multiply folded in
+                if clr_d1 = '1' then
+                    preg <= resize(areg * breg, ACC_W);
                 else
-                    preg <= preg + resize(mreg, ACC_W);
+                    preg <= preg + resize(areg * breg, ACC_W);
                 end if;
             end if;
         end if;

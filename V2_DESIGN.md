@@ -235,6 +235,89 @@ Both gates were extended so this class cannot recur:
   explicit `ALLOW` entry with a reason. Its operand regex also excluded
   newlines, so it had been skipping every multi-line multiply silently.
 
+## Run 6 (2026-07-30): it fits and routes; two numbers still wrong
+
+**Zero errors, zero critical warnings, full flow through routing.** The
+architecture is confirmed — both hard-block goals were met, and the LUT
+problem that started all of this is gone.
+
+| | v1 | run 6 | device | |
+|---|---|---|---|---|
+| LUT | 18,182 (126%) | **1,969** | 14,400 | **13.7%** — 9.2x reduction |
+| FF | 385 | 466 | 28,800 | 1.6% |
+| RAMB36 | **0** | **35.5** | 50 | 71%, as predicted |
+| DSP48E1 | **2** | **66** | 66 | **100% — saturated** |
+| WNS | never reached | **−9.485 ns** | ≥ 0 | fails |
+
+`ram_style="block"` and `use_dsp="yes"` both took. The BRAM prediction of 35
+tiles was exact. What went wrong is narrower than v1's problem and fully
+diagnosed from the reports.
+
+### DSP: two per lane, not one
+
+The DSP report named the cause directly:
+
+```
+mac_lane | (A2*B2)'           |  8 |  8 | 16   <- the multiply
+mac_lane | ((C:0x0) or P)+A:B | 30 | 18 | 48   <- a SECOND DSP, as an adder
+```
+
+32 × 2 + 2 in `gemm_sequencer` = 66, and synthesis reported
+`Used = 67, Available = 66` before demoting one.
+
+`mac_lane` registered the product in its own 16-bit `mreg` between the
+multiply and the accumulate. That reads like the DSP48E1's native
+A/B → M → P pipeline, but the DSP's M register is the full 43-bit product
+and is not addressable as a 16-bit value — so asking for a 16-bit register
+forces the product out to fabric and into a second DSP's `A:B` port.
+
+Now 2 stages: input registers, then the accumulator, with the multiply
+combinational between them (`MREG = 0`). That is the unambiguous
+single-DSP MACC. Expected: **34 DSP (52%)**.
+
+The depth change rippled into `gemm_sequencer`'s flush count (5 cycles → 4).
+That count had **no verified basis** — `mac_array_tb` waited three edges,
+generous enough to pass at either depth, so changing the depth broke
+nothing and proved nothing. The testbench now checks the accumulator one
+edge *before* the end too, pinning the depth. Verified against the 3-stage
+version: 32 failures. Against the 2-stage version: pass.
+
+### Timing: the writeback did everything in one cycle
+
+`WNS = −9.485 ns` on a 10 ns period, with **hold met** (`WHS = +0.110`) —
+a pure setup problem, one cone far too deep. `S_WB` sat between two
+registers and did:
+
+```
+accs(wb_cnt) -> 48x19 multiply -> >> RECIP_FRAC -> >> rq_shift
+             -> saturating narrow -> out_data
+                             and a SECOND >> rq_shift for out_wide
+```
+
+A multi-DSP multiply, then two 48-bit *variable* barrel shifters, then a
+saturating compare. Now four stages — lane select, multiply, fixed Q16
+shift, then the variable shift and narrow — with the address and a valid
+bit travelling alongside. `scale` and `rq_shift` are constant for a whole
+op, so nothing else needs to travel. Cost: three extra cycles per 32-lane
+writeback against a `k_len` up to 512; throughput stays one lane per cycle.
+
+**This fix is inferred, not confirmed.** The log carries only the summary;
+`reports_v2/impl_timing_summary.rpt` has the actual path and I have not
+seen it. The reasoning is strong — that cone is the deepest logic in the
+design by inspection — but the next run should be checked against the
+report, not assumed.
+
+### One warning left open
+
+Four read-enable registers were removed as unused (`Synth 8-6014`):
+`act_re_reg`, `w_re_reg`, `v1_reg`, `sc_re_reg`. The enables *are* wired
+end to end — `weight_window` passes `rd_en` to every bank's `re`, and
+`bram_sdp` gates its read on it — so this is most likely benign: if `re` is
+provably high whenever the result is consumed, the BRAM reads every cycle
+and downstream samples when it cares. Flagged rather than fixed, because
+this is the warning class that preceded v1's silent `smx_core` deletion,
+and only the hierarchical report or a functional simulation settles it.
+
 ## Running it
 
 ```bash
