@@ -54,10 +54,29 @@ package mirage_v2_pkg is
     ---------------------------------------------------------------------
     constant ACT_W   : positive := 8;   -- int8 activations
     constant WGT_W   : positive := 8;   -- int8 weights
-    constant ACC_W   : positive := 48;  -- DSP48E1 P register width
+
+    -- Accumulator width. This was 48 -- the DSP48E1 P register -- back when
+    -- the accumulator lived inside the DSP. It does not any more (see
+    -- prim/mac_lane.vhd), so 48 bits would just be fabric nobody uses.
+    --
+    -- Worst case is the FFN output layer: 2048 terms of int8 x int8.
+    --   2048 * 128 * 128 = 2^25, plus a sign bit = 27 bits.
+    -- 32 leaves 5 bits of headroom and is asserted below.
+    constant ACC_W   : positive := 32;
     constant SCORE_W : positive := 21;  -- QK^T score, as v1
     constant EXP_W   : positive := 24;  -- exp() result, Q-format
     constant SUM_W   : positive := 32;  -- softmax denominator
+
+    -- Longest reduction any op performs, which is what bounds ACC_W. The
+    -- FFN output layer reduces over FFN_DIM; every other op is MODEL_DIM or
+    -- shorter. mac_array asserts ACC_W against this.
+    constant MAX_REDUCE : positive := FFN_DIM;
+
+    -- mac_lane latency, input to accumulator, in clock edges. Declared ONCE
+    -- here because three places have to agree on it: mac_lane's pipeline,
+    -- gemm_sequencer's S_FLUSH drain, and mac_array_tb's latency check.
+    -- They drifted apart twice when this was a literal in each of them.
+    constant MAC_LAT : positive := 3;
 
     ---------------------------------------------------------------------
     -- MAC array geometry
@@ -210,6 +229,10 @@ package mirage_v2_pkg is
     -- because it was a constant shift and therefore pure rewiring.
     function requant(acc : acc_t; shift : natural) return act_t;
 
+    -- Bits needed to index n values: ceil(log2(n)). Written as a loop, not
+    -- 2**k arithmetic, because VHDL's integer is 32-bit and 2**31 overflows.
+    function clog2(n : positive) return natural;
+
     -- Saturating narrow to int8 with NO shift, for a datapath that has
     -- already shifted. Avoids a wide comparator -- see the body.
     function sat8(v : acc_t) return act_t;
@@ -277,6 +300,17 @@ package body mirage_v2_pkg is
         -- shifts once into its own pipeline register and calls sat8. Kept
         -- for anything that wants the whole operation combinationally.
         return sat8(shift_right(acc, shift));
+    end function;
+
+    function clog2(n : positive) return natural is
+        variable r : natural  := 0;
+        variable v : positive := 1;
+    begin
+        while v < n loop
+            v := v * 2;
+            r := r + 1;
+        end loop;
+        return r;
     end function;
 
     function addr_mul(idx : unsigned; stride : natural; w : positive)

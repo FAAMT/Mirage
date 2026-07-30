@@ -351,6 +351,68 @@ and downstream samples when it cares. Flagged rather than fixed, because
 this is the warning class that preceded v1's silent `smx_core` deletion,
 and only the hierarchical report or a functional simulation settles it.
 
+## Run 7 (2026-07-30): the attribute was the bug, not the pipeline
+
+Run 7 reported the same `Synth 8-3323` as run 6 — `Used = 67, Available =
+66` — on the rebuilt code. Restructuring `mac_lane` from three stages to two
+changed **nothing**, and that is the useful result: it rules out the coding
+style and leaves only one explanation.
+
+```vhdl
+attribute use_dsp of rtl : architecture is "yes";
+```
+
+`use_dsp` on an **architecture** applies to every arithmetic operation
+inside it. So it was not just asking Vivado to put the multiply in a DSP —
+it was asking for the accumulator too, and Vivado obliged:
+
+```
+mac_lane | (A2*B2)'           |  8 |  8 | 16   <- the multiply
+mac_lane | ((C:0x0) or P)+A:B | 30 | 18 | 48   <- the accumulator
+```
+
+Two runs were spent rearranging a pipeline that was never the problem.
+
+### The fix, and why it is the same trade as v2 itself
+
+The attribute is now scoped **per signal**: `"yes"` on the product, `"no"`
+on the accumulator. The 32 accumulators move to fabric.
+
+That is v2's founding argument, inverted — and it is the right way round
+now:
+
+| | v1 | run 6 |
+|---|---|---|
+| LUT | 18,182 (**126%**) | 1,969 (13.7%) |
+| DSP | 2 (3%) | 66 (**100%**) |
+
+v1 ran out of LUTs with the DSPs idle, so arithmetic moved *into* DSPs. Run
+6 measured the exact opposite, so the accumulator moves *back out*. Cost is
+32 × 32-bit adds — about 256 CARRY4 and 1,024 flops against 14,400 LUT and
+28,800 FF sitting unused.
+
+**Expected: 34 DSP (52%).**
+
+### ACC_W narrowed 48 → 32
+
+48 was only ever "the DSP48E1 P register width". With the accumulator in
+fabric that number means nothing, and 16 of those bits were unreachable.
+The real bound is the FFN output layer: 2048 terms of int8 × int8 = 2²⁵,
+plus sign = **27 bits**.
+
+`mac_array` now asserts `ACC_W >= ACT_W + WGT_W + clog2(MAX_REDUCE)`, so a
+future narrowing fails loudly with the arithmetic spelled out rather than
+wrapping silently. Narrowing also shrinks the scale multiply (32×18 instead
+of 48×18) and the whole writeback pipeline.
+
+### Latency has one home now
+
+`mac_lane`'s depth and `gemm_sequencer`'s flush count drifted apart twice,
+and `mac_array_tb` was too generous to notice either time. Both now derive
+from `MAC_LAT` in the package, and the testbench checks the accumulator one
+edge *before* the end. Verified: declaring `MAC_LAT = 2` while `mac_lane` is
+really 3 produces 32 failures.
+
 ## Running it
 
 ```bash

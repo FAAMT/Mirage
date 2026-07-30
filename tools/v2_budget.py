@@ -221,15 +221,29 @@ print(f"  {'TOTAL':<16}{'':<28}{total_bram:>3} RAMB36  "
 # ---------------------------------------------------------------------
 print("\nDSP BUDGET")
 lanes = CONSTS["N_LANES"]
-# Both figures below are MEASURED from Vivado 2022.2 run 6, not estimated.
-# That run reported 66 DSPs = 32 lanes x 2 + 2, because mac_lane's separate
-# 16-bit product register forced the multiply and the accumulate into two
-# DSPs. mac_lane is now 2-stage, which should make it 1 DSP per lane -- the
-# number to check on the next run.
-print(f"  mac_array         {lanes} x mac_lane (use_dsp=yes)   {lanes:>3} DSP48E1")
+# MEASURED, not estimated. Runs 6 and 7 both reported 67 DSPs against a
+# device with 66, because `use_dsp of rtl : architecture is "yes"` applied
+# to EVERY operation in mac_lane -- so the accumulator got a DSP of its own:
+#
+#   mac_lane | (A2*B2)'           |  8 |  8 | 16   the multiply
+#   mac_lane | ((C:0x0) or P)+A:B | 30 | 18 | 48   the accumulator
+#
+# 32 x 2 + 3 = 67. Restructuring the pipeline between runs 6 and 7 changed
+# nothing, which is the evidence that the attribute -- not the coding style
+# -- was asking for the second DSP.
+#
+# The attribute is now per signal: "yes" on the product, "no" on the
+# accumulator, which moves 32 adders into fabric. That is the v2 trade
+# inverted, and it is the right way round now: run 6 measured 1,969 LUT
+# (13.7%) against 66 DSP (100%).
+print(f"  mac_array         {lanes} x mac_lane (use_dsp on the product only)"
+      f"  {lanes:>3} DSP48E1")
 print(f"  gemm_sequencer    scale multiply, {CONSTS['ACC_W']}b x "
       f"{CONSTS['RECIP_ROM_DW']}b, serialised      2 DSP48E1")
 dsp_total = lanes + 2
+print(f"  {'':<18}(ACC_W narrowed 48 -> {CONSTS['ACC_W']} now that the")
+print(f"  {'':<18} accumulator is not a DSP P register, which also")
+print(f"  {'':<18} shrinks the scale multiply)")
 print(f"  {'TOTAL':<16}{'':<28}{dsp_total:>3} DSP48E1 "
       f"({dsp_total / DEV['dsp'] * 100:.0f}% of {DEV['dsp']})")
 
@@ -241,9 +255,13 @@ bram_pct = total_bram / DEV["ramb36"] * 100
 dsp_pct = dsp_total / DEV["dsp"] * 100
 print(f"  BRAM  {bram_pct:>5.0f}%   {'PASS' if bram_pct < 95 else 'FAIL'}")
 print(f"  DSP   {dsp_pct:>5.0f}%   {'PASS' if dsp_pct < 90 else 'FAIL'}")
-print("  LUT     n/a   NOT PREDICTABLE FROM THE RTL -- all storage and")
-print("                arithmetic is now in hard blocks, so what remains is")
-print("                control logic. Only synthesis can measure it. v1's")
-print("                measured 18,182 LUT (126%) is the number to beat.")
+print("  LUT     n/a   NOT PREDICTABLE FROM THE RTL. Storage is all in BRAM")
+print("                and every multiply is in a DSP, but the 32 lane")
+print(f"                accumulators are now DELIBERATELY in fabric: {lanes} x")
+print(f"                {CONSTS['ACC_W']}b adds, roughly {lanes * CONSTS['ACC_W'] // 4:,} CARRY4 and "
+      f"{lanes * CONSTS['ACC_W']:,} flops,")
+print("                against run 6's measured 1,969 LUT and 466 FF. Only")
+print("                synthesis can measure the total; v1's 18,182 LUT")
+print("                (126%) is the number to beat.")
 
 sys.exit(1 if violations else 0)

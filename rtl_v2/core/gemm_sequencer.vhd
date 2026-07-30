@@ -43,8 +43,8 @@
 -- Both the activation buffer and the weight window are synchronous-read
 -- BRAM: data arrives one cycle after the address. So mac_en and mac_clr are
 -- issued one cycle behind the address generator, via *_d1, to line up with
--- the data they belong to. mac_lane then adds its own 2-stage pipeline,
--- which S_FLUSH covers.
+-- the data they belong to. mac_lane then adds its own MAC_LAT-stage
+-- pipeline, which S_FLUSH covers.
 -- =====================================================================
 
 library IEEE;
@@ -276,11 +276,12 @@ begin
                         end if;
 
                     when S_FLUSH =>
-                        -- Drain. Cycle 0 validates the final BRAM fetch; the
-                        -- remaining cycles let it traverse mac_lane's 2
-                        -- stages (A/B registers, then the P accumulator --
-                        -- it was 3 until the second DSP per lane was traced
-                        -- to the separate product register). en must NOT
+                        -- Drain. Cycle 0 validates the final BRAM fetch;
+                        -- the remaining cycles let it traverse mac_lane's
+                        -- MAC_LAT stages. Derived from the package constant
+                        -- rather than written as a literal, because this
+                        -- count and mac_lane's depth drifted apart twice.
+                        -- en must NOT
                         -- stay high past cycle 0 -- mac_a still holds the
                         -- last activation and those terms would be
                         -- accumulated a second time. That exact mistake made
@@ -289,7 +290,7 @@ begin
                         if fl_cnt = 0 then
                             en_d1 <= '1';
                         end if;
-                        if fl_cnt = 3 then
+                        if fl_cnt = MAC_LAT + 1 then
                             wb_cnt <= (others => '0');
                             state  <= S_WB;
                         else

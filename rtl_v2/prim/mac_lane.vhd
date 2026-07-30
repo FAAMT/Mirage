@@ -76,53 +76,67 @@ architecture rtl of mac_lane is
 
     signal areg : act_t := (others => '0');
     signal breg : wgt_t := (others => '0');
+    signal mreg : signed(ACT_W + WGT_W - 1 downto 0) := (others => '0');
     signal preg : acc_t := (others => '0');
 
     -- clr has to travel with the data it applies to: it is sampled with
-    -- a/b but acted on one stage later, at the accumulator.
+    -- a/b but acted on two stages later, at the accumulator.
     signal clr_d1 : std_logic := '0';
+    signal clr_d2 : std_logic := '0';
 
-    -- Override Vivado's small-multiplier heuristic. This is the line that
-    -- turns 0 DSPs into N_LANES DSPs.
+    -- THE ATTRIBUTE GOES ON THE SIGNALS, NOT THE ARCHITECTURE.
+    --
+    -- `use_dsp of rtl : architecture is "yes"` applies to EVERY arithmetic
+    -- operation in the architecture -- so it demanded a DSP for the
+    -- accumulator as well as the multiply, and Vivado obliged. Runs 6 and 7
+    -- both measured two DSPs per lane:
+    --
+    --   mac_lane | (A2*B2)'           |  8 |  8 | 16   <- the multiply
+    --   mac_lane | ((C:0x0) or P)+A:B | 30 | 18 | 48   <- the accumulator
+    --
+    -- 32 lanes x 2 + the scale multiply = 67 against a device with 66.
+    -- Restructuring the pipeline did not help and could not have: the
+    -- attribute, not the coding style, was asking for the second DSP.
+    --
+    -- So it is now scoped per signal, and the two are pulled apart
+    -- deliberately. That is the same trade v2 was built on, inverted:
+    -- v1 ran out of LUTs with DSPs idle, so arithmetic moved into DSPs.
+    -- Run 6 measured 1,969 LUT (13.7%) and 66 DSP (100%), so the exhausted
+    -- resource is now the DSP and the accumulator moves back to fabric.
+    -- Cost is 32 accumulators of ACC_W bits: roughly 8 CARRY4 and 32 flops
+    -- each, against a device with 14,400 LUT and 28,800 FF spare.
     attribute use_dsp : string;
-    attribute use_dsp of rtl : architecture is "yes";
+    attribute use_dsp of mreg : signal is "yes";   -- multiply -> DSP48E1
+    attribute use_dsp of preg : signal is "no";    -- accumulate -> fabric
 
 begin
 
     acc <= preg;
 
-    -- TWO stages, not three. An earlier version registered the product in
-    -- its own 16-bit `mreg` between the multiply and the accumulate, which
-    -- reads like the DSP48E1's native A/B -> M -> P pipeline but is not.
-    -- Vivado 2022.2 measured it as TWO DSPs per lane (run 6):
-    --
-    --   mac_lane | (A2*B2)'           |  8 |  8 | 16   <- the multiply
-    --   mac_lane | ((C:0x0) or P)+A:B | 30 | 18 | 48   <- a second DSP,
-    --                                                     used as an adder
-    --
-    -- The DSP's internal M register is the full 43-bit product and is not
-    -- addressable as a 16-bit value, so asking for a 16-bit register forces
-    -- the product out to fabric and into a second DSP's A:B port. 32 lanes
-    -- x 2 + 2 in gemm_sequencer = 66, the entire device, and synthesis
-    -- reported Used = 67, Available = 66.
-    --
-    -- Letting the multiply stay combinational between the input registers
-    -- and the accumulator is the unambiguous single-DSP MACC: A/B regs,
-    -- MREG = 0, P accumulates. The DSP48E1 is built for exactly this.
+    -- MAC_LAT = 3 stages, and the split is now on a real boundary: the
+    -- first two stages are the DSP (A/B input registers, then the
+    -- registered product), the third is the fabric accumulator. Registering
+    -- the product inside the DSP is free here -- there is no fusion left to
+    -- break -- and it keeps the fabric adder in a cycle of its own, which
+    -- matters after run 6's -9.485 ns.
     mac_proc : process (clk)
     begin
         if rising_edge(clk) then
             if en = '1' then
-                -- stage 1: input registers (DSP A and B)
+                -- stage 1: DSP A and B input registers
                 areg   <= a;
                 breg   <= b;
                 clr_d1 <= clr;
 
-                -- stage 2: accumulator (DSP P), multiply folded in
-                if clr_d1 = '1' then
-                    preg <= resize(areg * breg, ACC_W);
+                -- stage 2: DSP product register
+                mreg   <= areg * breg;
+                clr_d2 <= clr_d1;
+
+                -- stage 3: fabric accumulator
+                if clr_d2 = '1' then
+                    preg <= resize(mreg, ACC_W);
                 else
-                    preg <= preg + resize(areg * breg, ACC_W);
+                    preg <= preg + resize(mreg, ACC_W);
                 end if;
             end if;
         end if;

@@ -125,10 +125,15 @@ begin
         -- verified basis. Checking the value BEFORE the final edge as well
         -- makes the depth a tested property.
         --
-        -- mac_lane is 2 stages: a/w -> areg/breg -> preg. Term k enters the
-        -- input registers at the loop edge that ends iteration k, and lands
-        -- in the accumulator one edge later. So right here the accumulator
-        -- holds terms 0 .. K_TEST-2, and needs exactly ONE more edge.
+        -- Term k enters the input registers at the loop edge that ends
+        -- iteration k and reaches the accumulator MAC_LAT-1 edges later.
+        -- So MAC_LAT-2 edges from here the accumulator holds every term but
+        -- the last, and one edge after that it holds them all. Derived from
+        -- the package constant, so changing mac_lane's depth without
+        -- updating MAC_LAT fails here rather than silently passing.
+        for f in 1 to MAC_LAT - 2 loop
+            wait until rising_edge(clk);
+        end loop;
         wait for CLK_P / 4;
         for j in 0 to N_LANES - 1 loop
             got := to_integer(signed(acc_bus((j + 1) * ACC_W - 1 downto j * ACC_W)));

@@ -56,6 +56,22 @@ end entity;
 architecture rtl of mac_array is
 begin
 
+    -- The accumulator must not wrap. A product of two ACT_W/WGT_W-bit
+    -- signed values needs ACT_W+WGT_W bits, and summing MAX_REDUCE of them
+    -- adds clog2(MAX_REDUCE) more. The worst case is the FFN output layer,
+    -- reducing over FFN_DIM = 2048 terms.
+    --
+    -- Checked here because ACC_W stopped being "the DSP48E1 P register
+    -- width" when the accumulator moved to fabric -- it is now a number
+    -- someone could shrink without realising what bounds it.
+    assert ACC_W >= ACT_W + WGT_W + clog2(MAX_REDUCE)
+        report "ACC_W = " & integer'image(ACC_W) & " is too narrow: "
+             & integer'image(MAX_REDUCE) & " terms of "
+             & integer'image(ACT_W) & "x" & integer'image(WGT_W)
+             & " need " & integer'image(ACT_W + WGT_W + clog2(MAX_REDUCE))
+             & " bits"
+        severity failure;
+
     lanes : for j in 0 to N_LANES - 1 generate
         signal acc_j : acc_t;
     begin
