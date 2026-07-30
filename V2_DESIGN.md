@@ -413,6 +413,100 @@ from `MAC_LAT` in the package, and the testbench checks the accumulator one
 edge *before* the end. Verified: declaring `MAC_LAT = 2` while `mac_lane` is
 really 3 produces 32 failures.
 
+## Run 8 (2026-07-30): resources met, timing still short
+
+| | v1 | run 6 | run 8 | budget | |
+|---|---|---|---|---|---|
+| LUT | 18,182 (126%) | 1,969 | **2,303** | 12,960 | PASS, 16% |
+| FF | 385 | 466 | **1,570** | 28,800 | PASS |
+| DSP48E1 | 2 | **66** ✗ | **34** | 59 | **PASS, 52%** |
+| RAMB36 | 0 | 35.5 | **35.5** | 47 | PASS, 71% |
+| WNS | — | −9.485 | **−6.226** | ≥ 0 | fails |
+
+Scoping `use_dsp` per signal worked exactly as predicted: **34 DSP**, no
+`Synth 8-3323`. LUT and FF rose by roughly what 32 fabric accumulators
+should cost, which is the confirmation that they landed where intended.
+
+**All three resource targets are met.** What remains is timing.
+
+### The critical path moved, and changed character
+
+| | run 6 | run 8 |
+|---|---|---|
+| path | accumulator → writeback → `out_data` | score BRAM → `smx/rom_addr` |
+| delay | 18.689 ns | 15.569 ns |
+| logic / route | 43% / **57%** | **63%** / 37% |
+| levels | 24 (14 CARRY4) | 24 (**17 CARRY4**) |
+
+The writeback cone is gone. The new one is the softmax exp-index path, and
+it is now *logic*-dominated — which is the tractable kind.
+
+The cause was `integer`:
+
+```vhdl
+z := to_integer(s_data) - to_integer(max_q);   -- 32-bit subtract
+if z > 0 then z := 0; elsif z < EXP_Z_MIN then z := EXP_Z_MIN; end if;
+idx := (-z) / (2 ** EXP_ROM_SH);               -- 32-bit negate + DIVISION
+if idx > 2**EXP_ROM_AW - 1 then ... end if;
+```
+
+`integer` is 32 bits, so a 21-bit subtract, two clamps and a negate all ran
+at 32 bits — and `/` is a truncating division, not a shift, so it carries
+sign-correction logic the design never needed.
+
+`mirage_v2_pkg.exp_index` replaces it:
+
+- **signed at the natural width**, 22 bits instead of 32
+- **`mag = max - s`** instead of `z = s - max`, so `mag` is non-negative by
+  contract and the negate in front of the shift disappears
+- **one clamp instead of three** — clamping `mag` to `MAG_MAX = 2^(AW+SH)−1`
+  makes `mag >> SH` fit `EXP_ROM_AW` bits *by construction*, so the separate
+  index test is gone. And a comparison against `2^k − 1` is an OR over the
+  high bits, not a carry chain.
+- an **explicit shift**, so there is no division to correct
+
+It is a package function rather than inline code specifically so it can be
+tested: `rtl_v2/pkg/exp_idx_tb.vhd` checks it against the original integer
+formulation on **37,215 inputs** — the clamp region swept exhaustively, every
+named boundary individually, out-of-contract inputs, and the extremes of
+`score_t`. Shifting the clamp by one index step produces 19 mismatches, so
+the test is not vacuous.
+
+### A correctness bug this run exposed
+
+Chasing the path surfaced something unrelated to timing. `layer_ctrl` line
+341 asserts `rc_re` — latch `1/sum8` for the row — in the same cycle it
+*issues* the last score column:
+
+```vhdl
+if sm_col = unsigned(n_tok) - 1 then
+    if sm_pass = '1' then
+        rc_re <= '1';   -- latch 1/sum8 for this row
+```
+
+But `sum8` only includes that column after it has traversed
+clamp → ROM → requantise → accumulate. So the reciprocal is fetched against
+a sum that is missing the last two or three columns of every row.
+
+This is **not** caused by the changes above — it is pre-existing, and it is a
+numerical error rather than a synthesis one, so nothing in the toolchain
+flags it. It needs a proper drain handshake between `softmax_unit` and
+`layer_ctrl`, and a system-level testbench to verify. Left in place
+deliberately rather than half-fixed: changing softmax's latency on top of an
+already-wrong handshake would make both harder to reason about.
+
+### If timing is still short
+
+Removing ~17 CARRY4 from a 15.6 ns path should recover several ns, but
+route was still 37% and no RTL change addresses that directly. If WNS is
+close but negative, the remaining levers in order of preference:
+
+1. `bram_sdp` already has a `DOUT_REG` generic, bound to 0 everywhere. Turning
+   it on for `score_mem` adds a pipeline stage *inside* the BRAM — but see
+   the handshake bug above before changing any softmax-path latency.
+2. The clock. 15.6 ns implies ~64 MHz; the plan's 100 MHz was already a
+   fallback from 125.
+
 ## Running it
 
 ```bash

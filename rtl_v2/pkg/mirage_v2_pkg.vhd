@@ -19,7 +19,9 @@
 --   * the activation is BROADCAST to all lanes -- 1 byte per cycle
 --   * weights are 32 CONSECUTIVE bytes per cycle -- 8 BRAM banks x 32 bits,
 --     two ports each, never 60
---   * each accumulator lives in a DSP48E1's P register, not in fabric
+--   * every multiply is a DSP48E1; the accumulators are deliberately in
+--     fabric (runs 6-8: LUT fell to 13.7% while DSP hit 100%, so the
+--     scarce resource inverted -- see prim/mac_lane.vhd)
 --
 -- and there is exactly ONE client of the MAC array (gemm_sequencer), which
 -- removes the need for the four-way arbiter v1 lacked.
@@ -186,6 +188,13 @@ package mirage_v2_pkg is
     constant EXP_ROM_FRAC : positive := 16;               -- output Q format
     constant EXP_ROM_SH   : positive := 4;                -- (-z) >> 4 = index
 
+    -- Largest (max - score) the exp path indexes with. Clamping the
+    -- magnitude to 2**(AW+SH)-1 makes (mag >> EXP_ROM_SH) fit EXP_ROM_AW
+    -- bits BY CONSTRUCTION, so softmax_unit needs one clamp instead of
+    -- three -- and a comparison against 2**k-1 is an OR over the high bits,
+    -- not a carry chain. Equals -EXP_Z_MIN - 1, which is asserted below.
+    constant MAG_MAX : positive := 2 ** (EXP_ROM_AW + EXP_ROM_SH) - 1;
+
     -- Softmax normalisation. No divider and no materialised probabilities:
     -- unnormalised exp values feed the MAC array as int8 activations, and
     -- one reciprocal lookup scales the whole output vector at the end,
@@ -228,6 +237,11 @@ package mirage_v2_pkg is
     -- 60-lane combinational `quantizer`, which synthesised to nothing
     -- because it was a constant shift and therefore pure rewiring.
     function requant(acc : acc_t; shift : natural) return act_t;
+
+    -- exp ROM index for one score against the row max. Contract: s <= max.
+    -- A function so it can be tested directly against the reference
+    -- formulation -- see rtl_v2/pkg/exp_idx_tb.vhd.
+    function exp_index(max_v : score_t; s : score_t) return unsigned;
 
     -- Bits needed to index n values: ceil(log2(n)). Written as a loop, not
     -- 2**k arithmetic, because VHDL's integer is 32-bit and 2**31 overflows.
@@ -300,6 +314,21 @@ package body mirage_v2_pkg is
         -- shifts once into its own pipeline register and calls sat8. Kept
         -- for anything that wants the whole operation combinationally.
         return sat8(shift_right(acc, shift));
+    end function;
+
+    function exp_index(max_v : score_t; s : score_t) return unsigned is
+        variable mag  : signed(SCORE_W downto 0);
+        variable idxv : unsigned(EXP_ROM_AW - 1 downto 0);
+    begin
+        mag := resize(max_v, SCORE_W + 1) - resize(s, SCORE_W + 1);
+        if mag(SCORE_W) = '1' then
+            idxv := (others => '0');      -- s > max: outside the contract
+        elsif mag > MAG_MAX then
+            idxv := (others => '1');      -- exp(z) below one LSB
+        else
+            idxv := resize(shift_right(unsigned(mag), EXP_ROM_SH), EXP_ROM_AW);
+        end if;
+        return idxv;
     end function;
 
     function clog2(n : positive) return natural is

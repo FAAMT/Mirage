@@ -80,6 +80,13 @@ begin
     e_data  <= e_q;
     sum8    <= std_logic_vector(sum_q);
 
+    -- MAG_MAX must be exactly the old clamp floor, or the ROM domain and
+    -- the index range stop agreeing.
+    assert MAG_MAX = -EXP_Z_MIN - 1
+        report "MAG_MAX (" & integer'image(MAG_MAX) & ") /= -EXP_Z_MIN-1 ("
+             & integer'image(-EXP_Z_MIN - 1) & ")"
+        severity failure;
+
     exp_tbl : entity work.exp_rom
         port map (clk => clk, re => rom_re, addr => rom_addr, dout => rom_dout);
 
@@ -87,8 +94,6 @@ begin
     -- Stage 1: max tracking (PASS_MAX) and z -> ROM address (PASS_EXP)
     ---------------------------------------------------------------------
     front : process (clk)
-        variable z    : integer;
-        variable idx  : integer;
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -115,19 +120,15 @@ begin
                             max_valid <= '1';
                         end if;
                     else
-                        -- PASS_EXP: z = s - max, always <= 0. Clamp to the
-                        -- ROM domain and index it.
-                        z := to_integer(s_data) - to_integer(max_q);
-                        if z > 0 then
-                            z := 0;                      -- out of contract
-                        elsif z < EXP_Z_MIN then
-                            z := EXP_Z_MIN;              -- below one LSB
-                        end if;
-                        idx := (-z) / (2 ** EXP_ROM_SH);
-                        if idx > 2 ** EXP_ROM_AW - 1 then
-                            idx := 2 ** EXP_ROM_AW - 1;
-                        end if;
-                        rom_addr <= std_logic_vector(to_unsigned(idx, EXP_ROM_AW));
+                        -- PASS_EXP. This was open-coded here with `integer`
+                        -- variables, so the subtract, both clamps, the
+                        -- negate and the divide all ran at 32 bits: run 8's
+                        -- worst path was 17 CARRY4 levels from the score
+                        -- BRAM to rom_addr (-6.226 ns, 62% logic). It is now
+                        -- exp_index -- signed at the natural width, one
+                        -- clamp instead of three, and a shift instead of a
+                        -- division -- and is tested in exp_idx_tb.
+                        rom_addr <= std_logic_vector(exp_index(max_q, s_data));
                         rom_re   <= '1';
                         v1       <= '1';
                     end if;

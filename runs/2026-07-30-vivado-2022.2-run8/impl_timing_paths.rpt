@@ -1,0 +1,38 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.2 (lin64) Build 3671981 Fri Oct 14 04:59:54 MDT 2022
+| Date         : Thu Jul 30 19:18:50 2026
+| Host         : REDACTED running 64-bit Ubuntu 22.04.4 LTS
+| Command      : report_timing -sort_by group -max_paths 20 -path_type summary -file /home/REDACTED/Downloads/Mirage/reports_v2/impl_timing_paths.rpt
+| Design       : encoder_layer
+| Device       : 7z007s-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Startpoint                     Endpoint                       Slack(ns)     
+----------------------------------------------------------------------------
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[10]/S         -6.226        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[1]/S          -6.226        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[8]/S          -6.226        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[9]/S          -6.226        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[3]/S          -6.165        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[5]/S          -6.165        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[0]/S          -6.131        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[2]/S          -6.131        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[4]/S          -6.131        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[6]/S          -6.131        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[7]/S          -6.131        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[10]/D         -3.448        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[6]/D          -3.414        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[8]/D          -3.379        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[7]/D          -3.210        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[9]/D          -3.140        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[3]/D          -3.102        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[2]/D          -3.076        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[4]/D          -3.053        
+score_mem/ram_reg_0/CLKBWRCLK  smx/rom_addr_reg[5]/D          -3.044        
+
+
+
