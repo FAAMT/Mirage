@@ -238,7 +238,9 @@ which is why the same defect in `qkv_score_calc.vhd` and `weight_stream_ctrl.vhd
 went unreported — the lint gate found those.
 
 Logs in `runs/` have had the host name, owner, PID and memory size scrubbed, and
-`vivado.pb` (a regenerable binary message DB that embedded the hostname) removed.
+two regenerable Vivado artifacts removed: `vivado.pb` (a binary message DB that
+embedded the hostname) and `project.wdf` (webtalk usage telemetry — a project
+UUID plus tool-usage counters, dropped before this went to a remote).
 
 ## Verified before shipping
 
