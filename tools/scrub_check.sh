@@ -12,11 +12,11 @@
 # It replaces me grepping by hand, which failed twice on the same package:
 #
 #   1. The pre-push scan was piped through `head -40`, so it TRUNCATED and
-#      I reported the package clean. 260 occurrences of /home/developer
+#      I reported the package clean. 260 occurrences of a real /home/<user> path
 #      were sitting in vivado.log below the cut.
 #   2. The patterns were wrong for the data. I searched for the word
 #      "hostname" and for *.local. Vivado writes the machine as
-#      `# Running On: SLTD-00558` and `| Host : SLTD-00558`, so a real
+#      `# Running On: <ASSET-TAG>` and `| Host : <ASSET-TAG>`, so a real
 #      corporate hostname went to the remote in the first push.
 #
 # Both failures share a cause: an ad-hoc scan whose coverage lives in
@@ -38,12 +38,31 @@ fi
 
 # This script documents the exact patterns it hunts for, so it matches
 # itself. Exclude it, or it can never report clean.
+#
+# That exclusion is a hole, and it bit once: an early version quoted a REAL
+# hostname as an example in the comment above, so the identifier was pushed
+# inside the very file meant to stop it -- unscannable by construction.
+# Examples here must be placeholders like <ASSET-TAG>, never real values.
+# The self-check below enforces that much.
 FILTERED=()
 for f in "${FILES[@]}"; do
     [[ "$f" == "tools/scrub_check.sh" ]] && continue
     FILTERED+=("$f")
 done
 FILES=("${FILTERED[@]}")
+
+# Self-check: the excluded file must not contain a literal identifier.
+# Placeholders are angle-bracketed; anything else shaped like an asset tag
+# or a home path in this script is a mistake.
+self_bad=$(grep -nE '/home/[a-z]|\b[A-Z]{3,6}-[0-9]{3,6}\b' "$0" \
+           | grep -vE '<[A-Z-]+>|/home/REDACTED|/home/<user>|VHDL-|FROZEN-|ISO-|UTF-' || true)
+if [[ -n "$self_bad" ]]; then
+    echo "FAIL  scrub_check.sh contains a literal identifier in its own text"
+    printf '%s\n' "$self_bad" | sed 's/^/      /'
+    echo
+    echo "SCRUB CHECK FAIL -- fix the example to a placeholder."
+    exit 1
+fi
 
 echo "scrub_check: ${#FILES[@]} files"
 echo
