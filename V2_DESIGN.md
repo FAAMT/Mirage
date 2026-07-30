@@ -141,11 +141,24 @@ at 2 KB instead of 32 KB.
 
 ## Verification status — read this before trusting anything
 
+**Verified by Vivado 2022.2 (run 5, 2026-07-30 — elaboration only):**
+- 11 of 12 modules elaborate clean on the real tool: `bram_sdp` at all
+  three parameterisations (8×64K, 32×1024, 21×2048), `mac_lane`,
+  `mac_array`, `weight_window`, `stage_engine`, `gemm_sequencer`,
+  `softmax_unit`, `exp_rom`, `recip_rom`. `layer_ctrl` failed; fixed, see
+  below.
+- No complaint about `use_dsp` on `mac_lane`. Encouraging, **not proof** —
+  DSP inference happens after elaboration, which never completed.
+
 **Verified by simulation:**
 - `mac_array` — all 32 lanes match a full-precision golden model over 64
   reduction steps (`rtl_v2/core/mac_array_tb.vhd`, self-checking, fails
   loudly). This found a real bug: holding `en` high during the pipeline
   flush re-accumulates the last operands, which broke 31 of 32 lanes.
+- **address arithmetic** — `rtl_v2/pkg/addr_math_tb.vhd` checks head bases
+  against `h * HEAD_DIM` and proves the 2,048 score addresses are
+  *injective* and in range. Aliasing there would corrupt attention
+  silently rather than fail.
 - exp and reciprocal table accuracy, in the generators, against float.
 
 **Verified structurally:**
@@ -183,6 +196,44 @@ at 2 KB instead of 32 KB.
 - **`stage_engine` multi-tile interaction.** The staging address generator
   handles both access patterns, but its interaction with the two-column-tile
   ×V op needs a directed test.
+
+## Run 5 (2026-07-30): two bugs neither local gate caught
+
+Vivado got through 11 of 12 modules and stopped in `layer_ctrl`. Both
+defects trace to the same operator, and one of them was silent.
+
+**`numeric_std."*"(UNSIGNED, NATURAL)` converts the natural to the width of
+the LEFT operand** — it is defined as `L * TO_UNSIGNED(R, L'LENGTH)`. Two
+consequences, both present:
+
+| form | what happens | who catches it |
+|---|---|---|
+| `head * HEAD_DIM`, 4-bit head | `TO_UNSIGNED(64, 4)` = 0, so the product is **0 for every head** — every head addressed head 0's K/V | nothing. Not GHDL analyse/elaborate, not Vivado synthesis |
+| `resize(head,11) * MAX_TOK * MAX_TOK` | result is `L'LENGTH + R'LENGTH` wide, so chained multiplies reach **44 bits** into an 11-bit target | `ERROR: [Synth 8-690]` |
+
+The loud one masked the silent one, and the silent one was worse: four
+sites, and Vivado would have synthesised it without a warning. Fixed by
+`mirage_v2_pkg.addr_mul(idx, stride, w)` — widen, multiply, trim — used at
+all six sites. Every `stride` is a power of two, so it stays a wired shift
+and does not compete for DSPs.
+
+**`rom_style` on a `constant` is ignored.** `WARNING: [Synth 8-5733]
+ignoring attributes on constant declaration ROM`, on both tables. That
+would have put 36,864 bits of `exp_rom` into LUT fabric — v1's exact
+failure mode, reappearing through a different door. Both ROMs are now
+`signal` arrays with initial values, which is what UG901's ROM template
+uses and what attributes actually attach to.
+
+Both gates were extended so this class cannot recur:
+
+- `rtl_v2/pkg/addr_math_tb.vhd` — new; checks values and injectivity, not
+  widths. Verified to fail on the old expression before being trusted.
+- `tools/v2_budget.py` — **the previous version passed this bug.** It
+  whitelisted "signal × power-of-two constant" as a harmless shift, which
+  is precisely the broken shape. A constant operand no longer makes a
+  multiply safe; signal multiplies must go through `addr_mul` or an
+  explicit `ALLOW` entry with a reason. Its operand regex also excluded
+  newlines, so it had been skipping every multi-line multiply silently.
 
 ## Running it
 

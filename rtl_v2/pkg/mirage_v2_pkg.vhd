@@ -210,6 +210,28 @@ package mirage_v2_pkg is
     -- because it was a constant shift and therefore pure rewiring.
     function requant(acc : acc_t; shift : natural) return act_t;
 
+    -- idx * stride, as a w-bit address. ALWAYS use this instead of writing
+    -- `idx * stride` directly, because numeric_std's
+    --
+    --     function "*" (L : UNSIGNED; R : NATURAL) return UNSIGNED
+    --       is  return L * TO_UNSIGNED(R, L'LENGTH);
+    --
+    -- converts the natural to the width of the LEFT operand. Two ways that
+    -- bites, and Vivado 2022.2 hit both in layer_ctrl on 2026-07-30:
+    --
+    --   * `head * HEAD_DIM` with a 4-bit head is TO_UNSIGNED(64, 4) = 0, so
+    --     the product is 0 for EVERY head. No error from GHDL or Vivado --
+    --     measured, every head addressed head 0's K/V. Silent and total.
+    --   * the result is L'LENGTH + R'LENGTH wide, so chained multiplies grow
+    --     without bound: `resize(head,11) * MAX_TOK * MAX_TOK` is 44 bits,
+    --     which IS a hard error (Synth 8-690, target 11 / source 44).
+    --
+    -- Widen first, then multiply, then trim. `stride` is a power of two at
+    -- every call site, so this is a wired shift, not a multiplier -- it does
+    -- not compete with mac_array for DSPs.
+    function addr_mul(idx : unsigned; stride : natural; w : positive)
+        return unsigned;
+
 end package;
 
 package body mirage_v2_pkg is
@@ -232,6 +254,20 @@ package body mirage_v2_pkg is
         else
             return resize(sh, ACT_W);
         end if;
+    end function;
+
+    function addr_mul(idx : unsigned; stride : natural; w : positive)
+        return unsigned is
+    begin
+        -- resize(idx, w) first, so TO_UNSIGNED(stride, w) holds `stride`
+        -- rather than truncating it; the product is then 2w wide and the
+        -- outer resize trims it back. Guarded so a future dimension change
+        -- fails loudly here instead of silently wrapping.
+        assert stride < 2 ** w
+            report "addr_mul: stride " & integer'image(stride)
+                 & " does not fit in " & integer'image(w) & " bits"
+            severity failure;
+        return resize(resize(idx, w) * stride, w);
     end function;
 
 end package body;

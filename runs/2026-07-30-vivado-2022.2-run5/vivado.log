@@ -1,0 +1,182 @@
+#-----------------------------------------------------------
+source tcl/synth_v2.tcl
+# set part xc7z007sclg400-1
+# set root [file normalize [file dirname [info script]]/..]
+# set rpt  $root/reports_v2
+# file mkdir $rpt
+# puts "Vivado version: [version -short]"
+Vivado version: 2022.2
+# puts "Target part   : $part"
+Target part   : xc7z007sclg400-1
+# puts ""
+
+# set srcs [list \
+#     $root/rtl_v2/pkg/mirage_v2_pkg.vhd \
+#     $root/rtl_v2/prim/bram_sdp.vhd \
+#     $root/rtl_v2/prim/mac_lane.vhd \
+#     $root/rtl_v2/core/mac_array.vhd \
+#     $root/rtl_v2/core/weight_window.vhd \
+#     $root/rtl_v2/core/exp_rom.vhd \
+#     $root/rtl_v2/core/recip_rom.vhd \
+#     $root/rtl_v2/core/softmax_unit.vhd \
+#     $root/rtl_v2/core/stage_engine.vhd \
+#     $root/rtl_v2/core/gemm_sequencer.vhd \
+#     $root/rtl_v2/ctrl/layer_ctrl.vhd \
+#     $root/rtl_v2/top/encoder_layer.vhd \
+# ]
+# proc util_row {str pat} {
+#     foreach line [split $str "\n"] {
+#         if {[string match "|*$pat*|*" $line]} {
+#             set f [split $line "|"]
+#             if {[llength $f] > 2} {
+#                 set v [string trim [lindex $f 2]]
+#                 if {[string is double -strict $v]} { return $v }
+#             }
+#         }
+#     }
+#     return "-"
+# }
+# read_vhdl -vhdl2008 $srcs
+# read_xdc $root/xdc/encoder_layer.xdc
+# puts "\n=============== \[phase 0\] elaborate ==============="
+
+=============== [phase 0] elaborate ===============
+# if {[catch { synth_design -rtl -name rtl_v2 -top encoder_layer -part $part } err]} {
+#     puts ">>> PHASE 0 FAILED. These sources analyse and elaborate cleanly under"
+#     puts ">>> GHDL 4.1.0 --std=08 and report zero readable-out-port sites under"
+#     puts ">>> --std=93, so this is a Vivado VHDL-2008 gap, not a design fault."
+#     puts ">>> Send the errors back rather than editing the RTL.\n"
+#     puts $err
+#     catch { close_design }
+# } else {
+#     puts ">>> phase 0 OK"
+#     close_design
+# }
+Command: synth_design -rtl -name rtl_v2 -top encoder_layer -part xc7z007sclg400-1
+Starting synth_design
+INFO: [Device 21-403] Loading part xc7z007sclg400-1
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 1952.262 ; gain = 369.719 ; free physical = 22105 ; free virtual = 59743
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 8 - type: integer 
+	Parameter ADDR_W bound to: 16 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'weight_window' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized0' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 32 - type: integer 
+	Parameter ADDR_W bound to: 10 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized0' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-256] done synthesizing module 'weight_window' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'stage_engine' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-256] done synthesizing module 'stage_engine' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-638] synthesizing module 'mac_array' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'mac_lane' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_lane' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_array' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'gemm_sequencer' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-256] done synthesizing module 'gemm_sequencer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized1' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 21 - type: integer 
+	Parameter ADDR_W bound to: 11 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized1' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'softmax_unit' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'exp_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+WARNING: [Synth 8-5733] ignoring attributes on constant declaration ROM [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:47]
+INFO: [Synth 8-256] done synthesizing module 'exp_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'softmax_unit' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'recip_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+WARNING: [Synth 8-5733] ignoring attributes on constant declaration ROM [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:44]
+INFO: [Synth 8-256] done synthesizing module 'recip_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+ERROR: [Synth 8-690] width mismatch in assignment; target has 11 bits, source has 44 bits [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:157]
+ERROR: [Synth 8-285] failed synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+ERROR: [Synth 8-285] failed synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 2019.230 ; gain = 436.688 ; free physical = 21953 ; free virtual = 59598
+---------------------------------------------------------------------------------
+RTL Elaboration failed
+26 Infos, 2 Warnings, 0 Critical Warnings and 4 Errors encountered.
+synth_design failed
+>>> PHASE 0 FAILED. These sources analyse and elaborate cleanly under
+>>> GHDL 4.1.0 --std=08 and report zero readable-out-port sites under
+>>> --std=93, so this is a Vivado VHDL-2008 gap, not a design fault.
+>>> Send the errors back rather than editing the RTL.
+
+ERROR: [Vivado_Tcl 4-5] Elaboration failed - please see the console for details
+
+# puts "\n=============== \[phase 1\] synth_design ==============="
+
+=============== [phase 1] synth_design ===============
+# if {[catch { synth_design -top encoder_layer -part $part -flatten_hierarchy none } err]} {
+#     puts ">>> SYNTHESIS FAILED:\n$err"
+#     exit 1
+# }
+Command: synth_design -top encoder_layer -part xc7z007sclg400-1 -flatten_hierarchy none
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2045.047 ; gain = 8.004 ; free physical = 21738 ; free virtual = 59380
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1553.285; parent = 1296.895; children = 256.391
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3018.117; parent = 2045.051; children = 973.066
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 8 - type: integer 
+	Parameter ADDR_W bound to: 16 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'weight_window' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized0' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 32 - type: integer 
+	Parameter ADDR_W bound to: 10 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized0' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-256] done synthesizing module 'weight_window' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'stage_engine' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-256] done synthesizing module 'stage_engine' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-638] synthesizing module 'mac_array' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'mac_lane' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_lane' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_array' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'gemm_sequencer' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-256] done synthesizing module 'gemm_sequencer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized1' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 21 - type: integer 
+	Parameter ADDR_W bound to: 11 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized1' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'softmax_unit' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'exp_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+WARNING: [Synth 8-5733] ignoring attributes on constant declaration ROM [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:47]
+INFO: [Synth 8-256] done synthesizing module 'exp_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'softmax_unit' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'recip_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+WARNING: [Synth 8-5733] ignoring attributes on constant declaration ROM [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:44]
+INFO: [Synth 8-256] done synthesizing module 'recip_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+ERROR: [Synth 8-690] width mismatch in assignment; target has 11 bits, source has 44 bits [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:157]
+ERROR: [Synth 8-285] failed synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+ERROR: [Synth 8-285] failed synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 2045.047 ; gain = 8.004 ; free physical = 21629 ; free virtual = 59273
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1646.188; parent = 1389.797; children = 256.391
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3018.117; parent = 2045.051; children = 973.066
+---------------------------------------------------------------------------------
+RTL Elaboration failed
+INFO: [Common 17-83] Releasing license: Synthesis
+28 Infos, 2 Warnings, 0 Critical Warnings and 4 Errors encountered.
+synth_design failed
+>>> SYNTHESIS FAILED:
+ERROR: [Common 17-69] Command failed: Synthesis failed - please see the console or run log file for details
+
+INFO: [Common 17-206] Exiting Vivado at Thu Jul 30 16:02:06 2026...
+

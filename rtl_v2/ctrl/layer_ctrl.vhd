@@ -154,16 +154,16 @@ begin
     -- Score writeback address: head-major, then query row, then key column.
     -- The sequencer's own out_waddr is an activation-memory address, so the
     -- score path needs its own.
-    sc_waddr_o <= std_logic_vector(resize(head, SCORE_AW) * MAX_TOK * MAX_TOK
-                                   + resize(sm_tok, SCORE_AW) * MAX_TOK
-                                   + resize(sm_col, SCORE_AW));
+    sc_waddr_o <= std_logic_vector(addr_mul(head,   MAX_TOK * MAX_TOK, SCORE_AW)
+                                   + addr_mul(sm_tok, MAX_TOK,        SCORE_AW)
+                                   + resize(sm_col,                   SCORE_AW));
 
     -- Staging geometry: K_h or V_h for the current head, n_tok x HEAD_DIM.
     stage_base <= std_logic_vector(to_unsigned(REG_K, ACT_AW)
-                                   + resize(head * HEAD_DIM, ACT_AW))
+                                   + addr_mul(head, HEAD_DIM, ACT_AW))
                   when op = O_STAGE_K else
                   std_logic_vector(to_unsigned(REG_V, ACT_AW)
-                                   + resize(head * HEAD_DIM, ACT_AW));
+                                   + addr_mul(head, HEAD_DIM, ACT_AW));
     -- QK^T: 64 reduction rows, n_tok lanes, transposed read.
     -- xV   : n_tok reduction rows, 64 lanes (2 column tiles), direct read.
     stage_rows  <= std_logic_vector(to_unsigned(HEAD_DIM, 7)) when op = O_STAGE_K
@@ -200,7 +200,7 @@ begin
                 k_len     <= std_logic_vector(to_unsigned(HEAD_DIM, ACT_AW));
                 n_coltile <= std_logic_vector(to_unsigned(1, 5));
                 act_base  <= std_logic_vector(to_unsigned(REG_Q, ACT_AW)
-                                              + resize(head * HEAD_DIM, ACT_AW));
+                                              + addr_mul(head, HEAD_DIM, ACT_AW));
                 out_base  <= (others => '0');   -- routed to score memory
                 rq_shift  <= std_logic_vector(to_unsigned(RQ_SCORE, 6));
 
@@ -211,7 +211,7 @@ begin
                 n_coltile <= std_logic_vector(to_unsigned(HEAD_DIM / N_LANES, 5));
                 act_base  <= std_logic_vector(to_unsigned(REG_V, ACT_AW));
                 out_base  <= std_logic_vector(to_unsigned(REG_ATTN, ACT_AW)
-                                              + resize(head * HEAD_DIM, ACT_AW));
+                                              + addr_mul(head, HEAD_DIM, ACT_AW));
                 rq_shift  <= std_logic_vector(to_unsigned(RQ_ATTN, 6));
 
             when O_PROJ_O =>
@@ -330,9 +330,9 @@ begin
                         sm_pass_exp <= sm_pass;
                         sc_re       <= '1';
                         sc_raddr    <= std_logic_vector(
-                                          resize(head, SCORE_AW) * MAX_TOK * MAX_TOK
-                                          + resize(sm_tok, SCORE_AW) * MAX_TOK
-                                          + resize(sm_col, SCORE_AW));
+                                          addr_mul(head,   MAX_TOK * MAX_TOK, SCORE_AW)
+                                          + addr_mul(sm_tok, MAX_TOK,        SCORE_AW)
+                                          + resize(sm_col,                   SCORE_AW));
                         sm_s_valid  <= '1';
 
                         if sm_col = unsigned(n_tok) - 1 then

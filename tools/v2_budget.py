@@ -94,32 +94,74 @@ for f in files:
                 violations.append(f"{name}: indexed write to a local array "
                                   f"({tname}) -- should be a bram_sdp")
 
-    # A `*` only matters if BOTH operands are signals. Two other forms are
-    # harmless and were false-positived by an earlier version of this check:
-    #   - slice bounds like (j+1)*ACC_W, where j is a generate index and
-    #     ACC_W a constant: folded at elaboration, no hardware at all
-    #   - signal * power-of-two constant, e.g. head * HEAD_DIM (64):
-    #     synthesises to a wired shift, not a multiplier
+    # Multiply discipline.
+    #
+    # An EARLIER VERSION OF THIS CHECK PASSED A REAL BUG, so the rule is now
+    # stricter. It whitelisted "signal * power-of-two constant" as a harmless
+    # wired shift. `head * HEAD_DIM` is exactly that shape -- and it is
+    # broken, because numeric_std's "*"(UNSIGNED, NATURAL) is defined as
+    # L * TO_UNSIGNED(R, L'LENGTH): the natural is converted to the width of
+    # the LEFT operand. With a 4-bit `head` and HEAD_DIM = 64 that is
+    # TO_UNSIGNED(64, 4) = 0, so the product is 0 for every head. Vivado
+    # 2022.2 synthesised it without complaint; only rtl_v2/pkg/addr_math_tb
+    # catches it.
+    #
+    # So a constant operand no longer makes a multiply safe. Signal
+    # multiplies must go through mirage_v2_pkg.addr_mul (widen, multiply,
+    # trim) or be listed below with a reason.
     KNOWN = set(CONSTS) | {"ACC_W", "WGT_W", "ACT_W", "BANK_W", "SCORE_W",
                            "MAX_TOK", "HEAD_DIM", "N_LANES", "W_BANKS"}
 
+    # (file, fragment) -> why this bare multiply is intended hardware.
+    ALLOW = {
+        ("gemm_sequencer.vhd", "signed('0' & scale)"):
+            "deliberate DSP multiply: the softmax scale, ~3 DSP in the budget",
+        ("mirage_v2_pkg.vhd", "* stride"):
+            "addr_mul's own body -- the sanctioned widen/multiply/trim",
+    }
+
+    # `constant X : T := A * B;` is elaboration-time integer arithmetic and
+    # never becomes hardware. Dropped before the scan rather than allowed
+    # per-site, so new package constants do not need an ALLOW entry.
+    code = "\n".join(l for l in code.split("\n")
+                     if not re.match(r'\s*constant\s+\w+\s*:', l))
+
     def is_const(tok):
         tok = tok.strip().strip("()")
-        if re.fullmatch(r"\d+", tok):
-            return True
-        return tok in KNOWN
+        return bool(re.fullmatch(r"\d+", tok)) or tok in KNOWN
 
-    for m in re.finditer(r'([\w.\(\)\+\- ]{1,40})\*([\w.\(\)\+\- ]{1,40})', code):
+    # Operands may sit on the far side of a line break, so match across
+    # newlines -- the previous version's char class excluded \n, which
+    # silently skipped every multi-line multiply it should have judged.
+    for m in re.finditer(r'([\w.\(\)\+\-\'& \n]{1,60})(?<!\*)\*(?!\*)'
+                         r'([\w.\(\)\+\-\'& \n]{1,60})', code):
+        frag = " ".join(m.group(0).split())
         lhs, rhs = m.group(1), m.group(2)
-        # take the token adjacent to the operator
+
+        # Slice bounds like ((j + 1) * ACC_W - 1 downto j * ACC_W) are pure
+        # elaboration-time arithmetic on a generate index -- no hardware.
+        if "downto" in frag or "to " in rhs:
+            continue
+
+        if any(k[0] == name and k[1] in frag for k in ALLOW):
+            continue
+
         l = re.findall(r'[\w]+', lhs)
         r = re.findall(r'[\w]+', rhs)
         if not l or not r:
             continue
-        if is_const(l[-1]) or is_const(r[0]):
+
+        # Both sides constant -> folded at elaboration, fine.
+        if is_const(l[-1]) and is_const(r[0]):
             continue
-        violations.append(f"{name}: signal*signal multiply outside mac_lane "
-                          f"-> `{m.group(0).strip()[:60]}`")
+
+        which = ("signal*signal" if not (is_const(l[-1]) or is_const(r[0]))
+                 else "signal*constant")
+        violations.append(
+            f"{name}: {which} multiply outside mac_lane/addr_mul "
+            f"-> `{frag[:60]}`\n"
+            f"{'':13}use addr_mul(idx, stride, width) -- a constant operand "
+            f"does NOT make this safe (see the note in this file)")
 
 if violations:
     for v in violations:

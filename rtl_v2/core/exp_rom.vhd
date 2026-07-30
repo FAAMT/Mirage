@@ -44,7 +44,11 @@ architecture rtl of exp_rom is
 
     type rom_t is array (0 to 2047) of std_logic_vector(EXP_ROM_DW - 1 downto 0);
 
-    constant ROM : rom_t := (
+    -- A SIGNAL, not a constant: Vivado 2022.2 emits
+    -- "[Synth 8-5733] ignoring attributes on constant declaration ROM" and
+    -- drops rom_style, which lands the whole table in LUT fabric. Attributes
+    -- on a signal are honoured. Never assigned, so it still infers a ROM.
+    signal ROM : rom_t := (
         "010000000000000000", "001111111100000000", "001111111000000010", "001111110100000100", "001111110000001000", "001111101100001100", "001111101000010010", "001111100100011000",
         "001111100000100000", "001111011100101000", "001111011000110001", "001111010100111100", "001111010001000111", "001111001101010011", "001111001001100000", "001111000101101110",
         "001111000001111101", "001110111110001101", "001110111010011110", "001110110110110000", "001110110011000011", "001110101111010111", "001110101011101011", "001110101000000001",
@@ -304,7 +308,7 @@ architecture rtl of exp_rom is
     );
 
     attribute rom_style : string;
-    attribute rom_style of ROM : constant is "block";
+    attribute rom_style of ROM : signal is "block";
 
     signal q : std_logic_vector(EXP_ROM_DW - 1 downto 0);
 
