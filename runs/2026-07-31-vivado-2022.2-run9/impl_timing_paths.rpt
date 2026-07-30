@@ -1,0 +1,38 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2022.2 (lin64) Build 3671981 Fri Oct 14 04:59:54 MDT 2022
+| Date         : Fri Jul 31 01:54:16 2026
+| Host         : REDACTED running 64-bit Ubuntu 22.04.4 LTS
+| Command      : report_timing -sort_by group -max_paths 20 -path_type summary -file /home/REDACTED/Downloads/Mirage/reports_v2/impl_timing_paths.rpt
+| Design       : encoder_layer
+| Device       : 7z007s-clg400
+| Speed File   : -1  PRODUCTION 1.12 2019-11-22
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Timing Report
+
+Startpoint                     Endpoint                       Slack(ns)     
+----------------------------------------------------------------------------
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[0]       0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[10]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[11]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[12]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[13]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[14]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[15]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[16]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[17]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[18]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[19]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[1]       0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[20]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[21]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[22]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[23]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[24]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[25]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[26]      0.058         
+recip/q_reg/CLKARDCLK          seq/wb2_prod_reg/PCIN[27]      0.058         
+
+
+

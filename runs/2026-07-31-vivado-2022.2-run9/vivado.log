@@ -1,0 +1,1562 @@
+#-----------------------------------------------------------
+# Vivado v2022.2 (64-bit)
+# SW Build 3671981 on Fri Oct 14 04:59:54 MDT 2022
+# IP Build 3669848 on Fri Oct 14 08:30:02 MDT 2022
+# Start of session at: Fri Jul 31 01:51:35 2026
+# Process ID: 209525
+# Current directory: /home/REDACTED/Downloads/Mirage
+# Command line: vivado -mode batch -source tcl/synth_v2.tcl -log reports_v2/vivado_run_7.log -journal reports_v2/vivado_run_7.jou
+# Log file: /home/REDACTED/Downloads/Mirage/reports_v2/vivado_run_7.log
+# Journal file: /home/REDACTED/Downloads/Mirage/reports_v2/vivado_run_7.jou
+# Running On: REDACTED, OS: Linux, CPU Frequency: 400.000 MHz, CPU Physical cores: 16, Host memory: 33265 MB
+#-----------------------------------------------------------
+source tcl/synth_v2.tcl
+# set part xc7z007sclg400-1
+# set root [file normalize [file dirname [info script]]/..]
+# set rpt  $root/reports_v2
+# file mkdir $rpt
+# puts "Vivado version: [version -short]"
+Vivado version: 2022.2
+# puts "Target part   : $part"
+Target part   : xc7z007sclg400-1
+# puts ""
+
+# set srcs [list \
+#     $root/rtl_v2/pkg/mirage_v2_pkg.vhd \
+#     $root/rtl_v2/prim/bram_sdp.vhd \
+#     $root/rtl_v2/prim/mac_lane.vhd \
+#     $root/rtl_v2/core/mac_array.vhd \
+#     $root/rtl_v2/core/weight_window.vhd \
+#     $root/rtl_v2/core/exp_rom.vhd \
+#     $root/rtl_v2/core/recip_rom.vhd \
+#     $root/rtl_v2/core/softmax_unit.vhd \
+#     $root/rtl_v2/core/stage_engine.vhd \
+#     $root/rtl_v2/core/gemm_sequencer.vhd \
+#     $root/rtl_v2/ctrl/layer_ctrl.vhd \
+#     $root/rtl_v2/top/encoder_layer.vhd \
+# ]
+# proc util_row {str pat} {
+#     foreach line [split $str "\n"] {
+#         if {[string match "|*$pat*|*" $line]} {
+#             set f [split $line "|"]
+#             if {[llength $f] > 2} {
+#                 set v [string trim [lindex $f 2]]
+#                 if {[string is double -strict $v]} { return $v }
+#             }
+#         }
+#     }
+#     return "-"
+# }
+# read_vhdl -vhdl2008 $srcs
+# read_xdc $root/xdc/encoder_layer.xdc
+# puts "\n=============== \[phase 0\] elaborate ==============="
+
+=============== [phase 0] elaborate ===============
+# if {[catch { synth_design -rtl -name rtl_v2 -top encoder_layer -part $part } err]} {
+#     puts ">>> PHASE 0 FAILED. These sources analyse and elaborate cleanly under"
+#     puts ">>> GHDL 4.1.0 --std=08 and report zero readable-out-port sites under"
+#     puts ">>> --std=93, so this is a Vivado VHDL-2008 gap, not a design fault."
+#     puts ">>> Send the errors back rather than editing the RTL.\n"
+#     puts $err
+#     catch { close_design }
+# } else {
+#     puts ">>> phase 0 OK"
+#     close_design
+# }
+Command: synth_design -rtl -name rtl_v2 -top encoder_layer -part xc7z007sclg400-1
+Starting synth_design
+INFO: [Device 21-403] Loading part xc7z007sclg400-1
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 1953.121 ; gain = 370.719 ; free physical = 20344 ; free virtual = 59104
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 8 - type: integer 
+	Parameter ADDR_W bound to: 16 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'weight_window' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized0' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 32 - type: integer 
+	Parameter ADDR_W bound to: 10 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized0' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-256] done synthesizing module 'weight_window' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'stage_engine' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-256] done synthesizing module 'stage_engine' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-638] synthesizing module 'mac_array' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'mac_lane' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_lane' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_array' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'gemm_sequencer' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-256] done synthesizing module 'gemm_sequencer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized1' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 21 - type: integer 
+	Parameter ADDR_W bound to: 11 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized1' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'softmax_unit' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'exp_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'exp_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'softmax_unit' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'recip_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-256] done synthesizing module 'recip_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'layer_ctrl' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'encoder_layer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+WARNING: [Synth 8-6014] Unused sequential element act_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:115]
+WARNING: [Synth 8-6014] Unused sequential element w_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:218]
+WARNING: [Synth 8-6014] Unused sequential element v1_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:103]
+WARNING: [Synth 8-6014] Unused sequential element sc_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:262]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:03 . Memory (MB): peak = 2030.121 ; gain = 447.719 ; free physical = 20249 ; free virtual = 59039
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2047.934 ; gain = 465.531 ; free physical = 20240 ; free virtual = 59038
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2047.934 ; gain = 465.531 ; free physical = 20240 ; free virtual = 59038
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:00.03 . Memory (MB): peak = 2047.934 ; gain = 0.000 ; free physical = 20248 ; free virtual = 59052
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:34]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:36]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:38]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:41]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:43]
+Finished Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/encoder_layer_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/encoder_layer_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Completed Processing XDC Constraints
+
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2202.684 ; gain = 0.000 ; free physical = 20253 ; free virtual = 59029
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+RTL Elaboration Complete:  : Time (s): cpu = 00:00:04 ; elapsed = 00:00:05 . Memory (MB): peak = 2202.684 ; gain = 620.281 ; free physical = 20255 ; free virtual = 59031
+32 Infos, 9 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:07 ; elapsed = 00:00:48 . Memory (MB): peak = 2202.684 ; gain = 923.695 ; free physical = 20255 ; free virtual = 59031
+>>> phase 0 OK
+# puts "\n=============== \[phase 1\] synth_design ==============="
+
+=============== [phase 1] synth_design ===============
+# if {[catch { synth_design -top encoder_layer -part $part -flatten_hierarchy none } err]} {
+#     puts ">>> SYNTHESIS FAILED:\n$err"
+#     exit 1
+# }
+Command: synth_design -top encoder_layer -part xc7z007sclg400-1 -flatten_hierarchy none
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z007s'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2202.684 ; gain = 0.000 ; free physical = 19853 ; free virtual = 58615
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3143.738; parent = 2170.672; children = 973.066
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'encoder_layer' [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 8 - type: integer 
+	Parameter ADDR_W bound to: 16 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'weight_window' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized0' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 32 - type: integer 
+	Parameter ADDR_W bound to: 10 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized0' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-256] done synthesizing module 'weight_window' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/weight_window.vhd:67]
+INFO: [Synth 8-638] synthesizing module 'stage_engine' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-256] done synthesizing module 'stage_engine' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:68]
+INFO: [Synth 8-638] synthesizing module 'mac_array' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'mac_lane' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_lane' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/mac_lane.vhd:75]
+INFO: [Synth 8-256] done synthesizing module 'mac_array' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/mac_array.vhd:56]
+INFO: [Synth 8-638] synthesizing module 'gemm_sequencer' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-256] done synthesizing module 'gemm_sequencer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:116]
+INFO: [Synth 8-638] synthesizing module 'bram_sdp__parameterized1' [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+	Parameter DATA_W bound to: 21 - type: integer 
+	Parameter ADDR_W bound to: 11 - type: integer 
+	Parameter DOUT_REG bound to: 0 - type: bool 
+INFO: [Synth 8-256] done synthesizing module 'bram_sdp__parameterized1' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/prim/bram_sdp.vhd:62]
+INFO: [Synth 8-638] synthesizing module 'softmax_unit' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'exp_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'exp_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/exp_rom.vhd:43]
+INFO: [Synth 8-256] done synthesizing module 'softmax_unit' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:61]
+INFO: [Synth 8-638] synthesizing module 'recip_rom' [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-256] done synthesizing module 'recip_rom' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/core/recip_rom.vhd:40]
+INFO: [Synth 8-638] synthesizing module 'layer_ctrl' [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'layer_ctrl' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:110]
+INFO: [Synth 8-256] done synthesizing module 'encoder_layer' (0#1) [/home/REDACTED/Downloads/Mirage/rtl_v2/top/encoder_layer.vhd:75]
+WARNING: [Synth 8-6014] Unused sequential element act_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/stage_engine.vhd:115]
+WARNING: [Synth 8-6014] Unused sequential element w_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/gemm_sequencer.vhd:218]
+WARNING: [Synth 8-6014] Unused sequential element v1_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/core/softmax_unit.vhd:103]
+WARNING: [Synth 8-6014] Unused sequential element sc_re_reg was removed.  [/home/REDACTED/Downloads/Mirage/rtl_v2/ctrl/layer_ctrl.vhd:262]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2202.684 ; gain = 0.000 ; free physical = 19835 ; free virtual = 58625
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3143.738; parent = 2170.672; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2202.684 ; gain = 0.000 ; free physical = 19830 ; free virtual = 58627
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3143.738; parent = 2170.672; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2202.684 ; gain = 0.000 ; free physical = 19830 ; free virtual = 58627
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3143.738; parent = 2170.672; children = 973.066
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.03 . Memory (MB): peak = 2202.684 ; gain = 0.000 ; free physical = 19837 ; free virtual = 58648
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:34]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:36]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:38]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:41]
+WARNING: [Designutils 20-1567] Use of 'set_multicycle_path' with '-hold' is not supported by synthesis. The constraint will not be passed to synthesis. [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc:43]
+Finished Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+INFO: [Project 1-236] Implementation specific constraints were found while reading constraint file [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]. These constraints will be ignored for synthesis but will be used in implementation. Impacted constraints are listed in the file [.Xil/encoder_layer_propImpl.xdc].
+Resolution: To avoid this warning, move constraints listed in [.Xil/encoder_layer_propImpl.xdc] to another XDC file and exclude this new file from synthesis with the used_in_synthesis property (File Properties dialog in GUI) and re-run elaboration/synthesis.
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2252.500 ; gain = 0.000 ; free physical = 19824 ; free virtual = 58593
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2252.500 ; gain = 0.000 ; free physical = 19824 ; free virtual = 58593
+INFO: [Synth 8-11241] undeclared symbol 'REGCCE', assumed default net type 'wire' [/tools/Xilinx/Vivado/2022.2/data/verilog/src/unimacro/BRAM_SINGLE_MACRO.v:2170]
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19925 ; free virtual = 58680
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z007sclg400-1
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19925 ; free virtual = 58681
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19916 ; free virtual = 58678
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'stage_engine'
+INFO: [Synth 8-802] inferred FSM for state register 'state_reg' in module 'layer_ctrl'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                  s_idle |                              001 |                               00
+                  s_read |                              010 |                               01
+                   s_fin |                              100 |                               10
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'one-hot' in module 'stage_engine'
+---------------------------------------------------------------------------------------------------
+                   State |                     New Encoding |                Previous Encoding 
+---------------------------------------------------------------------------------------------------
+                  s_idle |                         00000001 |                              000
+                 s_setup |                         00000010 |                              001
+                  s_copy |                         00000100 |                              100
+                  s_smax |                         00001000 |                              101
+                   s_run |                         00010000 |                              010
+                  s_wait |                         00100000 |                              011
+               s_advance |                         01000000 |                              110
+                  s_done |                         10000000 |                              111
+---------------------------------------------------------------------------------------------------
+INFO: [Synth 8-3354] encoded FSM with state register 'state_reg' using encoding 'one-hot' in module 'layer_ctrl'
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19930 ; free virtual = 58735
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input   27 Bit       Adders := 1     
+	   3 Input   22 Bit       Adders := 1     
+	   2 Input   16 Bit       Adders := 8     
+	   3 Input   16 Bit       Adders := 2     
+	   2 Input   11 Bit       Adders := 1     
+	   2 Input   10 Bit       Adders := 2     
+	   2 Input    7 Bit       Adders := 4     
+	   2 Input    6 Bit       Adders := 1     
+	   2 Input    5 Bit       Adders := 7     
+	   2 Input    4 Bit       Adders := 1     
+	   2 Input    3 Bit       Adders := 2     
+	   2 Input    2 Bit       Adders := 2     
++---Registers : 
+	               51 Bit    Registers := 1     
+	               32 Bit    Registers := 21    
+	               21 Bit    Registers := 3     
+	               18 Bit    Registers := 2     
+	               16 Bit    Registers := 13    
+	               11 Bit    Registers := 3     
+	               10 Bit    Registers := 3     
+	                8 Bit    Registers := 35    
+	                7 Bit    Registers := 2     
+	                6 Bit    Registers := 1     
+	                5 Bit    Registers := 6     
+	                4 Bit    Registers := 2     
+	                3 Bit    Registers := 4     
+	                2 Bit    Registers := 2     
+	                1 Bit    Registers := 92    
++---Multipliers : 
+	              19x32  Multipliers := 1     
++---RAMs : 
+	             512K Bit	(65536 X 8 bit)          RAMs := 1     
+	              42K Bit	(2048 X 21 bit)          RAMs := 1     
+	              32K Bit	(1024 X 32 bit)          RAMs := 16    
++---ROMs : 
+	                    ROMs := 2     
++---Muxes : 
+	   2 Input   32 Bit        Muxes := 9     
+	   2 Input   21 Bit        Muxes := 3     
+	   2 Input   18 Bit        Muxes := 1     
+	   2 Input   16 Bit        Muxes := 8     
+	   3 Input   16 Bit        Muxes := 2     
+	   8 Input   16 Bit        Muxes := 4     
+	   9 Input   16 Bit        Muxes := 2     
+	   9 Input   12 Bit        Muxes := 1     
+	   2 Input   11 Bit        Muxes := 1     
+	   4 Input   10 Bit        Muxes := 1     
+	   8 Input   10 Bit        Muxes := 1     
+	   2 Input   10 Bit        Muxes := 1     
+	   8 Input    8 Bit        Muxes := 1     
+	   6 Input    8 Bit        Muxes := 1     
+	  15 Input    8 Bit        Muxes := 1     
+	   2 Input    8 Bit        Muxes := 2     
+	   2 Input    7 Bit        Muxes := 4     
+	   3 Input    7 Bit        Muxes := 2     
+	   8 Input    6 Bit        Muxes := 1     
+	   8 Input    5 Bit        Muxes := 4     
+	   2 Input    5 Bit        Muxes := 2     
+	   9 Input    5 Bit        Muxes := 1     
+	   2 Input    4 Bit        Muxes := 2     
+	   8 Input    4 Bit        Muxes := 2     
+	   9 Input    4 Bit        Muxes := 1     
+	   2 Input    3 Bit        Muxes := 4     
+	   8 Input    3 Bit        Muxes := 3     
+	   3 Input    3 Bit        Muxes := 1     
+	   2 Input    2 Bit        Muxes := 2     
+	   8 Input    2 Bit        Muxes := 1     
+	   2 Input    1 Bit        Muxes := 36    
+	   3 Input    1 Bit        Muxes := 6     
+	   8 Input    1 Bit        Muxes := 26    
+	  15 Input    1 Bit        Muxes := 2     
+	   6 Input    1 Bit        Muxes := 2     
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 66 (col length:40)
+BRAMs: 100 (col length: RAMB18 40 RAMB36 20)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+WARNING: [Synth 8-7080] Parallel synthesis criteria is not met
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP mreg_reg, operation Mode is: (A2*B2)'.
+DSP Report: register breg_reg is absorbed into DSP mreg_reg.
+DSP Report: register areg_reg is absorbed into DSP mreg_reg.
+DSP Report: register mreg_reg is absorbed into DSP mreg_reg.
+DSP Report: operator mreg0 is absorbed into DSP mreg_reg.
+DSP Report: Generating DSP wb2_prod0, operation Mode is: A*B2.
+DSP Report: register wb2_prod0 is absorbed into DSP wb2_prod0.
+DSP Report: operator wb2_prod0 is absorbed into DSP wb2_prod0.
+DSP Report: operator wb2_prod0 is absorbed into DSP wb2_prod0.
+DSP Report: Generating DSP wb2_prod_reg, operation Mode is: (PCIN>>17)+A*B2.
+DSP Report: register wb1_acc_reg is absorbed into DSP wb2_prod_reg.
+DSP Report: register wb2_prod_reg is absorbed into DSP wb2_prod_reg.
+DSP Report: operator wb2_prod0 is absorbed into DSP wb2_prod_reg.
+DSP Report: operator wb2_prod0 is absorbed into DSP wb2_prod_reg.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[47]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[46]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[45]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[44]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[43]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[42]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[41]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[40]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[39]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[38]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[37]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[36]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[35]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[34]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[33]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[32]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[31]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[30]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[29]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[28]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[27]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[26]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[25]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[24]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[23]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[22]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[21]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[20]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[19]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[18]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[17]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[15]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[14]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[13]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[12]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[11]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[10]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[9]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[8]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[7]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[6]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[5]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[4]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[3]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[2]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[1]) is unused and will be removed from module gemm_sequencer.
+WARNING: [Synth 8-3332] Sequential element (wb2_prod_reg[0]) is unused and will be removed from module gemm_sequencer.
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:10 ; elapsed = 00:00:10 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 20039 ; free virtual = 58802
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1592.830; parent = 1339.602; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Block RAM: Preliminary Mapping Report (see note below)
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|Module Name               | RTL Object | PORT A (Depth x Width) | W | R | PORT B (Depth x Width) | W | R | Ports driving FF | RAMB18 | RAMB36 | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|act_mem                   | ram_reg    | 64 K x 8(READ_FIRST)   | W |   | 64 K x 8(WRITE_FIRST)  |   | R | Port A and B     | 0      | 16     | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|score_mem                 | ram_reg    | 2 K x 21(READ_FIRST)   | W |   | 2 K x 21(WRITE_FIRST)  |   | R | Port A and B     | 1      | 1      | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+
+Note: The table above is a preliminary report that shows the Block RAMs at the current stage of the synthesis flow. Some Block RAMs may be reimplemented as non Block RAM primitives later in the synthesis flow. Multiple instantiated Block RAMs are reported only once. 
+
+DSP: Preliminary Mapping Report (see note below. The ' indicates corresponding REG is set)
++---------------+-----------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|Module Name    | DSP Mapping     | A Size | B Size | C Size | D Size | P Size | AREG | BREG | CREG | DREG | ADREG | MREG | PREG | 
++---------------+-----------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|mac_lane       | (A2*B2)'        | 8      | 8      | -      | -      | 16     | 1    | 1    | -    | -    | -     | 1    | 0    | 
+|gemm_sequencer | A*B2            | 19     | 18     | -      | -      | 48     | 0    | 1    | -    | -    | -     | 0    | 0    | 
+|gemm_sequencer | (PCIN>>17)+A*B2 | 19     | 15     | -      | -      | 48     | 0    | 1    | -    | -    | -     | 0    | 1    | 
++---------------+-----------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+
+Note: The table above is a preliminary report that shows the DSPs inferred at the current stage of the synthesis flow. Some DSP may be reimplemented as non DSP primitives later in the synthesis flow. Multiple instantiated DSPs are reported only once.
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:14 ; elapsed = 00:00:15 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19965 ; free virtual = 58735
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1714.713; parent = 1461.516; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:15 ; elapsed = 00:00:16 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19921 ; free virtual = 58684
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1729.217; parent = 1476.020; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Block RAM: Final Mapping Report
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|Module Name               | RTL Object | PORT A (Depth x Width) | W | R | PORT B (Depth x Width) | W | R | Ports driving FF | RAMB18 | RAMB36 | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+|act_mem                   | ram_reg    | 64 K x 8(READ_FIRST)   | W |   | 64 K x 8(WRITE_FIRST)  |   | R | Port A and B     | 0      | 16     | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|bram_sdp__parameterized0: | ram_reg    | 1 K x 32(READ_FIRST)   | W |   | 1 K x 32(WRITE_FIRST)  |   | R | Port A and B     | 0      | 1      | 
+|score_mem                 | ram_reg    | 2 K x 21(READ_FIRST)   | W |   | 2 K x 21(WRITE_FIRST)  |   | R | Port A and B     | 1      | 1      | 
++--------------------------+------------+------------------------+---+---+------------------------+---+---+------------------+--------+--------+
+
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_0 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_1 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_2 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_3 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_4 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_5 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_6 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance act_mem/ram_reg_1_7 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[0].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[0].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[1].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[1].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[2].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[2].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[3].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[3].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[4].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[4].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[5].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[5].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[6].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[6].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[7].buf_a/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance wgt/gen_banks[7].buf_b/ram_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance score_mem/ram_reg_0 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance score_mem/ram_reg_1 (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance smx/exp_tbl/q_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+INFO: [Synth 8-7052] The timing for the instance recip/q_reg (implemented as a Block RAM) might be sub-optimal as no optional output register could be merged into the ram block. Providing additional output register may help in improving timing.
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:16 ; elapsed = 00:00:17 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19863 ; free virtual = 58640
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1730.979; parent = 1477.781; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:18 ; elapsed = 00:00:19 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19921 ; free virtual = 58684
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1731.369; parent = 1478.172; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:18 ; elapsed = 00:00:19 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19936 ; free virtual = 58699
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1731.369; parent = 1478.172; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:18 ; elapsed = 00:00:20 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19926 ; free virtual = 58703
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1732.139; parent = 1478.941; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+
+Static Shift Register Report:
++---------------+-------------------+--------+-------+--------------+--------------------+-------------------+--------+---------+
+|Module Name    | RTL Name          | Length | Width | Reset Signal | Pull out first Reg | Pull out last Reg | SRL16E | SRLC32E | 
++---------------+-------------------+--------+-------+--------------+--------------------+-------------------+--------+---------+
+|gemm_sequencer | out_waddr_reg[15] | 4      | 16    | NO           | NO                 | YES               | 16     | 0       | 
++---------------+-------------------+--------+-------+--------------+--------------------+-------------------+--------+---------+
+
+---------------------------------------------------------------------------------
+Finished ROM, RAM, DSP, Shift Register and Retiming Reporting
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+DSP Final Report (the ' indicates corresponding REG is set)
++---------------+------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|Module Name    | DSP Mapping      | A Size | B Size | C Size | D Size | P Size | AREG | BREG | CREG | DREG | ADREG | MREG | PREG | 
++---------------+------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|mac_lane       | (A'*B')'         | 30     | 18     | -      | -      | 16     | 1    | 1    | -    | -    | -     | 0    | 1    | 
+|gemm_sequencer | A*B'             | 18     | 17     | -      | -      | 48     | 0    | 1    | -    | -    | -     | 0    | 0    | 
+|gemm_sequencer | (PCIN>>17+A*B')' | 0      | 18     | -      | -      | 48     | 0    | 1    | -    | -    | -     | 0    | 1    | 
++---------------+------------------+--------+--------+--------+--------+--------+------+------+------+------+-------+------+------+
+
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+---------+------+
+|      |Cell     |Count |
++------+---------+------+
+|1     |BUFG     |     1|
+|2     |CARRY4   |   324|
+|3     |DSP48E1  |    34|
+|6     |LUT1     |    28|
+|7     |LUT2     |   209|
+|8     |LUT3     |  1476|
+|9     |LUT4     |   108|
+|10    |LUT5     |   121|
+|11    |LUT6     |   392|
+|12    |MUXF7    |   128|
+|13    |RAMB18E1 |     1|
+|14    |RAMB36E1 |    35|
+|20    |SRL16E   |    16|
+|21    |FDRE     |  1561|
+|22    |FDSE     |     9|
+|23    |IBUF     |    79|
+|24    |OBUF     |    12|
++------+---------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:18 ; elapsed = 00:00:20 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19926 ; free virtual = 58703
+Synthesis current peak Physical Memory [PSS] (MB): peak = 1732.217; parent = 1479.020; children = 253.229
+Synthesis current peak Virtual Memory [VSS] (MB): peak = 3193.555; parent = 2220.488; children = 973.066
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 48 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:17 ; elapsed = 00:00:19 . Memory (MB): peak = 2252.500 ; gain = 0.000 ; free physical = 19973 ; free virtual = 58764
+Synthesis Optimization Complete : Time (s): cpu = 00:00:18 ; elapsed = 00:00:20 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 19973 ; free virtual = 58764
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:00.03 . Memory (MB): peak = 2252.500 ; gain = 0.000 ; free physical = 19987 ; free virtual = 58785
+INFO: [Netlist 29-17] Analyzing 522 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+Finished Parsing XDC File [/home/REDACTED/Downloads/Mirage/xdc/encoder_layer.xdc]
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2252.500 ; gain = 0.000 ; free physical = 19951 ; free virtual = 58742
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Synth Design complete, checksum: 5c452531
+INFO: [Common 17-83] Releasing license: Synthesis
+72 Infos, 57 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:21 ; elapsed = 00:00:21 . Memory (MB): peak = 2252.500 ; gain = 49.816 ; free physical = 20126 ; free virtual = 58931
+# report_utilization              -file $rpt/synth_utilization.rpt
+# report_utilization -hierarchical -file $rpt/synth_utilization_hier.rpt
+# write_checkpoint -force $rpt/post_synth.dcp
+INFO: [Timing 38-480] Writing timing data to binary archive.
+INFO: [Common 17-1381] The checkpoint '/home/REDACTED/Downloads/Mirage/reports_v2/post_synth.dcp' has been generated.
+# set u [report_utilization -return_string]
+# set s_lut  [util_row $u "Slice LUTs"]
+# set s_ff   [util_row $u "Slice Registers"]
+# set s_dsp  [util_row $u "DSPs"]
+# set s_bram [util_row $u "Block RAM Tile"]
+# puts "\n>>> POST-SYNTHESIS: LUT $s_lut  FF $s_ff  DSP $s_dsp  RAMB36 $s_bram"
+
+>>> POST-SYNTHESIS: LUT 2203  FF 1570  DSP 34  RAMB36 35.5
+# if {$s_dsp == 0} {
+#     puts ">>> WARNING: 0 DSP. use_dsp=\"yes\" on mac_lane's architecture did not"
+#     puts ">>>          take. Check for a Synth 8-x message about USE_DSP."
+# }
+# if {$s_bram == 0} {
+#     puts ">>> WARNING: 0 BRAM. ram_style=\"block\" did not take. Check that"
+#     puts ">>>          bram_sdp was not inlined and its reset-free process kept."
+# }
+# puts "\n=============== \[phase 2\] opt / place / route ==============="
+
+=============== [phase 2] opt / place / route ===============
+# set routed 1
+# if {[catch { opt_design }   err]} { puts ">>> opt_design failed:\n$err";   set routed 0 }
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z007s'
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:00.85 ; elapsed = 00:00:00.54 . Memory (MB): peak = 2340.543 ; gain = 16.008 ; free physical = 20073 ; free virtual = 58885
+
+Starting Cache Timing Information Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Cache Timing Information Task | Checksum: 86d57c2d
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:01 . Memory (MB): peak = 2396.355 ; gain = 55.812 ; free physical = 19980 ; free virtual = 58751
+
+Starting Logic Optimization Task
+
+Phase 1 Retarget
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+INFO: [Opt 31-49] Retargeted 0 cell(s).
+Phase 1 Retarget | Checksum: d0381dea
+
+Time (s): cpu = 00:00:00.21 ; elapsed = 00:00:00.1 . Memory (MB): peak = 2618.324 ; gain = 0.000 ; free physical = 19655 ; free virtual = 58439
+INFO: [Opt 31-389] Phase Retarget created 0 cells and removed 4 cells
+
+Phase 2 Constant propagation
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Phase 2 Constant propagation | Checksum: aec54b27
+
+Time (s): cpu = 00:00:00.24 ; elapsed = 00:00:00.13 . Memory (MB): peak = 2618.324 ; gain = 0.000 ; free physical = 19660 ; free virtual = 58451
+INFO: [Opt 31-389] Phase Constant propagation created 0 cells and removed 0 cells
+
+Phase 3 Sweep
+Phase 3 Sweep | Checksum: 16727a8e3
+
+Time (s): cpu = 00:00:00.3 ; elapsed = 00:00:00.2 . Memory (MB): peak = 2618.324 ; gain = 0.000 ; free physical = 19651 ; free virtual = 58449
+INFO: [Opt 31-389] Phase Sweep created 0 cells and removed 0 cells
+
+Phase 4 BUFG optimization
+Phase 4 BUFG optimization | Checksum: 16727a8e3
+
+Time (s): cpu = 00:00:00.38 ; elapsed = 00:00:00.24 . Memory (MB): peak = 2650.340 ; gain = 32.016 ; free physical = 19646 ; free virtual = 58451
+INFO: [Opt 31-662] Phase BUFG optimization created 0 cells of which 0 are BUFGs and removed 0 cells.
+
+Phase 5 Shift Register Optimization
+INFO: [Opt 31-1064] SRL Remap converted 0 SRLs to 0 registers and converted 0 registers of register chains to 0 SRLs
+Phase 5 Shift Register Optimization | Checksum: 16727a8e3
+
+Time (s): cpu = 00:00:00.39 ; elapsed = 00:00:00.25 . Memory (MB): peak = 2650.340 ; gain = 32.016 ; free physical = 19646 ; free virtual = 58451
+INFO: [Opt 31-389] Phase Shift Register Optimization created 0 cells and removed 0 cells
+
+Phase 6 Post Processing Netlist
+Phase 6 Post Processing Netlist | Checksum: 16727a8e3
+
+Time (s): cpu = 00:00:00.4 ; elapsed = 00:00:00.25 . Memory (MB): peak = 2650.340 ; gain = 32.016 ; free physical = 19646 ; free virtual = 58451
+INFO: [Opt 31-389] Phase Post Processing Netlist created 0 cells and removed 0 cells
+Opt_design Change Summary
+=========================
+
+
+-------------------------------------------------------------------------------------------------------------------------
+|  Phase                        |  #Cells created  |  #Cells Removed  |  #Constrained objects preventing optimizations  |
+-------------------------------------------------------------------------------------------------------------------------
+|  Retarget                     |               0  |               4  |                                              0  |
+|  Constant propagation         |               0  |               0  |                                              0  |
+|  Sweep                        |               0  |               0  |                                              0  |
+|  BUFG optimization            |               0  |               0  |                                              0  |
+|  Shift Register Optimization  |               0  |               0  |                                              0  |
+|  Post Processing Netlist      |               0  |               0  |                                              0  |
+-------------------------------------------------------------------------------------------------------------------------
+
+
+
+Starting Connectivity Check Task
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2650.340 ; gain = 0.000 ; free physical = 19644 ; free virtual = 58456
+Ending Logic Optimization Task | Checksum: 1efabf415
+
+Time (s): cpu = 00:00:00.49 ; elapsed = 00:00:00.35 . Memory (MB): peak = 2650.340 ; gain = 32.016 ; free physical = 19644 ; free virtual = 58456
+
+Starting Power Optimization Task
+INFO: [Pwropt 34-132] Skipping clock gating for clocks with a period < 2.00 ns.
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Running Vector-less Activity Propagation...
+
+Finished Running Vector-less Activity Propagation
+INFO: [Pwropt 34-9] Applying IDT optimizations ...
+INFO: [Pwropt 34-10] Applying ODC optimizations ...
+
+
+Starting PowerOpt Patch Enables Task
+INFO: [Pwropt 34-162] WRITE_MODE attribute of 0 BRAM(s) out of a total of 36 has been updated to save power. Run report_power_opt to get a complete listing of the BRAMs updated.
+INFO: [Pwropt 34-201] Structural ODC has moved 0 WE to EN ports
+Number of BRAM Ports augmented: 18 newly gated: 0 Total Ports: 72
+Number of Flops added for Enable Generation: 7
+
+Ending PowerOpt Patch Enables Task | Checksum: 1440ca527
+
+Time (s): cpu = 00:00:00.09 ; elapsed = 00:00:00.08 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19846 ; free virtual = 58623
+Ending Power Optimization Task | Checksum: 1440ca527
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:02 . Memory (MB): peak = 2826.395 ; gain = 176.055 ; free physical = 19846 ; free virtual = 58623
+
+Starting Final Cleanup Task
+
+Starting Logic Optimization Task
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Ending Logic Optimization Task | Checksum: b77b7eac
+
+Time (s): cpu = 00:00:00.56 ; elapsed = 00:00:00.21 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19697 ; free virtual = 58474
+Ending Final Cleanup Task | Checksum: b77b7eac
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19740 ; free virtual = 58524
+
+Starting Netlist Obfuscation Task
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19740 ; free virtual = 58524
+Ending Netlist Obfuscation Task | Checksum: b77b7eac
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19740 ; free virtual = 58524
+INFO: [Common 17-83] Releasing license: Implementation
+23 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:00:09 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 501.859 ; free physical = 19740 ; free virtual = 58524
+# if {$routed && [catch { place_design } err]} { puts ">>> place_design failed:\n$err"; set routed 0 }
+Command: place_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+Running DRC as a precondition to command place_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+Starting Placer Task
+INFO: [Place 30-611] Multithreading enabled for place_design using a maximum of 8 CPUs
+
+Phase 1 Placer Initialization
+
+Phase 1.1 Placer Initialization Netlist Sorting
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19684 ; free virtual = 58482
+Phase 1.1 Placer Initialization Netlist Sorting | Checksum: a7880c40
+
+Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19684 ; free virtual = 58482
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19684 ; free virtual = 58482
+
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Phase 1.2 IO Placement/ Clock Placement/ Build Placer Device | Checksum: a53847e8
+
+Time (s): cpu = 00:00:00.95 ; elapsed = 00:00:00.3 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19702 ; free virtual = 58514
+
+Phase 1.3 Build Placer Netlist Model
+Phase 1.3 Build Placer Netlist Model | Checksum: d5a4ea8d
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.65 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19705 ; free virtual = 58475
+
+Phase 1.4 Constrain Clocks/Macros
+Phase 1.4 Constrain Clocks/Macros | Checksum: d5a4ea8d
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.65 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19705 ; free virtual = 58475
+Phase 1 Placer Initialization | Checksum: d5a4ea8d
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.66 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19705 ; free virtual = 58475
+
+Phase 2 Global Placement
+
+Phase 2.1 Floorplanning
+Phase 2.1 Floorplanning | Checksum: 144a63488
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.75 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19792 ; free virtual = 58569
+
+Phase 2.2 Update Timing before SLR Path Opt
+Phase 2.2 Update Timing before SLR Path Opt | Checksum: 138fedfc2
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.81 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19854 ; free virtual = 58638
+
+Phase 2.3 Post-Processing in Floorplanning
+Phase 2.3 Post-Processing in Floorplanning | Checksum: 138fedfc2
+
+Time (s): cpu = 00:00:03 ; elapsed = 00:00:00.81 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19854 ; free virtual = 58638
+
+Phase 2.4 Global Placement Core
+
+Phase 2.4.1 UpdateTiming Before Physical Synthesis
+Phase 2.4.1 UpdateTiming Before Physical Synthesis | Checksum: 15d4d1e37
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:02 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20181 ; free virtual = 58951
+
+Phase 2.4.2 Physical Synthesis In Placer
+INFO: [Physopt 32-1035] Found 0 LUTNM shape to break, 432 LUT instances to create LUTNM shape
+INFO: [Physopt 32-1044] Break lutnm for timing: one critical 0, two critical 0, total 0, new lutff created 0
+INFO: [Physopt 32-1138] End 1 Pass. Optimized 210 nets or LUTs. Breaked 0 LUT, combined 210 existing LUTs and moved 0 existing LUT
+INFO: [Physopt 32-65] No nets found for high-fanout optimization.
+INFO: [Physopt 32-232] Optimized 0 net. Created 0 new instance.
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+INFO: [Physopt 32-670] No setup violation found.  DSP Register Optimization was not performed.
+INFO: [Physopt 32-670] No setup violation found.  Shift Register to Pipeline Optimization was not performed.
+INFO: [Physopt 32-670] No setup violation found.  Shift Register Optimization was not performed.
+INFO: [Physopt 32-670] No setup violation found.  BRAM Register Optimization was not performed.
+INFO: [Physopt 32-670] No setup violation found.  URAM Register Optimization was not performed.
+INFO: [Physopt 32-949] No candidate nets found for dynamic/static region interface net replication
+INFO: [Physopt 32-775] End 1 Pass. Optimized 0 net or cell. Created 0 new cell, deleted 0 existing cell and moved 0 existing cell
+Netlist sorting complete. Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20172 ; free virtual = 58949
+
+Summary of Physical Synthesis Optimizations
+============================================
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+|  Optimization                                     |  Added Cells  |  Removed Cells  |  Optimized Cells/Nets  |  Dont Touch  |  Iterations  |  Elapsed   |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+|  LUT Combining                                    |            0  |            210  |                   210  |           0  |           1  |  00:00:00  |
+|  Retime                                           |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Very High Fanout                                 |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  DSP Register                                     |            0  |              0  |                     0  |           0  |           0  |  00:00:00  |
+|  Shift Register to Pipeline                       |            0  |              0  |                     0  |           0  |           0  |  00:00:00  |
+|  Shift Register                                   |            0  |              0  |                     0  |           0  |           0  |  00:00:00  |
+|  BRAM Register                                    |            0  |              0  |                     0  |           0  |           0  |  00:00:00  |
+|  URAM Register                                    |            0  |              0  |                     0  |           0  |           0  |  00:00:00  |
+|  Dynamic/Static Region Interface Net Replication  |            0  |              0  |                     0  |           0  |           1  |  00:00:00  |
+|  Total                                            |            0  |            210  |                   210  |           0  |           4  |  00:00:00  |
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Phase 2.4.2 Physical Synthesis In Placer | Checksum: 1f15dd2a4
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20178 ; free virtual = 58962
+Phase 2.4 Global Placement Core | Checksum: f93aefc4
+
+Time (s): cpu = 00:00:10 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20131 ; free virtual = 58922
+Phase 2 Global Placement | Checksum: f93aefc4
+
+Time (s): cpu = 00:00:10 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20131 ; free virtual = 58922
+
+Phase 3 Detail Placement
+
+Phase 3.1 Commit Multi Column Macros
+Phase 3.1 Commit Multi Column Macros | Checksum: ca0a82ff
+
+Time (s): cpu = 00:00:10 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20120 ; free virtual = 58918
+
+Phase 3.2 Commit Most Macros & LUTRAMs
+Phase 3.2 Commit Most Macros & LUTRAMs | Checksum: 1161aacf0
+
+Time (s): cpu = 00:00:11 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20101 ; free virtual = 58913
+
+Phase 3.3 Area Swap Optimization
+Phase 3.3 Area Swap Optimization | Checksum: 16c56696d
+
+Time (s): cpu = 00:00:11 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20101 ; free virtual = 58913
+
+Phase 3.4 Pipeline Register Optimization
+Phase 3.4 Pipeline Register Optimization | Checksum: 17fe6813e
+
+Time (s): cpu = 00:00:11 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20092 ; free virtual = 58911
+
+Phase 3.5 Fast Optimization
+Phase 3.5 Fast Optimization | Checksum: 114859e90
+
+Time (s): cpu = 00:00:12 ; elapsed = 00:00:03 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20096 ; free virtual = 58923
+
+Phase 3.6 Small Shape Detail Placement
+Phase 3.6 Small Shape Detail Placement | Checksum: 11e78d46f
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:04 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20036 ; free virtual = 58869
+
+Phase 3.7 Re-assign LUT pins
+Phase 3.7 Re-assign LUT pins | Checksum: 140ed4ab5
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:04 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20082 ; free virtual = 58852
+
+Phase 3.8 Pipeline Register Optimization
+Phase 3.8 Pipeline Register Optimization | Checksum: 1ee453252
+
+Time (s): cpu = 00:00:13 ; elapsed = 00:00:04 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20082 ; free virtual = 58852
+
+Phase 3.9 Fast Optimization
+Phase 3.9 Fast Optimization | Checksum: b8813446
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:04 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20074 ; free virtual = 58851
+Phase 3 Detail Placement | Checksum: b8813446
+
+Time (s): cpu = 00:00:14 ; elapsed = 00:00:04 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20074 ; free virtual = 58851
+
+Phase 4 Post Placement Optimization and Clean-Up
+
+Phase 4.1 Post Commit Optimization
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+
+Phase 4.1.1 Post Placement Optimization
+Post Placement Optimization Initialization | Checksum: 168ca2d93
+
+Phase 4.1.1.1 BUFG Insertion
+
+Starting Physical Synthesis Task
+
+Phase 1 Physical Synthesis Initialization
+INFO: [Physopt 32-721] Multithreading enabled for phys_opt_design using a maximum of 8 CPUs
+INFO: [Physopt 32-619] Estimated Timing Summary | WNS=-0.416 | TNS=-10.177 |
+Phase 1 Physical Synthesis Initialization | Checksum: 148fae512
+
+Time (s): cpu = 00:00:00.21 ; elapsed = 00:00:00.05 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20004 ; free virtual = 58816
+INFO: [Place 46-33] Processed net seq/mac_en, BUFG insertion was skipped due to placement/routing conflicts.
+INFO: [Place 46-56] BUFG insertion identified 1 candidate nets. Inserted BUFG: 0, Replicated BUFG Driver: 0, Skipped due to Placement/Routing Conflicts: 1, Skipped due to Timing Degradation: 0, Skipped due to Illegal Netlist: 0.
+Ending Physical Synthesis Task | Checksum: e290007e
+
+Time (s): cpu = 00:00:00.3 ; elapsed = 00:00:00.12 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20060 ; free virtual = 58824
+Phase 4.1.1.1 BUFG Insertion | Checksum: 168ca2d93
+
+Time (s): cpu = 00:00:15 ; elapsed = 00:00:04 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20053 ; free virtual = 58823
+
+Phase 4.1.1.2 Post Placement Timing Optimization
+INFO: [Place 30-746] Post Placement Timing Summary WNS=-0.055. For the most accurate timing information please run report_timing.
+Phase 4.1.1.2 Post Placement Timing Optimization | Checksum: 21167a5f5
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20051 ; free virtual = 58814
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20051 ; free virtual = 58814
+Phase 4.1 Post Commit Optimization | Checksum: 21167a5f5
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20047 ; free virtual = 58817
+
+Phase 4.2 Post Placement Cleanup
+Phase 4.2 Post Placement Cleanup | Checksum: 21167a5f5
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20042 ; free virtual = 58819
+
+Phase 4.3 Placer Reporting
+
+Phase 4.3.1 Print Estimated Congestion
+INFO: [Place 30-612] Post-Placement Estimated Congestion 
+ ____________________________________________________
+|           | Global Congestion | Short Congestion  |
+| Direction | Region Size       | Region Size       |
+|___________|___________________|___________________|
+|      North|                1x1|                1x1|
+|___________|___________________|___________________|
+|      South|                1x1|                1x1|
+|___________|___________________|___________________|
+|       East|                1x1|                1x1|
+|___________|___________________|___________________|
+|       West|                1x1|                1x1|
+|___________|___________________|___________________|
+
+Phase 4.3.1 Print Estimated Congestion | Checksum: 21167a5f5
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20042 ; free virtual = 58820
+Phase 4.3 Placer Reporting | Checksum: 21167a5f5
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20033 ; free virtual = 58817
+
+Phase 4.4 Final Placement Cleanup
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20033 ; free virtual = 58817
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20033 ; free virtual = 58817
+Phase 4 Post Placement Optimization and Clean-Up | Checksum: 1729b78f3
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20029 ; free virtual = 58820
+Ending Placer Task | Checksum: b35f483a
+
+Time (s): cpu = 00:00:18 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20029 ; free virtual = 58820
+INFO: [Common 17-83] Releasing license: Implementation
+30 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+place_design completed successfully
+place_design: Time (s): cpu = 00:00:19 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 20034 ; free virtual = 58825
+# if {$routed && [catch { route_design } err]} { puts ">>> route_design failed:\n$err"; set routed 0 }
+Command: route_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z007s'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z007s'
+Running DRC as a precondition to command route_design
+INFO: [DRC 23-27] Running DRC with 8 threads
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+
+Starting Routing Task
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 8 CPUs
+
+Phase 1 Build RT Design
+Checksum: PlaceDB: af51a217 ConstDB: 0 ShapeSum: 40da623 RouteDB: 0
+Post Restoration Checksum: NetGraph: 983e87bb NumContArr: 70cad54c Constraints: 0 Timing: 0
+Phase 1 Build RT Design | Checksum: 109095d07
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19940 ; free virtual = 58704
+
+Phase 2 Router Initialization
+
+Phase 2.1 Fix Topology Constraints
+Phase 2.1 Fix Topology Constraints | Checksum: 109095d07
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19902 ; free virtual = 58672
+
+Phase 2.2 Pre Route Cleanup
+Phase 2.2 Pre Route Cleanup | Checksum: 109095d07
+
+Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19902 ; free virtual = 58672
+ Number of Nodes with overlaps = 0
+
+Phase 2.3 Update Timing
+Phase 2.3 Update Timing | Checksum: b843f007
+
+Time (s): cpu = 00:00:08 ; elapsed = 00:00:06 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19911 ; free virtual = 58681
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.158 | TNS=-7.601 | WHS=-0.199 | THS=-14.451|
+
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 0 %
+  Global Horizontal Routing Utilization  = 0 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 4055
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 4055
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Phase 2 Router Initialization | Checksum: 132618eeb
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:06 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19885 ; free virtual = 58662
+
+Phase 3 Initial Routing
+
+Phase 3.1 Global Routing
+Phase 3.1 Global Routing | Checksum: 132618eeb
+
+Time (s): cpu = 00:00:09 ; elapsed = 00:00:06 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19885 ; free virtual = 58662
+Phase 3 Initial Routing | Checksum: 1b6bdd5f7
+
+Time (s): cpu = 00:00:12 ; elapsed = 00:00:07 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19865 ; free virtual = 58628
+INFO: [Route 35-580] Design has 2 pins with tight setup and hold constraints.
+
+The top 5 pins with tight setup and hold constraints:
+
++====================+===================+====================+
+| Launch Setup Clock | Launch Hold Clock | Pin                |
++====================+===================+====================+
+| clk                | clk               | seq/state_reg[1]/D |
+| clk                | clk               | seq/state_reg[0]/D |
++--------------------+-------------------+--------------------+
+
+File with complete list of pins: tight_setup_hold_pins.txt
+
+
+Phase 4 Rip-up And Reroute
+
+Phase 4.1 Global Iteration 0
+ Number of Nodes with overlaps = 224
+ Number of Nodes with overlaps = 40
+ Number of Nodes with overlaps = 9
+ Number of Nodes with overlaps = 7
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=-0.034 | TNS=-1.649 | WHS=N/A    | THS=N/A    |
+
+Phase 4.1 Global Iteration 0 | Checksum: 154f6dcc0
+
+Time (s): cpu = 00:00:15 ; elapsed = 00:00:09 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19853 ; free virtual = 58659
+
+Phase 4.2 Global Iteration 1
+ Number of Nodes with overlaps = 21
+ Number of Nodes with overlaps = 9
+ Number of Nodes with overlaps = 5
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.021  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 4.2 Global Iteration 1 | Checksum: 13ad37fdf
+
+Time (s): cpu = 00:00:15 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19860 ; free virtual = 58665
+
+Phase 4.3 Global Iteration 2
+ Number of Nodes with overlaps = 21
+ Number of Nodes with overlaps = 6
+ Number of Nodes with overlaps = 7
+ Number of Nodes with overlaps = 2
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.025  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 4.3 Global Iteration 2 | Checksum: 241839fdc
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19855 ; free virtual = 58647
+Phase 4 Rip-up And Reroute | Checksum: 241839fdc
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19855 ; free virtual = 58647
+
+Phase 5 Delay and Skew Optimization
+
+Phase 5.1 Delay CleanUp
+Phase 5.1 Delay CleanUp | Checksum: 241839fdc
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19855 ; free virtual = 58647
+
+Phase 5.2 Clock Skew Optimization
+Phase 5.2 Clock Skew Optimization | Checksum: 241839fdc
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19855 ; free virtual = 58647
+Phase 5 Delay and Skew Optimization | Checksum: 241839fdc
+
+Time (s): cpu = 00:00:16 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19847 ; free virtual = 58645
+
+Phase 6 Post Hold Fix
+
+Phase 6.1 Hold Fix Iter
+
+Phase 6.1.1 Update Timing
+Phase 6.1.1 Update Timing | Checksum: 21850553b
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19837 ; free virtual = 58643
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=0.025  | TNS=0.000  | WHS=0.071  | THS=0.000  |
+
+Phase 6.1 Hold Fix Iter | Checksum: 21850553b
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19837 ; free virtual = 58643
+Phase 6 Post Hold Fix | Checksum: 21850553b
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19837 ; free virtual = 58643
+
+Phase 7 Route finalize
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 3.91681 %
+  Global Horizontal Routing Utilization  = 3.55101 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 0
+    (Failed Nets is the sum of unrouted and partially routed nets)
+  Number of Unrouted Nets             = 0
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Phase 7 Route finalize | Checksum: 203533add
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19828 ; free virtual = 58641
+
+Phase 8 Verifying routed nets
+
+ Verification completed successfully
+Phase 8 Verifying routed nets | Checksum: 203533add
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:10 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19828 ; free virtual = 58640
+
+Phase 9 Depositing Routes
+Phase 9 Depositing Routes | Checksum: 15bb3aa12
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:11 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19786 ; free virtual = 58612
+
+Phase 10 Post Router Timing
+INFO: [Route 35-57] Estimated Timing Summary | WNS=0.025  | TNS=0.000  | WHS=0.071  | THS=0.000  |
+
+INFO: [Route 35-327] The final timing numbers are based on the router estimated timing analysis. For a complete and accurate timing signoff, please run report_timing_summary.
+Phase 10 Post Router Timing | Checksum: 15bb3aa12
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:11 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19798 ; free virtual = 58632
+INFO: [Route 35-16] Router Completed Successfully
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:11 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19798 ; free virtual = 58632
+
+Routing Is Done.
+INFO: [Common 17-83] Releasing license: Implementation
+15 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+route_design completed successfully
+route_design: Time (s): cpu = 00:00:18 ; elapsed = 00:01:11 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19974 ; free virtual = 58739
+# puts "\n=============== \[phase 3\] timing + utilisation ==============="
+
+=============== [phase 3] timing + utilisation ===============
+# catch { report_utilization -file $rpt/impl_utilization.rpt }
+# catch { report_timing_summary -delay_type min_max -max_paths 10 \
+#             -file $rpt/impl_timing_summary.rpt }
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+# catch { report_timing -sort_by group -max_paths 20 -path_type summary \
+#             -file $rpt/impl_timing_paths.rpt }
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 20 -nworst 1 -delay_type max -sort_by group.
+# if {$routed} { catch { write_checkpoint -force $rpt/post_route.dcp } }
+INFO: [Timing 38-480] Writing timing data to binary archive.
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Write XDEF Complete: Time (s): cpu = 00:00:00.57 ; elapsed = 00:00:00.21 . Memory (MB): peak = 2826.395 ; gain = 0.000 ; free physical = 19902 ; free virtual = 58703
+INFO: [Common 17-1381] The checkpoint '/home/REDACTED/Downloads/Mirage/reports_v2/post_route.dcp' has been generated.
+# set wns "n/a"
+# if {$routed} {
+#     if {![catch { set wns [get_property SLACK [get_timing_paths -delay_type max]] }]} {
+#         puts ">>> WNS: $wns ns"
+#     }
+# }
+>>> WNS: 0.058 ns
+# set fh [open $rpt/summary_v2.csv w]
+# puts $fh "metric,value,budget,verdict"
+# puts $fh "LUT,$s_lut,12960,[expr {$s_lut ne "-" && $s_lut < 12960 ? "PASS" : "CHECK"}]"
+# puts $fh "FF,$s_ff,28800,-"
+# puts $fh "DSP48E1,$s_dsp,59,[expr {$s_dsp ne "-" && $s_dsp > 0 && $s_dsp < 59 ? "PASS" : "CHECK"}]"
+# puts $fh "RAMB36,$s_bram,47,[expr {$s_bram ne "-" && $s_bram > 0 && $s_bram < 47 ? "PASS" : "CHECK"}]"
+# puts $fh "WNS_ns,$wns,0,[expr {$wns ne "n/a" && $wns >= 0 ? "PASS" : "CHECK"}]"
+# close $fh
+# puts "\n================ MIRAGE v2 ($part) ================"
+
+================ MIRAGE v2 (xc7z007sclg400-1) ================
+# puts [format "  %-10s %10s %10s" metric measured budget]
+  metric       measured     budget
+# puts [format "  %-10s %10s %10s   (plan: <90%)" LUT     $s_lut  12960]
+  LUT              2203      12960   (plan: <90%)
+# puts [format "  %-10s %10s %10s" FF      $s_ff   28800]
+  FF               1570      28800
+# puts [format "  %-10s %10s %10s   (plan: <90%)" DSP48E1 $s_dsp  59]
+  DSP48E1            34         59   (plan: <90%)
+# puts [format "  %-10s %10s %10s   (plan: <95%)" RAMB36  $s_bram 47]
+  RAMB36           35.5         47   (plan: <95%)
+# puts [format "  %-10s %10s %10s   (must be >= 0)" WNS_ns  $wns    0]
+  WNS_ns          0.058          0   (must be >= 0)
+# puts ""
+
+# puts "v1 measured, for comparison: 18182 LUT (126%), 0 BRAM, 2 DSP, no top level."
+v1 measured, for comparison: 18182 LUT (126%), 0 BRAM, 2 DSP, no top level.
+# puts "Reports in reports_v2/, checkpoints post_synth.dcp / post_route.dcp."
+Reports in reports_v2/, checkpoints post_synth.dcp / post_route.dcp.
+# exit
+INFO: [Common 17-206] Exiting Vivado at Fri Jul 31 01:54:17 2026...

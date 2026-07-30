@@ -507,6 +507,58 @@ close but negative, the remaining levers in order of preference:
 2. The clock. 15.6 ns implies ~64 MHz; the plan's 100 MHz was already a
    fallback from 125.
 
+## Run 9 (2026-07-31): every target met
+
+```
+All user specified timing constraints are met.
+```
+
+| | v1 | run 6 | run 8 | run 9 | budget | |
+|---|---|---|---|---|---|---|
+| LUT | 18,182 (**126%**) | 1,969 | 2,303 | **2,203** | 12,960 | PASS, 15% |
+| FF | 385 | 466 | 1,570 | **1,570** | 28,800 | PASS |
+| DSP48E1 | 2 (3%) | **66** (100%) | 34 | **34** | 59 | PASS, 52% |
+| RAMB36 | **0** | 35.5 | 35.5 | **35.5** | 47 | PASS, 71% |
+| WNS | — | −9.485 | −6.226 | **+0.058** | ≥ 0 | **PASS** |
+
+Zero errors, zero critical warnings, and **0 failing endpoints of 6,271** on
+setup, hold and pulse width alike (WHS +0.071, WPWS +4.020). Full flow:
+elaborate → synth → opt → place → route → timing.
+
+Against v1: **8.3× fewer LUTs**, from 126% of the device to 15%.
+
+### The numbers confirm the intent, not just the totals
+
+- `mac_array` = **1,024 LUT** — exactly 32 lanes × 32-bit fabric
+  accumulators. They landed precisely where the run-8 fix put them.
+- `act_mem` and `score_mem` = **0 LUT**. Entirely in BRAM, which is what v1
+  never achieved for a single array.
+- `mac_lane | (A2*B2)'` appears **32 times, once per lane** — one DSP each,
+  with no accumulator DSP beside it.
+- `gemm_sequencer | A*B'` + `(PCIN>>17+A*B')'` — the scale multiply as a
+  2-DSP cascade with a *registered* output.
+
+That last one explains 47 `Synth 8-3332` warnings about `wb2_prod_reg` bits
+being "unused and removed": the product register was absorbed into the
+DSP's own P register, so the fabric flops for it are redundant. Benign, and
+visible in the DSP table rather than inferred — the multiply is still there,
+still 2 DSPs, still pipelined.
+
+WNS is **+58 ps**. That is closure, but with no margin worth relying on: any
+change to the softmax path, the writeback, or the constraints can push it
+negative again. Re-run timing after any RTL edit rather than assuming it
+holds.
+
+### What this does NOT mean
+
+The design **meets its resource and timing targets and still computes wrong
+numbers.** The `rc_re` handshake bug documented under run 8 is unfixed:
+every row fetches its reciprocal against an exp-sum missing its last two or
+three columns. Synthesis and timing closure cannot see a numerical error.
+
+Closing that, plus residual/layernorm, requant calibration and FFN hidden
+tiling, is what stands between this and a correct encoder layer.
+
 ## Running it
 
 ```bash
