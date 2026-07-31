@@ -13,3 +13,15 @@ reports_v2/*.log
 reports_v2/*.jou
 reports_v2/*.dcp
 reports_v2/summary_v2.csv
+
+# --- verification harness artefacts (2026-07-31) -------------------------
+# Nothing below is source. The venv and the MarianMT checkpoint are third
+# party and large; the sim work library and command scripts are generated
+# and one of them is 64 MB.
+model_ref/.venv/
+model_ref/hf/
+model_ref/__pycache__/
+sim/work/
+sim/*_cmd.txt
+sim/*_res.txt
+sim/*.log

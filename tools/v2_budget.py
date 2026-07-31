@@ -118,6 +118,14 @@ for f in files:
             "deliberate DSP multiply: the softmax scale, ~3 DSP in the budget",
         ("mirage_v2_pkg.vhd", "* stride"):
             "addr_mul's own body -- the sanctioned widen/multiply/trim",
+        ("mirage_v2_pkg.vhd", "v * 2"):
+            "clog2's doubling loop. `v` is a VARIABLE in a pure function that "
+            "is only ever called on constants, so this is evaluated at "
+            "elaboration and no multiplier is built. Exempted by the EXACT "
+            "assignment rather than by function name, so a hardware `v * 2` "
+            "elsewhere in the package is still caught. Left unexempted since "
+            "run 5, it made the gate report one finding on every clean run -- "
+            "which is how a gate stops being read.",
     }
 
     # `constant X : T := A * B;` is elaboration-time integer arithmetic and

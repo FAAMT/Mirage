@@ -68,8 +68,20 @@ architecture rtl of softmax_unit is
     signal max_q  : score_t := (others => '0');
     signal max_valid : std_logic := '0';
 
-    -- valid pipeline: address issue -> ROM read -> requantise
-    signal v1, v2 : std_logic := '0';
+    -- Valid pipeline: address issue -> ROM read -> requantise.
+    --
+    -- THREE stages, not two. exp_rom is a SYNCHRONOUS read, so the data
+    -- for the address issued alongside v1 does not appear until the cycle
+    -- after v1 is high. The requantiser used to fire on v1 itself and
+    -- therefore consumed the PREVIOUS score's exp value: the whole row
+    -- came out shifted one column left.
+    --
+    -- That fault is close to invisible from the outside. The row still
+    -- looks like a softmax, the values are still in range, and a row of
+    -- equal scores -- the obvious thing to try first -- is invariant under
+    -- the shift and passes. sim/softmax_unit_tb catches it by driving a
+    -- strictly increasing row and comparing element by element.
+    signal v1, v1_d, v2 : std_logic := '0';
 
     signal e_q    : act_t := (others => '0');
     signal sum_q  : unsigned(SUM8_W - 1 downto 0) := (others => '0');
@@ -151,17 +163,22 @@ begin
     begin
         if rising_edge(clk) then
             if rst = '1' then
+                v1_d  <= '0';
                 v2    <= '0';
                 e_q   <= (others => '0');
                 sum_q <= (others => '0');
             else
-                v2 <= v1;
+                -- v1 marks the cycle the ROM ADDRESS is presented; v1_d
+                -- marks the cycle its DATA is available. The requantiser
+                -- must run on the latter.
+                v1_d <= v1;
+                v2   <= v1_d;
 
                 if row_start = '1' then
                     sum_q <= (others => '0');
                 end if;
 
-                if v1 = '1' then
+                if v1_d = '1' then
                     scaled := (resize(unsigned(rom_dout), scaled'length) sll 7)
                               - resize(unsigned(rom_dout), scaled'length);
                     e8 := to_integer(shift_right(scaled, EXP_ROM_FRAC));

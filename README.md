@@ -267,3 +267,33 @@ reads them. The tcl parses and its table plumbing was dry-run against a sample
 Vivado utilisation report. GHDL checks language correctness and elaboration,
 not synthesisability — Vivado may still object to something GHDL accepts, which
 is why a failing module is marked `FAILED` and the batch continues.
+
+## Numerical verification (2026-07-31)
+
+Run 9 met every resource and timing target and still computed wrong numbers.
+`TEST_PLAN.html` is the plan that closed that; `PROVENANCE.md` records every
+change from the code as received.
+
+```
+sim/build.sh                    analyse rtl_v2 + testbenches
+sim/build.sh <tb> --ieee-asserts=disable --stop-time=100ms
+                                run one VHDL unit testbench
+model_ref/test_ops.py           op-level co-simulation, RTL vs bit-exact model
+model_ref/diagnose.py           per-stage int8 accuracy vs float32 (fast, no GHDL)
+model_ref/translate_hw.py       "Hello" -> Arabic, six encoder layers on the RTL
+```
+
+`model_ref/` needs a venv with numpy and sentencepiece, and the MarianMT
+checkpoint:
+
+```
+python3 -m venv model_ref/.venv && model_ref/.venv/bin/pip install numpy sentencepiece
+cd model_ref/hf && for f in config.json vocab.json source.spm target.spm pytorch_model.bin; do
+  curl -sSLO "https://huggingface.co/Helsinki-NLP/opus-mt-en-ar/resolve/main/$f"; done
+```
+
+Neither the venv nor the checkpoint is tracked. `model_ref/torchbin.py` reads
+the legacy PyTorch pickle directly into numpy, so torch is not required.
+
+Result: 13 defects found and fixed; every job type bit-exact against the model;
+"Hello" decodes to token 1466 مرحبا, identical to the float32 reference.

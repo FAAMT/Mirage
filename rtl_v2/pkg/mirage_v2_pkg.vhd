@@ -80,6 +80,13 @@ package mirage_v2_pkg is
     -- They drifted apart twice when this was a literal in each of them.
     constant MAC_LAT : positive := 3;
 
+    -- softmax_unit latency, s_valid in to e_valid out, in clock edges:
+    -- address issue -> exp_rom synchronous read -> requantise. Declared
+    -- here for the same reason MAC_LAT is: layer_ctrl's softmax drain
+    -- counts have to agree with it, and a literal in each place is how
+    -- they drift.
+    constant EXP_LAT : positive := 3;
+
     ---------------------------------------------------------------------
     -- MAC array geometry
     --
@@ -109,7 +116,17 @@ package mirage_v2_pkg is
     -- Buffer sizing
     ---------------------------------------------------------------------
     constant ACT_DEPTH   : positive := MAX_TOK * MODEL_DIM;      -- 8192 int8
-    constant SCORE_DEPTH : positive := NUM_HEADS * MAX_TOK * MAX_TOK; -- 2048
+
+    -- Score memory: NUM_HEADS x MAX_TOK rows, each padded to N_LANES.
+    --
+    -- The row stride is N_LANES = 32 rather than MAX_TOK = 16 so that
+    -- gemm_sequencer's OWN writeback address walks it correctly. The
+    -- sequencer advances one output row by n_coltile * N_LANES, which for
+    -- the single-column-tile QK^T op is exactly 32. Padding the rows costs
+    -- one extra RAMB36 and removes the need for a second address generator
+    -- shadowing the sequencer's -- the kind of duplicate that drifts.
+    constant SCORE_ROW_STRIDE : positive := N_LANES;                    -- 32
+    constant SCORE_DEPTH : positive := NUM_HEADS * MAX_TOK * SCORE_ROW_STRIDE;
 
     ---------------------------------------------------------------------
     -- Address widths. Explicit, so no port is ever an unconstrained
@@ -117,7 +134,7 @@ package mirage_v2_pkg is
     ---------------------------------------------------------------------
     constant BANK_AW  : positive := 10;  -- log2(BANK_DEPTH)
     constant ACT_AW   : positive := 16;  -- 64 KB activation memory, 16 RAMB36
-    constant SCORE_AW : positive := 11;  -- log2(2048)
+    constant SCORE_AW : positive := 12;  -- log2(SCORE_DEPTH) = log2(4096)
     constant DDR_AW   : positive := 24;  -- external weight address space
 
     ---------------------------------------------------------------------
@@ -140,8 +157,34 @@ package mirage_v2_pkg is
     constant REG_K      : natural  := 16#4000#;
     constant REG_V      : natural  := 16#6000#;
     constant REG_ATTN   : natural  := 16#8000#;  -- attention output
-    constant REG_FFN_H  : natural  := 16#A000#;  -- FFN hidden, one token
-    constant REG_OUT    : natural  := 16#B000#;  -- layer output
+    constant REG_OUT    : natural  := 16#A000#;  -- layer output
+    -- FFN hidden. 2 KB per token, so this region holds FFN_TOK_MAX tokens.
+    --
+    -- The FFN hidden layer is FFN_DIM = 2048 wide, four times MODEL_DIM, so
+    -- holding it for all MAX_TOK tokens would need 32 KB -- half the whole
+    -- activation memory. Holding it for a GROUP of tokens is the middle
+    -- ground: the W1 weight window is loaded once per column tile and
+    -- amortised over the group, instead of being reloaded for every token.
+    -- At 64 column tiles x 512 rows that reload is 262,144 bank words, so
+    -- the amortisation is worth real time.
+    constant REG_FFN_H   : natural  := 16#C000#;
+    constant FFN_TOK_MAX : positive := 7;        -- (16#FF00# - 16#C000#) / 2048
+
+    -- One row of int8 exp values, written by the softmax job and read back
+    -- by the xV matmul as an ordinary activation.
+    --
+    -- The design note "softmax never materialises probabilities" still
+    -- holds and this does not break it: what lands here is the UNNORMALISED
+    -- exp stream that already existed on softmax_unit's e_data port. The
+    -- normalisation is still one reciprocal multiply per output vector in
+    -- the writeback, and there is still no divider anywhere.
+    --
+    -- What it buys is that the exp stream no longer has to be consumed in
+    -- the same cycle it is produced. The as-received design produced it
+    -- during one op (O_SMAX_EXP) and consumed it during a different one
+    -- (O_ATTN_V), so xV multiplied a stale constant -- see V2_DESIGN.md.
+    -- Sixteen bytes of a 64 KB memory removes that coupling entirely.
+    constant REG_EXP    : natural  := 16#FF00#;  -- MAX_TOK int8, one row
 
     ---------------------------------------------------------------------
     -- Types. Vectors of scalars only -- no 2-D array ports (v1 lesson 2).

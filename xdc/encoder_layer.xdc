@@ -37,10 +37,51 @@ set_multicycle_path -hold  1 -from [get_ports {host_waddr[*]}]
 set_multicycle_path -setup 2 -from [get_ports {host_wdata[*]}]
 set_multicycle_path -hold  1 -from [get_ports {host_wdata[*]}]
 
+set_multicycle_path -setup 2 -from [get_ports host_re]
+set_multicycle_path -hold  1 -from [get_ports host_re]
+set_multicycle_path -setup 2 -from [get_ports {host_raddr[*]}]
+set_multicycle_path -hold  1 -from [get_ports {host_raddr[*]}]
+
 set_multicycle_path -setup 2 -from [get_ports wstream_valid]
 set_multicycle_path -hold  1 -from [get_ports wstream_valid]
 set_multicycle_path -setup 2 -from [get_ports {wstream_data[*]}]
 set_multicycle_path -hold  1 -from [get_ports {wstream_data[*]}]
+set_multicycle_path -setup 2 -from [get_ports {wstream_row[*]}]
+set_multicycle_path -hold  1 -from [get_ports {wstream_row[*]}]
+set_multicycle_path -setup 2 -from [get_ports {wstream_bank[*]}]
+set_multicycle_path -hold  1 -from [get_ports {wstream_bank[*]}]
+
+# ---------------------------------------------------------------------
+# Job interface and config register file (added 2026-07-31).
+#
+# layer_ctrl is now a job dispatcher: the PS writes the geometry registers,
+# then pulses job_start. Both happen while the core is idle, and the config
+# registers may not be rewritten while `busy` is high -- that is a protocol
+# rule, not a timing accident. Left unconstrained, Vivado would budget
+# these at a single cycle from a chip boundary that in reality moves once
+# per job, and at run 9's +58 ps of margin that is the difference between
+# a real failure and an artefact.
+#
+# Multicycle rather than false, so they are still CHECKED. A false path
+# here would hide a genuine setup problem on cfg_data, which fans out to
+# k_len, the requantisation scale and every base address in the design.
+# ---------------------------------------------------------------------
+set_multicycle_path -setup 2 -from [get_ports job_start]
+set_multicycle_path -hold  1 -from [get_ports job_start]
+set_multicycle_path -setup 2 -from [get_ports {job_op[*]}]
+set_multicycle_path -hold  1 -from [get_ports {job_op[*]}]
+set_multicycle_path -setup 2 -from [get_ports cfg_we]
+set_multicycle_path -hold  1 -from [get_ports cfg_we]
+set_multicycle_path -setup 2 -from [get_ports {cfg_addr[*]}]
+set_multicycle_path -hold  1 -from [get_ports {cfg_addr[*]}]
+set_multicycle_path -setup 2 -from [get_ports {cfg_data[*]}]
+set_multicycle_path -hold  1 -from [get_ports {cfg_data[*]}]
+
+# Score-memory readback. Verification only, and driven only while idle.
+set_multicycle_path -setup 2 -from [get_ports host_sc_re]
+set_multicycle_path -hold  1 -from [get_ports host_sc_re]
+set_multicycle_path -setup 2 -from [get_ports {host_sc_raddr[*]}]
+set_multicycle_path -hold  1 -from [get_ports {host_sc_raddr[*]}]
 
 # ---------------------------------------------------------------------
 # Out-of-context synthesis has no package pins, so no I/O constraints

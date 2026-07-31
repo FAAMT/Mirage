@@ -1,0 +1,581 @@
+<title>Mirage — Verification Plan</title>
+<style>
+  :root{
+    /* Palette: wafer teal as the structural accent, oxide red / moss green /
+       amber reserved for state. Neutrals carry a slight cyan bias so they
+       sit with the accent instead of under it. */
+    --ground:#F4F5F4;
+    --panel:#FFFFFF;
+    --panel-2:#EBEEEE;
+    --ink:#12181A;
+    --ink-2:#3D4A4D;
+    --ink-3:#6B7A7D;
+    --rule:#D2D9D9;
+    --rule-strong:#B4BFBF;
+    --accent:#0F6E6A;
+    --accent-soft:#DCEBEA;
+    --pass:#2E6F45;
+    --pass-soft:#DDEBE1;
+    --fail:#A33128;
+    --fail-soft:#F3DFDC;
+    --warn:#8A6206;
+    --warn-soft:#F2E7CC;
+
+    --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --measure: 68ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#0F1417;
+      --panel:#161D20;
+      --panel-2:#1E2629;
+      --ink:#E3E9E9;
+      --ink-2:#AEBCBC;
+      --ink-3:#7C8C8C;
+      --rule:#2A3438;
+      --rule-strong:#3C4A4E;
+      --accent:#4FB3AC;
+      --accent-soft:#14312F;
+      --pass:#6FBE8B;
+      --pass-soft:#16301F;
+      --fail:#E08279;
+      --fail-soft:#331A17;
+      --warn:#D9AE55;
+      --warn-soft:#2E2412;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0F1417; --panel:#161D20; --panel-2:#1E2629;
+    --ink:#E3E9E9; --ink-2:#AEBCBC; --ink-3:#7C8C8C;
+    --rule:#2A3438; --rule-strong:#3C4A4E;
+    --accent:#4FB3AC; --accent-soft:#14312F;
+    --pass:#6FBE8B; --pass-soft:#16301F;
+    --fail:#E08279; --fail-soft:#331A17;
+    --warn:#D9AE55; --warn-soft:#2E2412;
+  }
+  :root[data-theme="light"]{
+    --ground:#F4F5F4; --panel:#FFFFFF; --panel-2:#EBEEEE;
+    --ink:#12181A; --ink-2:#3D4A4D; --ink-3:#6B7A7D;
+    --rule:#D2D9D9; --rule-strong:#B4BFBF;
+    --accent:#0F6E6A; --accent-soft:#DCEBEA;
+    --pass:#2E6F45; --pass-soft:#DDEBE1;
+    --fail:#A33128; --fail-soft:#F3DFDC;
+    --warn:#8A6206; --warn-soft:#F2E7CC;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--serif); font-size:17px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px 96px}
+
+  /* ---- masthead ---- */
+  header.mast{
+    border-bottom:2px solid var(--ink); margin-bottom:44px;
+    padding:56px 0 22px;
+    display:grid; grid-template-columns:1fr auto; gap:24px; align-items:end;
+  }
+  .mast h1{
+    font-family:var(--sans); font-weight:700; letter-spacing:-.025em;
+    font-size:clamp(2.1rem,4.6vw,3.3rem); line-height:1.04; margin:0;
+    text-wrap:balance;
+  }
+  .mast .sub{
+    font-family:var(--sans); color:var(--ink-2); font-size:1.02rem;
+    margin:12px 0 0; max-width:56ch;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:.7rem; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 14px;
+    font-weight:600;
+  }
+  .stamp{
+    font-family:var(--mono); font-size:.72rem; line-height:1.9;
+    color:var(--ink-3); text-align:right; white-space:nowrap;
+  }
+  .stamp b{color:var(--ink-2); font-weight:600}
+
+  /* ---- headline result ---- */
+  .verdict{
+    background:var(--panel); border:1px solid var(--rule);
+    border-left:4px solid var(--accent);
+    padding:26px 30px; margin:0 0 46px;
+    display:grid; grid-template-columns:1fr auto; gap:28px; align-items:center;
+  }
+  .verdict .lead{font-family:var(--sans); font-size:1.06rem; margin:0; color:var(--ink)}
+  .verdict .lead b{color:var(--accent)}
+  .arabic{
+    font-size:2.6rem; line-height:1.2; direction:rtl;
+    font-family:"Geeza Pro","Noto Naskh Arabic","Segoe UI",Tahoma,serif;
+    color:var(--ink); white-space:nowrap;
+  }
+  .arabic small{
+    display:block; direction:ltr; font-family:var(--mono);
+    font-size:.66rem; color:var(--ink-3); letter-spacing:.08em; margin-top:2px;
+  }
+
+  /* ---- sections ---- */
+  section{margin:0 0 54px}
+  h2{
+    font-family:var(--sans); font-weight:680; letter-spacing:-.015em;
+    font-size:1.5rem; margin:0 0 6px; text-wrap:balance;
+  }
+  h2 .num{
+    font-family:var(--mono); font-size:.78rem; color:var(--accent);
+    letter-spacing:.1em; margin-right:.75em; font-weight:600;
+    vertical-align:.18em;
+  }
+  h3{
+    font-family:var(--sans); font-weight:650; font-size:1.02rem;
+    margin:30px 0 8px; letter-spacing:-.005em;
+  }
+  .deck{color:var(--ink-2); font-family:var(--sans); font-size:.97rem;
+        max-width:var(--measure); margin:0 0 22px}
+  p{max-width:var(--measure); margin:0 0 16px}
+  ul{max-width:var(--measure); padding-left:1.15em; margin:0 0 16px}
+  li{margin:0 0 7px}
+  code{
+    font-family:var(--mono); font-size:.86em;
+    background:var(--panel-2); padding:.1em .38em; border-radius:2px;
+    color:var(--ink);
+  }
+  a{color:var(--accent)}
+  .hr{height:1px; background:var(--rule); border:0; margin:44px 0}
+
+  /* ---- tables ---- */
+  .tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--rule); background:var(--panel)}
+  table{border-collapse:collapse; width:100%; font-family:var(--sans); font-size:.88rem}
+  th{
+    text-align:left; font-family:var(--mono); font-weight:600;
+    font-size:.68rem; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--ink-3); padding:11px 14px; border-bottom:1px solid var(--rule-strong);
+    white-space:nowrap; background:var(--panel-2);
+  }
+  td{padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top; color:var(--ink-2)}
+  tr:last-child td{border-bottom:0}
+  td.n{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--ink)}
+  td strong{color:var(--ink); font-weight:650}
+
+  .pill{
+    font-family:var(--mono); font-size:.66rem; letter-spacing:.07em;
+    text-transform:uppercase; padding:.2em .5em; border-radius:2px;
+    font-weight:600; white-space:nowrap; display:inline-block;
+  }
+  .p-pass{background:var(--pass-soft); color:var(--pass)}
+  .p-fail{background:var(--fail-soft); color:var(--fail)}
+  .p-warn{background:var(--warn-soft); color:var(--warn)}
+  .p-info{background:var(--accent-soft); color:var(--accent)}
+
+  /* ---- split diagram ---- */
+  .split{
+    display:grid; grid-template-columns:1fr 1fr; gap:0;
+    border:1px solid var(--rule); background:var(--panel); margin:0 0 20px;
+  }
+  .split > div{padding:20px 22px}
+  .split > div:first-child{border-right:1px solid var(--rule)}
+  .split h4{
+    font-family:var(--mono); font-size:.7rem; letter-spacing:.13em;
+    text-transform:uppercase; margin:0 0 4px; color:var(--accent); font-weight:600;
+  }
+  .split .big{
+    font-family:var(--sans); font-size:1.9rem; font-weight:700;
+    letter-spacing:-.02em; color:var(--ink); line-height:1.1;
+    font-variant-numeric:tabular-nums;
+  }
+  .split .cap{font-family:var(--sans); font-size:.82rem; color:var(--ink-3); margin:2px 0 14px}
+  .split ul{font-family:var(--sans); font-size:.88rem; margin:0; padding-left:1.1em}
+  .split li{color:var(--ink-2)}
+
+  /* ---- ladder ---- */
+  .ladder{border-left:2px solid var(--rule-strong); margin:0; padding:0}
+  .rung{
+    position:relative; padding:0 0 30px 26px;
+  }
+  .rung:last-child{padding-bottom:0}
+  .rung::before{
+    content:""; position:absolute; left:-6px; top:7px;
+    width:10px; height:10px; background:var(--accent);
+    border:2px solid var(--ground); border-radius:50%;
+  }
+  .rung .rl{
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--ink-3); font-weight:600;
+  }
+  .rung .rt{font-family:var(--sans); font-weight:650; font-size:1.05rem; margin:1px 0 5px; color:var(--ink)}
+  .rung p{font-size:.94rem; font-family:var(--sans); color:var(--ink-2); margin:0 0 8px}
+
+  .note{
+    background:var(--panel-2); border-left:3px solid var(--rule-strong);
+    padding:16px 20px; font-family:var(--sans); font-size:.92rem;
+    color:var(--ink-2); margin:0 0 20px; max-width:var(--measure);
+  }
+  .note b{color:var(--ink)}
+  .note.alert{border-left-color:var(--fail); background:var(--fail-soft)}
+  .note.alert b{color:var(--fail)}
+
+  footer{
+    border-top:1px solid var(--rule); padding-top:20px; margin-top:56px;
+    font-family:var(--mono); font-size:.72rem; color:var(--ink-3); line-height:1.9;
+  }
+  @media (max-width:760px){
+    header.mast{grid-template-columns:1fr}
+    .stamp{text-align:left}
+    .verdict{grid-template-columns:1fr}
+    .split{grid-template-columns:1fr}
+    .split > div:first-child{border-right:0; border-bottom:1px solid var(--rule)}
+  }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div>
+    <p class="eyebrow">Mirage&nbsp;v2 · Zynq-7007S · verification plan</p>
+    <h1>Proving the accelerator computes<br>the right numbers</h1>
+    <p class="sub">Run&nbsp;9 met every resource and timing target and still produced
+    wrong results. Synthesis and static timing analysis cannot see a numerical
+    error. This is the plan that closes that gap, and what it found.</p>
+  </div>
+  <div class="stamp">
+    <b>target</b> xc7z007sclg400-1<br>
+    <b>model</b> opus-mt-en-ar<br>
+    <b>sim</b> GHDL 4.1.0 · VHDL-2008<br>
+    <b>date</b> 2026-07-31
+  </div>
+</header>
+
+<div class="verdict">
+  <div>
+    <p class="lead">The whole translation now runs on the fabric. Twelve
+    layers of real MarianMT weights — six encoder, six decoder — driven through
+    the job interface as 13,584 jobs, produce <b>token ids identical to the
+    float32 reference</b>. Encoder cosine 0.985. The decoder needed no RTL
+    change: the causal mask is one existing config field.</p>
+  </div>
+  <div class="arabic">مرحبا<small>token 1466 · "Hello"</small></div>
+</div>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">01</span>What is being tested, and what is not</h2>
+  <p class="deck">The FPGA cannot translate anything on its own, and pretending
+  otherwise would make every number below meaningless.</p>
+
+  <p>The fabric holds one encoder layer's matmul chain and its softmax. It has no
+  embedding table, no decoder, no beam search, and not enough block RAM to hold a
+  single 512×512 weight matrix — that is 256&nbsp;KB against a 225&nbsp;KB device.
+  So the claim under test is narrower and more useful than "it translates":</p>
+
+  <div class="note">
+    <b>The claim.</b> Drive the real <code>opus-mt-en-ar</code> weights and the
+    real token embedding for “Hello” through six passes of the RTL encoder layer,
+    let the PS do the elementwise work between passes, and the resulting encoder
+    state still decodes to the correct Arabic token.
+  </div>
+
+  <p>Everything else — embeddings, the decoder, weight streaming — is the
+  processing system's job, which is what the Zynq part is for. The original
+  README says so itself: <em>“an ARM Cortex-A9 on the PS side orchestrates DMA,
+  tiling and token streaming.”</em></p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">02</span>Where the line between fabric and processor falls</h2>
+  <p class="deck">Not by what fits, but by where the arithmetic actually is.</p>
+
+  <div class="split">
+    <div>
+      <h4>Programmable logic</h4>
+      <div class="big">3.1 M</div>
+      <div class="cap">multiply-accumulates per token, per layer</div>
+      <ul>
+        <li>Q, K, V and output projections</li>
+        <li>QKᵀ scores</li>
+        <li>softmax — exp table, no divider</li>
+        <li>attention × V</li>
+        <li>both FFN layers</li>
+        <li>requantisation and saturation</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Processing system</h4>
+      <div class="big">13 K</div>
+      <div class="cap">elementwise operations per token, per layer — 0.4%</div>
+      <ul>
+        <li>projection biases</li>
+        <li>swish (SiLU) between FFN layers</li>
+        <li>residual add</li>
+        <li>two layer normalisations</li>
+        <li>quantisation scale selection</li>
+        <li>weight streaming and job issue</li>
+      </ul>
+    </div>
+  </div>
+
+  <p>Layer normalisation is the interesting case. It <em>can</em> be built in
+  fabric — a mean is a shift when <code>D&nbsp;=&nbsp;512</code>, the variance is
+  one DSP, the reciprocal square root is a table. It is left on the PS anyway,
+  because it is 0.4% of the arithmetic and 100% of the dynamic-range difficulty,
+  and because the PS has to touch every tensor at the layer boundary regardless
+  — it is already streaming the weights in. The round trip is roughly 20&nbsp;µs
+  of DMA against several milliseconds of fabric compute.</p>
+
+  <div class="note">
+    <b>Measured consequence of that boundary.</b> Counted from the generated
+    job stream, a layer loads 131,072 weight-window rows — <b>1,048,576 bank
+    words</b> at 32&nbsp;bits per cycle, 10.5&nbsp;ms at 100&nbsp;MHz — against
+    roughly 232,000 cycles of actual compute. The design is
+    <b>weight-bandwidth bound by about 4.5:1</b>. Adding fabric arithmetic would
+    not make it faster; widening the weight path would.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">03</span>The verification ladder</h2>
+  <p class="deck">Four rungs, each with a pass criterion that can fail. A test
+  that cannot fail is documentation.</p>
+
+  <div class="ladder">
+    <div class="rung">
+      <div class="rl">Rung 1 · VHDL unit testbenches</div>
+      <div class="rt">One module, against arithmetic written out independently</div>
+      <p>Each testbench recomputes the expected result from the definition — not
+      from the module — and compares element by element. Address generators are
+      checked for <em>values and injectivity</em>, never widths.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Testbench</th><th>Covers</th><th>Scale</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td><code>addr_math_tb</code></td><td>head bases, score addressing</td><td class="n">2,048 addresses</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td><code>sat8_tb</code></td><td>saturating narrow</td><td class="n">6,149 inputs</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td><code>exp_idx_tb</code></td><td>exp ROM index vs integer reference</td><td class="n">37,215 inputs</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td><code>mac_array_tb</code></td><td>32 lanes, latency pinned to <code>MAC_LAT</code></td><td class="n">64 reduction steps</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td><code>stage_engine_tb</code></td><td>Kᵀ and V staging at real strides, zero-fill</td><td class="n">2,368 bytes</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td><code>softmax_unit_tb</code></td><td>exp stream and sum, element by element</td><td class="n">4 rows × 6 columns</td><td><span class="pill p-pass">pass</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="rung">
+      <div class="rl">Rung 2 · Op-level co-simulation</div>
+      <div class="rt">Every job type through the real top level</div>
+      <p>Python emits a command script and a bit-exact model from the
+      <em>same</em> calls, so the RTL and the model provably see identical
+      stimulus. Zero tolerance: integer equality on every byte.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Case</th><th>Exercises</th><th>Values</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td>plain GEMM</td><td>one tile, reduction over 64</td><td class="n">32</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td>tiled GEMM</td><td>multi-token, multi-column-tile stepping</td><td class="n">192</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td>chunked GEMM</td><td>accumulator carried across two jobs</td><td class="n">32</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td>stage + QKᵀ</td><td>transpose staging then scores</td><td class="n">96</td><td><span class="pill p-pass">pass</span></td></tr>
+          <tr><td>softmax + ×V</td><td>exp row, reciprocal, attention matmul</td><td class="n">1,097</td><td><span class="pill p-pass">pass</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="rung">
+      <div class="rl">Rung 3 · Layer co-simulation</div>
+      <div class="rt">One encoder layer, real weights, every tensor compared</div>
+      <p>Q, K, V, the per-head score blocks, the attention context, the output
+      projection, both FFN stages — dumped out of the fabric and compared byte
+      for byte against the model.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Tensors compared, layer 0</td><td class="n">23</td></tr>
+          <tr><td>Values compared</td><td class="n">10,272</td></tr>
+          <tr><td>Tolerance</td><td class="n">0 — exact integer equality</td></tr>
+          <tr><td>Mismatches</td><td class="n">0 &nbsp;<span class="pill p-pass">pass</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="rung">
+      <div class="rl">Rung 4 · End-to-end translation</div>
+      <div class="rt">“Hello” → مرحبا, six layers on the fabric</div>
+      <p>Three separate criteria, because one end-to-end number can pass for the
+      wrong reasons.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Criterion</th><th>Asks</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Bit-exact</strong></td><td>Is the RTL what the model says it is?</td><td class="n">61,632 values, 138 tensors, 0 mismatches <span class="pill p-pass">pass</span></td></tr>
+          <tr><td><strong>Numeric</strong></td><td>Did int8 preserve the representation?</td><td class="n">cosine 0.9835 / 0.9875 vs float32</td></tr>
+          <tr><td><strong>Semantic</strong></td><td>Does it still say “marhaba”?</td><td>ids <code>[1466, 1466, 0]</code> <span class="pill p-pass">match</span></td></tr>
+          <tr><td>Scale of the run</td><td>—</td><td class="n">2,352 jobs · 7.88 M cycles · 40 min GHDL</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="rung">
+      <div class="rl">Rung 5 · Reuse — the decoder on the same fabric</div>
+      <div class="rt">12 layers, 13,584 jobs, no RTL change</div>
+      <p>A decoder layer is three sublayers and each decomposes into jobs that
+      already exist. The causal mask is <em>free</em>: the softmax job already
+      takes <code>sm_len</code>, so issuing <code>sm_len&nbsp;=&nbsp;t+1</code>
+      for query row&nbsp;<em>t</em> is the mask — no −inf, no comparator, no
+      extra hardware. Cross-attention is the same projections and the same
+      staging against different base addresses.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Path</th><th>New job types</th><th>New RTL</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>masked self-attention</td><td class="n">0</td><td class="n">none</td><td><span class="pill p-pass">runs</span></td></tr>
+          <tr><td>cross-attention</td><td class="n">0</td><td class="n">none</td><td><span class="pill p-pass">runs</span></td></tr>
+          <tr><td>decoder feed-forward</td><td class="n">0</td><td class="n">none</td><td><span class="pill p-pass">runs</span></td></tr>
+          <tr><td><strong>encoder + decoder, end to end</strong></td><td class="n">—</td><td class="n">—</td><td>ids <code>[1466, 1466, 0]</code> <span class="pill p-pass">identical</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">04</span>What the ladder found</h2>
+  <p class="deck">Thirteen defects. Every one of them passed synthesis, passed
+  static timing analysis, and would have passed a bitstream.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Module</th><th>Defect</th><th>Effect on the numbers</th><th>Found by</th></tr></thead>
+    <tbody>
+      <tr><td><code>stage_engine</code></td><td>address used the pass shape (<code>rows</code>/<code>lanes</code>) as the memory stride</td><td>every K/V lane but lane 0 read the wrong token</td><td>rung 1</td></tr>
+      <tr><td><code>stage_engine</code></td><td>bank index free-ran instead of resetting per row</td><td>with four lanes per row, row <em>r</em> landed in bank <em>r</em></td><td>rung 1</td></tr>
+      <tr><td><code>stage_engine</code></td><td>window row sampled a cycle late</td><td>last bank word of every row written to row+1</td><td>rung 1</td></tr>
+      <tr><td><code>stage_engine</code></td><td>short rows left unused lanes stale</td><td>previous op's data accumulated into real output columns</td><td>rung 1</td></tr>
+      <tr><td><code>stage_engine</code></td><td><code>act_re</code> registered but <code>act_raddr</code> concurrent</td><td>first byte of every staging pass missed — 1 byte in 592</td><td>rung 1</td></tr>
+      <tr><td><code>softmax_unit</code></td><td>requantiser fired on the ROM <em>address</em> strobe, not its data</td><td>every exp row shifted one column left</td><td>rung 1</td></tr>
+      <tr><td><code>layer_ctrl</code></td><td>one max register shared across all rows of a head</td><td>rows 1…n−1 computed exp against −2²⁰ → flat 127</td><td>review</td></tr>
+      <tr><td><code>layer_ctrl</code></td><td>exp stream produced in one op, consumed in another</td><td>×V multiplied V by a stale constant</td><td>review</td></tr>
+      <tr><td><code>layer_ctrl</code></td><td><code>sm_s_valid</code> asserted with <code>sc_re</code>, not one cycle later</td><td>softmax sampled the previous column's score</td><td>review</td></tr>
+      <tr><td><code>layer_ctrl</code></td><td><code>rc_re</code> latched 1/sum8 three cycles early</td><td>every row's reciprocal missed its last columns</td><td>review</td></tr>
+      <tr><td><code>gemm_sequencer</code></td><td><code>en</code>/<code>clr</code> asserted at k=0, before the first fetch returned</td><td>one bogus term in every dot product; <code>U</code> after reset</td><td>rung 2</td></tr>
+      <tr><td><code>gemm_sequencer</code></td><td>MAC pipeline never drained — <code>en</code> gates all three stages</td><td>last two terms of every reduction silently lost</td><td>rung 2</td></tr>
+      <tr><td><code>encoder_layer</code></td><td>exp data not registered alongside <code>exp_we</code></td><td>exp row written one address late</td><td>rung 2</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <b>The pattern.</b> Eight of the thirteen are alignment errors between a
+    strobe and the data it labels. None changes a width, so nothing
+    warns. Several produce output that still <em>looks</em> like a plausible
+    softmax or a plausible dot product. The softmax shift was invisible to a row
+    of equal scores — the obvious first test — and only fell out of a strictly
+    increasing row compared element by element.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">05</span>The rule that governed which fixes were allowed</h2>
+  <p class="deck">Run 9 closed timing at +58 picoseconds. That is closure with no
+  margin worth relying on.</p>
+
+  <p>Every change was classified before it was made, and the classification
+  decided whether it was permitted:</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Class</th><th>Timing exposure</th><th>Policy</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Control path</strong></td><td>none — FSM states, counters, drain lengths</td><td><span class="pill p-pass">free</span></td><td>9 of the 13 fixes</td></tr>
+      <tr><td><strong>New register stage</strong></td><td>adds latency, not path depth</td><td><span class="pill p-pass">free</span></td><td>staging pipeline, exp data alignment</td></tr>
+      <tr><td><strong>Constant → register</strong></td><td>same net, different source</td><td><span class="pill p-info">low</span></td><td>programmable requant multiplier</td></tr>
+      <tr><td><strong>New 2:1 mux</strong></td><td>one LUT level on an existing path</td><td><span class="pill p-warn">justify</span></td><td>MAC flush zeroing, score readback</td></tr>
+      <tr><td><strong>Deepen existing stage</strong></td><td>directly consumes slack</td><td><span class="pill p-fail">avoided</span></td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Two muxes were added. Both sit between a block RAM output and a register
+  input, on paths with most of a 10&nbsp;ns period spare — not on the writeback
+  or softmax cones where run 8's critical paths lived. The programmable requant
+  multiplier replaced a hardwired constant on a net that already fed the
+  reciprocal multiplier, so it changes the source of a value rather than the
+  depth of any cone.</p>
+
+  <div class="note alert">
+    <b>Not yet re-measured.</b> These are arguments, not results. The design has
+    not been back through Vivado since the fixes. Every claim in this section is
+    an expectation until a run reports WNS, and at +58&nbsp;ps of starting margin
+    the expectation is worth exactly what a re-run costs.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">06</span>Two things the fabric now does that it could not</h2>
+
+  <h3>Reduction chunking</h3>
+  <p>The weight window holds 1,024 rows. The FFN output layer reduces over 2,048,
+  so it did not fit even for a single output tile — and the projections
+  (512×512 = 256&nbsp;KB) never fit at all. The sequencer now takes
+  <code>acc_clr</code> and <code>acc_wb</code>: a long reduction is issued as
+  several jobs with a weight reload between them, and the accumulator survives
+  across them. Only the last chunk writes back.</p>
+
+  <h3>A programmable requantisation multiplier</h3>
+  <p>Output scale used to be a power of two, because <code>rq_shift</code> was
+  the only control. Softmax cannot live with that. <code>exp_rom</code> is
+  indexed as <code>(max − s) &gt;&gt; 4</code> over a table of
+  <code>exp(−i/256)</code>, so a score LSB <em>means</em> 2⁻¹² in natural-log
+  units. Miss that scale by a factor <em>f</em> and the hardware computes
+  <code>exp(−z/f)</code> — the attention runs at the wrong temperature, silently,
+  with no failing endpoint anywhere. The 18-bit multiplier that already existed
+  for the reciprocal now takes a programmable value and hits the required scale
+  to about 17 bits instead of to the nearest octave.</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">07</span>Where the accuracy goes</h2>
+  <p class="deck">Per-stage cosine against float32, measured through all six
+  layers. Nothing collapses; it erodes.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Stage</th><th>Layer 0</th><th>Layer 2</th><th>Layer 5</th></tr></thead>
+    <tbody>
+      <tr><td>Q / K / V projections</td><td class="n">0.9995</td><td class="n">0.9930</td><td class="n">0.9821</td></tr>
+      <tr><td>QKᵀ scores</td><td class="n">1.0000</td><td class="n">0.9932</td><td class="n">0.9971</td></tr>
+      <tr><td>attention context</td><td class="n">0.9986</td><td class="n">0.9872</td><td class="n">0.9750</td></tr>
+      <tr><td>post-attention layernorm</td><td class="n">0.9994</td><td class="n">0.9935</td><td class="n">0.9898</td></tr>
+      <tr><td>FFN hidden (after swish)</td><td class="n">0.9978</td><td class="n">0.9818</td><td class="n">0.9734</td></tr>
+      <tr><td><strong>layer output</strong></td><td class="n">0.9948</td><td class="n">0.9871</td><td class="n">0.9854</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The dominant loss is the FFN, which is expected: it is the widest reduction
+  and the only place a nonlinearity sits between two int8 quantisations. The
+  requantisation truncates rather than rounds to nearest, which costs a
+  systematic half-LSB per stage — the cheapest available accuracy improvement
+  and a candidate for the next revision, at the cost of one adder in the
+  writeback.</p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">08</span>What is still open</h2>
+
+  <div class="tw"><table>
+    <thead><tr><th>Item</th><th>Status</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Vivado re-run after the fixes</td><td><span class="pill p-fail">required</span></td><td>resource and timing claims are arguments until measured</td></tr>
+      <tr><td>Decoder through GHDL</td><td><span class="pill p-warn">model only</span></td><td>runs on the Fabric model, which the layer run measures to be bit-identical to the RTL; a GHDL pass over 12 layers × 3 steps would take hours and test nothing new</td></tr>
+      <tr><td>Round-to-nearest requantisation</td><td><span class="pill p-warn">identified</span></td><td>one adder in the writeback; removes a half-LSB bias per stage</td></tr>
+      <tr><td>Bias and swish in fabric</td><td><span class="pill p-info">optional</span></td><td>a 256-entry host-loaded table and one adder; saves three PS round trips per layer</td></tr>
+      <tr><td>Weight bandwidth</td><td><span class="pill p-info">architectural</span></td><td>3:1 bound; the next real speedup is a wider weight path, not more DSPs</td></tr>
+      <tr><td>Context beyond 7 tokens</td><td><span class="pill p-warn">bounded</span></td><td>FFN hidden region holds 7 tokens; longer inputs need token grouping</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  mirage-vivado-2026-07-29 · rtl_v2 · sim/ · model_ref/<br>
+  reproduce: <code>sim/build.sh &lt;testbench&gt;</code> · <code>model_ref/test_ops.py</code> · <code>model_ref/translate_hw.py</code><br>
+  reference model: Helsinki-NLP/opus-mt-en-ar, float32, numpy, no torch
+</footer>
+
+</div>

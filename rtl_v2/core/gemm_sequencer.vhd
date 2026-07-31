@@ -83,6 +83,25 @@ entity gemm_sequencer is
         -- ever materialised. Every other op passes unity.
         scale     : in std_logic_vector(RECIP_ROM_DW - 1 downto 0);
 
+        -- REDUCTION CHUNKING.
+        --
+        -- weight_window holds BANK_DEPTH = 1024 rows. The FFN output layer
+        -- reduces over FFN_DIM = 2048, so it does not fit even for a single
+        -- column tile, and the projections (512 x 512 = 256 KB) do not fit
+        -- at all. Every long reduction is therefore issued as several jobs
+        -- with a weight reload between them, and the accumulator has to
+        -- survive across them.
+        --
+        --   acc_clr  '1' -> this job starts a fresh reduction
+        --   acc_wb   '1' -> this job ends one, so requantise and write back
+        --
+        -- A single-job op passes "11", which is the behaviour this module
+        -- always had. Chunk-splitting only works with n_tok = 1 and
+        -- n_coltile = 1, because the accumulators are per-lane and the
+        -- t/ct loops would otherwise overwrite a partial sum.
+        acc_clr   : in std_logic;
+        acc_wb    : in std_logic;
+
         -- activation buffer read port
         act_re    : out std_logic;
         act_raddr : out std_logic_vector(ACT_AW - 1 downto 0);
@@ -141,6 +160,8 @@ architecture rtl of gemm_sequencer is
     -- one-cycle alignment for the BRAM read latency
     signal en_d1  : std_logic := '0';
     signal clr_d1 : std_logic := '0';
+    -- high while pushing zeros through the MAC pipeline to flush it
+    signal flush_z : std_logic := '0';
 
     signal busy_i : std_logic := '0';
     signal done_i : std_logic := '0';
@@ -186,7 +207,20 @@ begin
 
     busy    <= busy_i;
     done    <= done_i;
-    mac_a   <= act_data;
+
+    -- Zero the broadcast operand while draining the MAC pipeline.
+    --
+    -- mac_lane's three stages are ALL gated by `en`, so dropping `en` after
+    -- the last term freezes the pipeline with two terms still inside it and
+    -- they never reach the accumulator. Holding `en` high instead would
+    -- re-accumulate the last activation, which is the failure the original
+    -- S_FLUSH comment describes. Feeding ZERO with `en` still high does
+    -- both jobs: the pipeline advances and the injected terms contribute
+    -- nothing, because 0 * anything is 0.
+    --
+    -- One 2:1 mux on a path that runs BRAM -> mux -> mac_lane's input
+    -- register, with most of a 10 ns period spare.
+    mac_a   <= (others => '0') when flush_z = '1' else act_data;
     mac_w   <= w_bus;
     mac_en  <= en_d1;
     mac_clr <= clr_d1;
@@ -212,6 +246,7 @@ begin
                 out_stride <= (others => '0');
                 en_d1      <= '0';
                 clr_d1     <= '0';
+                flush_z    <= '0';
                 busy_i     <= '0';
                 done_i     <= '0';
                 act_re     <= '0';
@@ -232,8 +267,9 @@ begin
                 done_i <= '0';
                 act_re <= '0';
                 w_re   <= '0';
-                en_d1  <= '0';
-                clr_d1 <= '0';
+                en_d1   <= '0';
+                clr_d1  <= '0';
+                flush_z <= '0';
 
                 case state is
 
@@ -261,10 +297,34 @@ begin
                         w_re      <= '1';
                         w_row     <= std_logic_vector(w_tile + resize(k_cnt, BANK_AW));
 
-                        -- Validate the PREVIOUS cycle's fetch.
-                        en_d1 <= '1';
-                        if k_cnt = 0 then
-                            clr_d1 <= '1';       -- first term: load, not accumulate
+                        -- Validate the PREVIOUS cycle's fetch -- and at
+                        -- k_cnt = 0 there ISN'T one.
+                        --
+                        -- This used to assert en unconditionally, including
+                        -- on the very first cycle of the op, when act_data
+                        -- and w_bus still held whatever the last op left
+                        -- there. Every matmul therefore accumulated one
+                        -- extra bogus term, and `clr` landed on that term
+                        -- rather than on the first real one, so the whole
+                        -- dot product was offset by a stale product. On the
+                        -- first op after reset the stale value is 'U', the
+                        -- accumulator goes metavalue, and sat8 returns -128
+                        -- for all 32 lanes -- which is exactly how
+                        -- model_ref/test_ops.py found it.
+                        --
+                        -- Addresses are issued on cycles 0 .. k_len-1 and
+                        -- their data arrives on cycles 1 .. k_len, so en
+                        -- belongs on 1 .. k_len: the tail of S_MAC plus the
+                        -- first cycle of S_FLUSH, which already asserted it.
+                        -- Total en cycles is now k_len, not k_len + 1.
+                        if k_cnt /= 0 then
+                            en_d1 <= '1';
+                        end if;
+                        if k_cnt = 1 and acc_clr = '1' then
+                            -- first term of a FRESH reduction: load rather
+                            -- than accumulate. A continuation chunk leaves
+                            -- clr low so the partial sum survives.
+                            clr_d1 <= '1';
                         end if;
 
                         if k_cnt = unsigned(k_len) - 1 then
@@ -287,12 +347,36 @@ begin
                         -- accumulated a second time. That exact mistake made
                         -- the first mac_array testbench fail on 31 of 32
                         -- lanes.
-                        if fl_cnt = 0 then
+                        -- Cycle 0 validates the final BRAM fetch. Cycles 1
+                        -- and 2 keep `en` high with a zeroed operand so the
+                        -- last two terms traverse mac_lane's remaining
+                        -- stages: a term needs MAC_LAT en-cycles to reach
+                        -- the accumulator, so k_len real terms need
+                        -- MAC_LAT - 1 zero cycles behind them.
+                        if fl_cnt < MAC_LAT then
                             en_d1 <= '1';
+                            if fl_cnt /= 0 then
+                                flush_z <= '1';
+                            end if;
+                            -- k_len = 1 has no second S_MAC cycle, so the
+                            -- first real datum arrives here and this is
+                            -- where clr belongs. The xV matmul reduces over
+                            -- n_tok, which is 1 for a single-token input.
+                            if fl_cnt = 0 and unsigned(k_len) = 1
+                               and acc_clr = '1' then
+                                clr_d1 <= '1';
+                            end if;
                         end if;
                         if fl_cnt = MAC_LAT + 1 then
-                            wb_cnt <= (others => '0');
-                            state  <= S_WB;
+                            if acc_wb = '1' then
+                                wb_cnt <= (others => '0');
+                                state  <= S_WB;
+                            else
+                                -- A continuation chunk: leave the
+                                -- accumulators alone and end the job. The
+                                -- next chunk picks them up with acc_clr low.
+                                state <= S_NEXT;
+                            end if;
                         else
                             fl_cnt <= fl_cnt + 1;
                         end if;

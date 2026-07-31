@@ -549,6 +549,31 @@ change to the softmax path, the writeback, or the constraints can push it
 negative again. Re-run timing after any RTL edit rather than assuming it
 holds.
 
+### The decoder runs on the same fabric, with no RTL change
+
+`model_ref/decoder_hw.py` and `model_ref/full_hw.py`. A decoder layer is
+three sublayers and every one of them decomposes into jobs that already
+exist:
+
+* **masked self-attention** -- the causal mask is FREE. The softmax job
+  already takes `sm_len`, so issuing `sm_len = t + 1` for query row `t` *is*
+  the mask. No -inf, no comparator, no extra hardware.
+* **cross-attention** -- Q from the decoder state, K and V from the encoder
+  output. Same projection jobs, same staging, same softmax; only the base
+  addresses differ.
+* **feed-forward** -- byte for byte the encoder's, chunked reduction included.
+
+Measured, "Hello" end to end with both encoder and decoder on the fabric:
+**13,584 jobs, output ids `[1466, 1466, 0]` = مرحبا مرحبا, IDENTICAL to the
+float32 reference.** That is the reuse the design was shaped around, and it
+holds because layer_ctrl was given a job interface instead of a hardwired op
+sequence -- what makes a decoder a decoder lives entirely on the PS.
+
+`full_hw.py` runs against the Fabric model rather than GHDL. That
+substitution is stated rather than hidden: `translate_hw.py` measures the RTL
+to be bit-identical to Fabric on a full encoder layer with these same
+weights, so the equivalence has been established, not assumed.
+
 ### What this does NOT mean
 
 The design **meets its resource and timing targets and still computes wrong
@@ -575,3 +600,157 @@ soon as they exist, so a stall still leaves everything up to that point.
 **The first two numbers to look at are DSP and RAMB36.** If either is 0,
 the corresponding attribute did not take and nothing else in the report
 matters yet.
+
+---
+
+## 2026-07-31: numerical verification, and the thirteen defects it found
+
+Run 9 met every resource and timing target and still computed wrong numbers.
+This section covers closing that gap. The full plan, with pass criteria, is
+`TEST_PLAN.html`; this is the engineering record.
+
+### The verification ladder
+
+Four rungs, each able to fail independently:
+
+1. **VHDL unit testbenches** — one module against arithmetic written out from
+   the definition, not from the module. `sim/stage_engine_tb`,
+   `sim/softmax_unit_tb`, plus the four that already existed.
+2. **Op-level co-simulation** — `model_ref/test_ops.py`. Python emits a
+   command script and a bit-exact model from the *same* calls, so the RTL and
+   the model provably see identical stimulus. 1,449 values, zero tolerance.
+3. **Layer co-simulation** — one encoder layer with real MarianMT weights;
+   23 tensors, 10,272 values, integer equality.
+4. **End-to-end** — "Hello" through six encoder layers on the fabric, decoded
+   against the float32 reference.
+
+`sim/encoder_layer_tb.vhd` is a command interpreter rather than a fixed
+stimulus, because the stimulus IS the PS's job schedule and it depends on real
+weights. Encoding that in VHDL literals would mean regenerating the testbench
+whenever a scale changed.
+
+### The defects
+
+Thirteen. Eight are alignment errors between a strobe and the data it labels. None changes a width, so nothing warns, and several produce output that
+still looks like a plausible softmax or a plausible dot product.
+
+| Module | Defect | Effect |
+|---|---|---|
+| `stage_engine` | address used the pass shape (`rows`/`lanes`) as the memory stride | every K/V lane but lane 0 read the wrong token |
+| `stage_engine` | bank index free-ran instead of resetting per row | with 4 lanes/row, row *r* landed in bank *r* |
+| `stage_engine` | window row sampled a cycle late | last bank word of every row written to row+1 |
+| `stage_engine` | short rows left unused lanes stale | previous op's data accumulated into real columns |
+| `stage_engine` | `act_re` registered, `act_raddr` concurrent | first byte of every pass missed — 1 in 592 |
+| `softmax_unit` | requantiser fired on the ROM *address* strobe | every exp row shifted one column left |
+| `layer_ctrl` | one max register shared across a head's rows | rows 1..n-1 used max = -2^20, so exp = flat 127 |
+| `layer_ctrl` | exp stream produced in one op, consumed in another | xV multiplied V by a stale constant |
+| `layer_ctrl` | `sm_s_valid` asserted with `sc_re` | softmax sampled the previous column's score |
+| `layer_ctrl` | `rc_re` latched 1/sum8 three cycles early | every row's reciprocal missed its last columns |
+| `gemm_sequencer` | `en`/`clr` asserted at k=0, before the first fetch | one bogus term per dot product; `U` after reset |
+| `gemm_sequencer` | MAC pipeline never drained | last two terms of every reduction lost |
+| `encoder_layer` | exp data not registered with `exp_we` | exp row written one address late |
+
+The softmax shift is worth singling out: a row of equal scores — the obvious
+first thing to try — is invariant under it and passes. It only fell out of a
+strictly increasing row compared element by element.
+
+### Two structural changes
+
+**`layer_ctrl` is now a job dispatcher, not an op walker.** The old walker
+could not be made correct by fixing its sequencing, because it assumed the
+weights were already resident. `weight_window` holds 1,024 rows; W_Q alone is
+512 x 512 = 256 KB, and the FFN output layer reduces over 2,048. Every matmul
+here is inherently chunked with a reload between chunks, and something outside
+the fabric has to do the reload. The PS issues one job at a time — GEMM, STAGE
+or SMAX — and the fabric holds no assumption about what comes next.
+
+**Reduction chunking.** `gemm_sequencer` takes `acc_clr` and `acc_wb`, so a
+long reduction is issued as several jobs with the accumulator surviving across
+them. Only the last chunk writes back.
+
+**A programmable requantisation multiplier.** Output scale used to be a power
+of two. `exp_rom` is indexed as `(max - s) >> 4` over a table of `exp(-i/256)`,
+so a score LSB MEANS 2^-12 in natural-log units; miss that by a factor f and
+the hardware computes `exp(-z/f)` — the attention runs at the wrong
+temperature, silently. The 18-bit multiplier that already existed for the
+reciprocal now takes a programmable value.
+
+### Resource cost of these changes
+
+`tools/v2_budget.py` now derives **36 RAMB36 (72%)** and **34 DSP48E1 (52%)**,
+against run 9's measured 35.5 and 34. The extra half-to-one block RAM is the
+score memory: padding each score row to N_LANES = 32 instead of MAX_TOK = 16
+takes it from 2,048 to 4,096 entries. That buys the removal of a second
+address generator -- the QK^T writeback now uses gemm_sequencer's OWN address
+plus a head base, rather than a shadow generator in layer_ctrl that had to
+agree with it. A duplicated address generator is exactly the kind of thing
+that drifts, and one block RAM is a cheap price for deleting it.
+
+The gate also stopped reporting a permanent false positive on `clog2`'s
+`v := v * 2`, which is elaboration-time arithmetic on a variable. It had been
+firing on every clean run since run 5 -- which is how a gate stops being read.
+The exemption is keyed to that exact site, and a deliberately broken
+`addr_mul` still trips the rule.
+
+### The PL/PS split
+
+Per token per layer: **3.1 M multiply-accumulates on the fabric**, **13 K
+elementwise operations on the PS** — 0.4%. The PS owns bias, swish, residual,
+both layer normalisations and the quantisation scales. Layer norm *can* be
+built in fabric (the mean is a shift at D=512, the variance is one DSP, rsqrt
+is a table) and is deliberately not: it is 0.4% of the arithmetic and 100% of
+the dynamic-range difficulty, and the PS already touches every tensor at the
+layer boundary because it is streaming the weights.
+
+**Measured, and more important than the split:** counted from the generated
+job stream, a layer loads 131,072 weight-window rows = **1,048,576 bank words**
+at 32 bits/cycle — 10.5 ms at 100 MHz — against ~232,000 cycles of compute.
+**Weight-bandwidth bound by about 4.5:1.** More DSPs would not make it faster;
+a wider weight path would. (The FFN output layer is reloaded per token because
+its reduction is chunked and the accumulators are per-lane, so the ratio grows
+with context length -- one more reason the weight path is the thing to widen.)
+
+### Result
+
+- Rungs 1-3: pass, zero tolerance.
+- **Six encoder layers on the RTL, measured:** 2,352 jobs, a 64 MB job stream,
+  7.88 M simulated cycles in 40 minutes of GHDL. **61,632 values across 138
+  tensors compared byte for byte against the model -- 0 mismatches.**
+- Encoder output vs float32: **cosine 0.9835 / 0.9875** per token.
+- "Hello" -> token ids `[1466, 1466, 0]` = مرحبا مرحبا, **identical to the
+  float32 reference**.
+
+### The decoder runs on the same fabric, with no RTL change
+
+`model_ref/decoder_hw.py` and `model_ref/full_hw.py`. A decoder layer is
+three sublayers and every one of them decomposes into jobs that already
+exist:
+
+* **masked self-attention** -- the causal mask is FREE. The softmax job
+  already takes `sm_len`, so issuing `sm_len = t + 1` for query row `t` *is*
+  the mask. No -inf, no comparator, no extra hardware.
+* **cross-attention** -- Q from the decoder state, K and V from the encoder
+  output. Same projection jobs, same staging, same softmax; only the base
+  addresses differ.
+* **feed-forward** -- byte for byte the encoder's, chunked reduction included.
+
+Measured, "Hello" end to end with both encoder and decoder on the fabric:
+**13,584 jobs, output ids `[1466, 1466, 0]` = مرحبا مرحبا, IDENTICAL to the
+float32 reference.** That is the reuse the design was shaped around, and it
+holds because layer_ctrl was given a job interface instead of a hardwired op
+sequence -- what makes a decoder a decoder lives entirely on the PS.
+
+`full_hw.py` runs against the Fabric model rather than GHDL. That
+substitution is stated rather than hidden: `translate_hw.py` measures the RTL
+to be bit-identical to Fabric on a full encoder layer with these same
+weights, so the equivalence has been established, not assumed.
+
+### What this does NOT mean
+
+The design has **not** been back through Vivado since these fixes. Every
+timing claim is an argument, not a measurement, and run 9 closed at +58 ps.
+Changes were classified before being made — control path and new register
+stages were treated as free, two new 2:1 muxes were justified individually
+(both sit between a block RAM output and a register input), and nothing was
+allowed to deepen an existing cone. That reasoning is worth exactly what a
+re-run costs.
