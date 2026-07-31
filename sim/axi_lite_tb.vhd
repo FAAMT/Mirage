@@ -118,11 +118,14 @@ architecture sim of axi_lite_tb is
     constant A_ISR     : natural := 16#0C#;
     constant A_ACT_PTR : natural := 16#10#;
     constant A_ACT_DAT : natural := 16#14#;
+    constant A_WGT_DAT : natural := 16#24#;
+    constant A_WGT_LST : natural := 16#28#;
     constant A_CFG0    : natural := 16#40#;
 
     type byte_arr is array (natural range <>) of integer;
     signal ref_out : byte_arr(0 to N_OUT - 1) := (others => 0);
     signal dut_out : byte_arr(0 to N_OUT - 1) := (others => 0);
+    signal pio_out : byte_arr(0 to N_OUT - 1) := (others => 0);
 
     signal errors : natural := 0;
 
@@ -426,6 +429,54 @@ begin
         end loop;
 
         ---------------------------------------------------------------
+        -- PHASE 3b -- the PIO weight path, and proof the refused config
+        --             write really did not take effect
+        --
+        -- Bring-up cannot depend on a DMA, so weights must also be
+        -- loadable through the control port alone. The same window is
+        -- pushed word by word through WGT_DATA, the job is re-run, and the
+        -- result must equal the reference again.
+        --
+        -- It doubles as the real check on phase 3: that test wrote 999
+        -- into CFG0 (k_len) while busy and saw ISR[1] set, but an error
+        -- flag on a write that was ALSO applied would look identical. If
+        -- the write had landed, k_len would now be 999 instead of 32 and
+        -- this job could not reproduce the reference.
+        ---------------------------------------------------------------
+        report "phase 3b: PIO weight path";
+
+        axi_wr(A_CFG0 + 4 * 8, x"00000000");
+
+        for row in 0 to K_LEN - 1 loop
+            for bank in 0 to W_BANKS - 1 loop
+                for b in 0 to BANK_BYTES - 1 loop
+                    word((b + 1) * 8 - 1 downto b * 8) :=
+                        std_logic_vector(to_signed(
+                            wgt_val(row, bank * BANK_BYTES + b), 8));
+                end loop;
+                if row = K_LEN - 1 and bank = W_BANKS - 1 then
+                    axi_wr(A_WGT_LST, word);
+                else
+                    axi_wr(A_WGT_DAT, word);
+                end if;
+            end loop;
+        end loop;
+
+        axi_wr(A_ISR, x"00000003");
+        axi_wr(A_CTRL, x"00000001");
+        loop
+            axi_rd(A_ISR, rv);
+            exit when rv(0) = '1';
+        end loop;
+
+        axi_wr(A_ACT_PTR, std_logic_vector(to_unsigned(OUT_BASE, 32)));
+        for i in 0 to N_OUT - 1 loop
+            axi_rd(A_ACT_DAT, rv);
+            pio_out(i) <= to_integer(signed(rv));
+            wait for 1 ns;
+        end loop;
+
+        ---------------------------------------------------------------
         -- PHASE 4 -- compare
         ---------------------------------------------------------------
         wait until rising_edge(clk);
@@ -441,7 +492,15 @@ begin
             if ref_out(i) /= dut_out(i) then
                 report "MISMATCH byte " & integer'image(i)
                      & ": direct " & integer'image(ref_out(i))
-                     & ", axi " & integer'image(dut_out(i)) severity error;
+                     & ", axi-stream " & integer'image(dut_out(i))
+                    severity error;
+                nerr := nerr + 1;
+            end if;
+            if ref_out(i) /= pio_out(i) then
+                report "MISMATCH byte " & integer'image(i)
+                     & ": direct " & integer'image(ref_out(i))
+                     & ", axi-pio " & integer'image(pio_out(i))
+                    severity error;
                 nerr := nerr + 1;
             end if;
         end loop;
@@ -471,7 +530,7 @@ begin
         if nerr = 0 then
             write(lo, string'("PASS  axi wrapper transparent over "));
             write(lo, N_OUT);
-            write(lo, string'(" bytes + 4 contract checks"));
+            write(lo, string'(" bytes x2 paths (stream, pio) + 5 contract checks"));
         else
             write(lo, string'("FAIL  "));
             write(lo, nerr);

@@ -38,7 +38,17 @@
 --   0x14  ACT_DATA  RW   W: byte -> [ptr], ptr++ ; R: [ptr] -> byte, ptr++
 --   0x18  SC_PTR    RW   score word pointer
 --   0x1C  SC_DATA   R    score at [ptr] sign-extended, ptr++
+--   0x24  WGT_DATA  W    push one weight word into the stream sink
+--   0x28  WGT_LAST  W    push one weight word with TLAST (ends a window)
 --   0x40  CFG0 .. 0x68 CFG10   W  -> cfg_addr = (offset - 0x40)/4
+--
+-- WGT_DATA/WGT_LAST are a deliberate slow path. The weight stream is the
+-- bandwidth-critical direction and belongs on a DMA, but requiring one on
+-- day one would mean the first board test debugs the accelerator, the
+-- DMA, the HP port and the cache policy simultaneously. These two
+-- registers push words into the same sink over AXI4-Lite, so bring-up
+-- needs nothing but the control port -- slow enough to be useless in
+-- production, sufficient to prove the datapath on silicon.
 --
 -- The auto-incrementing ACT_DATA port is what makes a 512-byte
 -- activation vector one loop with no address write per byte. It is still
@@ -103,7 +113,12 @@ entity mirage_axi_lite is
         host_sc_raddr : out std_logic_vector(SCORE_AW - 1 downto 0);
         host_sc_dout  : in  std_logic_vector(SCORE_W - 1 downto 0);
 
-        wstream_buf : in std_logic
+        wstream_buf : in std_logic;
+
+        -- PIO weight push, merged with the AXI-Stream port in the top
+        wgt_pio_valid : out std_logic;
+        wgt_pio_data  : out std_logic_vector(BANK_W - 1 downto 0);
+        wgt_pio_last  : out std_logic
     );
 end entity;
 
@@ -118,6 +133,8 @@ architecture rtl of mirage_axi_lite is
     constant IDX_ACT_DAT : natural := 16#14# / 4;
     constant IDX_SC_PTR  : natural := 16#18# / 4;
     constant IDX_SC_DAT  : natural := 16#1C# / 4;
+    constant IDX_WGT_DAT : natural := 16#24# / 4;
+    constant IDX_WGT_LST : natural := 16#28# / 4;
     constant IDX_CFG0    : natural := 16#40# / 4;
     constant IDX_CFG_TOP : natural := 16#68# / 4;
 
@@ -230,10 +247,15 @@ begin
                 sc_ptr     <= (others => '0');
                 isr_done   <= '0';
                 isr_cfgerr <= '0';
+                wgt_pio_valid <= '0';
+                wgt_pio_data  <= (others => '0');
+                wgt_pio_last  <= '0';
             else
-                job_start <= '0';
-                cfg_we    <= '0';
-                host_we   <= '0';
+                job_start     <= '0';
+                cfg_we        <= '0';
+                host_we       <= '0';
+                wgt_pio_valid <= '0';
+                wgt_pio_last  <= '0';
 
                 -- done is a one-cycle pulse; this is the only chance to
                 -- see it. Latched unconditionally, ahead of any decode,
@@ -271,6 +293,15 @@ begin
 
                         when IDX_SC_PTR =>
                             sc_ptr <= unsigned(s_axi_wdata(SCORE_AW - 1 downto 0));
+
+                        when IDX_WGT_DAT =>
+                            wgt_pio_data  <= s_axi_wdata(BANK_W - 1 downto 0);
+                            wgt_pio_valid <= '1';
+
+                        when IDX_WGT_LST =>
+                            wgt_pio_data  <= s_axi_wdata(BANK_W - 1 downto 0);
+                            wgt_pio_valid <= '1';
+                            wgt_pio_last  <= '1';
 
                         when others =>
                             if wr_idx >= IDX_CFG0 and wr_idx <= IDX_CFG_TOP then

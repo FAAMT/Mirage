@@ -101,7 +101,23 @@ architecture rtl of mirage_axi_top is
 
     signal beat_count : std_logic_vector(31 downto 0);
 
+    -- PIO weight push from the control port, merged with the stream
+    signal pio_valid : std_logic;
+    signal pio_data  : std_logic_vector(BANK_W - 1 downto 0);
+    signal pio_last  : std_logic;
+    signal wgt_tvalid, wgt_tlast : std_logic;
+    signal wgt_tdata : std_logic_vector(BANK_W - 1 downto 0);
+
 begin
+
+    -- Two producers, one sink. PIO wins when both present, which cannot
+    -- happen in practice: bring-up uses PIO with no DMA configured, and
+    -- production uses the DMA and never writes WGT_DATA. The priority is
+    -- stated rather than left to chance so the failure mode is a dropped
+    -- DMA beat, not two words written to one address.
+    wgt_tvalid <= pio_valid or s_axis_tvalid;
+    wgt_tdata  <= pio_data when pio_valid = '1' else s_axis_tdata;
+    wgt_tlast  <= pio_last when pio_valid = '1' else s_axis_tlast;
 
     ctrl : entity work.mirage_axi_lite
         port map (
@@ -144,17 +160,21 @@ begin
             host_sc_re    => host_sc_re,
             host_sc_raddr => host_sc_raddr,
             host_sc_dout  => host_sc_dout,
-            wstream_buf   => wstream_buf
+            wstream_buf   => wstream_buf,
+
+            wgt_pio_valid => pio_valid,
+            wgt_pio_data  => pio_data,
+            wgt_pio_last  => pio_last
         );
 
     wgt : entity work.wgt_stream
         port map (
             clk           => aclk,
             rst           => rst,
-            s_axis_tvalid => s_axis_tvalid,
+            s_axis_tvalid => wgt_tvalid,
             s_axis_tready => s_axis_tready,
-            s_axis_tdata  => s_axis_tdata,
-            s_axis_tlast  => s_axis_tlast,
+            s_axis_tdata  => wgt_tdata,
+            s_axis_tlast  => wgt_tlast,
             wstream_valid => wstream_valid,
             wstream_data  => wstream_data,
             wstream_row   => wstream_row,
