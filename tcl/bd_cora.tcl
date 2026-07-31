@@ -116,17 +116,6 @@ if {[llength $matches] > 1} {
 }
 puts ">>> using board part: $board"
 
-file mkdir $outdir
-create_project ${design} $outdir -part $part -force
-
-# Record the repo on the project too. set_param is a session setting, so
-# without this the project reopens in the GUI unable to resolve its own
-# board_part and quietly drops the preset.
-if {[llength $repo_found]} {
-    set_property board_part_repo_paths $repo_found [current_project]
-}
-set_property board_part $board [current_project]
-
 # ---------------------------------------------------------------------
 # Sources. Every rtl_v2 file is VHDL-2008 -- the design uses 2008-only
 # constructs throughout, and Vivado defaults new files to VHDL-93, which
@@ -149,13 +138,144 @@ set srcs [list \
     $root/rtl_v2/axi/wgt_stream.vhd \
     $root/rtl_v2/top/mirage_axi_top.vhd ]
 
+set ip_proj $outdir/ip_proj
+set ip_repo $outdir/ip_repo
+set bd_proj $outdir/bd_proj
+set ip_vlnv mirage:user:mirage_axi_top:1.0
+
+file mkdir $outdir
+
+# =====================================================================
+# STAGE 1 -- package mirage_axi_top as IP
+#
+# This used to be a module reference (create_bd_cell -type module).
+# Vivado 2022.2 refuses:
+#
+#   [filemgmt 56-195] Reference 'mirage_axi_top' contains top file
+#   'mirage_axi_top.vhd' of type VHDL 2008. This type is not allowed
+#   as the top file in the reference.
+#
+# Module references require a VHDL-93 or Verilog top file. This design
+# is VHDL-2008 throughout and is not going to stop being; the IP
+# packager has no such restriction.
+#
+# Packaging is the better shape anyway. It declares the AXI interfaces
+# and the memory map explicitly instead of hoping port-name inference
+# fires in the block design, and it lets the address block be sized
+# here rather than argued with at assign_bd_address time.
+# =====================================================================
+file delete -force $ip_repo
+file mkdir $ip_repo
+
+create_project mirage_ip $ip_proj -part $part -force
 add_files -norecurse $srcs
 set_property file_type {VHDL 2008} [get_files $srcs]
+set_property top mirage_axi_top [current_fileset]
 update_compile_order -fileset sources_1
 
+ipx::package_project -root_dir $ip_repo -vendor mirage -library user \
+    -taxonomy /UserIP -import_files -force
+
+set core [ipx::current_core]
+set_property name          mirage_axi_top $core
+set_property version       1.0            $core
+set_property display_name  "Mirage int8 encoder layer" $core
+set_property description \
+    "int8 transformer encoder layer; AXI4-Lite control, AXI4-Stream weights" \
+    $core
+set_property core_revision 1 $core
+
+# --- what did the packager actually infer? ---------------------------
+proc busif_matching {core pat} {
+    foreach bi [ipx::get_bus_interfaces -of_objects $core] {
+        if {[string match $pat [get_property BUS_TYPE_VLNV $bi]]} {
+            return [get_property NAME $bi]
+        }
+    }
+    return ""
+}
+
+puts ">>> bus interfaces inferred by the packager:"
+foreach bi [ipx::get_bus_interfaces -of_objects $core] {
+    puts [format ">>>   %-14s %s" [get_property NAME $bi] \
+                                  [get_property BUS_TYPE_VLNV $bi]]
+}
+
+set if_axi  [busif_matching $core *:aximm_rtl:*]
+set if_axis [busif_matching $core *:axis_rtl:*]
+
+if {$if_axi eq ""} {
+    puts ">>> The packager did not infer an AXI4-Lite slave interface."
+    puts ">>> Port names on mirage_axi_top must follow the s_axi_* "
+    puts ">>> convention for inference to fire. Nothing downstream can"
+    puts ">>> work without it, so stopping here rather than failing"
+    puts ">>> later inside the block design."
+    exit 1
+}
+puts ">>> AXI4-Lite interface : $if_axi"
+puts ">>> AXI-Stream interface: [expr {$if_axis eq "" ? "(none inferred)" : $if_axis}]"
+
+# Associate the clock with each interface. BD automation can usually
+# work this out by itself, so a failure here is a warning, not a stop.
+foreach b [list $if_axi $if_axis] {
+    if {$b eq ""} { continue }
+    if {[catch {ipx::associate_bus_interfaces -busif $b -clock aclk $core} e]} {
+        puts ">>> note: could not associate aclk with $b ($e)"
+        puts ">>> continuing -- axi4 automation connects clocks anyway"
+    }
+}
+
 # ---------------------------------------------------------------------
-# Block design
+# Address block size. The register file decodes 8 address bits = 256
+# bytes, but a Zynq GP0 segment cannot be smaller than 4K, and
+# assign_bd_address will not hand out more than the memory map declares.
+# Declaring 4K here settles it at package time. 0x100..0xFFF alias back
+# onto the registers, which is ordinary for a small AXI4-Lite slave and
+# is invisible to a driver that addresses off one base pointer.
 # ---------------------------------------------------------------------
+foreach m [ipx::get_memory_maps -of_objects $core] {
+    foreach ab [ipx::get_address_blocks -of_objects $m] {
+        set_property range 4096 $ab
+        puts ">>> address block [get_property NAME $ab] range -> 4096 B"
+    }
+}
+
+ipx::create_xgui_files $core
+ipx::update_checksums $core
+if {[catch {ipx::check_integrity $core} e]} {
+    puts ">>> ipx::check_integrity reported: $e"
+}
+ipx::save_core $core
+close_project
+puts ">>> packaged $ip_vlnv into $ip_repo"
+
+# =====================================================================
+# STAGE 2 -- the block design
+#
+# A separate project from the packaging one. The IP carries its own
+# imported copies of every source, so the raw rtl_v2 files are
+# deliberately NOT added here: two copies of the same entities in one
+# project is an elaboration conflict waiting to happen.
+# =====================================================================
+create_project ${design} $bd_proj -part $part -force
+
+# Record the repo on the project too. set_param is a session setting, so
+# without this the project reopens in the GUI unable to resolve its own
+# board_part and quietly drops the preset.
+if {[llength $repo_found]} {
+    set_property board_part_repo_paths $repo_found [current_project]
+}
+set_property board_part $board [current_project]
+
+set_property ip_repo_paths $ip_repo [current_project]
+update_ip_catalog -rebuild
+if {[llength [get_ipdefs -quiet $ip_vlnv]] == 0} {
+    puts ">>> $ip_vlnv is not in the catalogue after update_ip_catalog."
+    puts ">>> Packaging reported success, so this is a repo path problem:"
+    puts ">>>   $ip_repo"
+    exit 1
+}
+
 create_bd_design $design
 
 # --- Zynq PS, board preset, then the deltas this design needs ---------
@@ -176,20 +296,16 @@ set_property -dict [list \
 # weight DMA will use, and enabling it now means adding the DMA later
 # does not re-run PS configuration and re-time the whole design.
 
-# --- the accelerator, as a module reference (no IP packaging step) ----
-create_bd_cell -type module -reference mirage_axi_top mirage
+# --- the accelerator, from the IP catalogue ---------------------------
+create_bd_cell -type ip -vlnv $ip_vlnv mirage
 
 # ---------------------------------------------------------------------
-# Connections.
-#
-# A module reference gets its interfaces INFERRED from port names, and
-# whether inference fires -- and what it names the result -- is not
-# something to assume. s_axi_* and s_axis_* follow the conventions, so it
-# should group them, but a hardcoded /mirage/s_axi that does not exist
-# fails deep in the script with an unhelpful error. Everything below
-# discovers what is actually there and says so.
+# Connections. The interface names come from the packaged core, so they
+# are known rather than guessed -- but confirm they survived onto the
+# cell before using them, because a hardcoded /mirage/s_axi that does
+# not exist fails deep in the script with an unhelpful error.
 # ---------------------------------------------------------------------
-puts ">>> interfaces inferred on the mirage cell:"
+puts ">>> interfaces on the mirage cell:"
 foreach ip [get_bd_intf_pins -quiet -of_objects [get_bd_cells mirage]] {
     puts [format ">>>   %-28s %s" [get_property NAME $ip] \
                                   [get_property VLNV $ip]]
@@ -199,9 +315,9 @@ set axi_slave [get_bd_intf_pins -quiet -of_objects [get_bd_cells mirage] \
                  -filter {MODE == Slave && VLNV =~ *:aximm_rtl:*}]
 if {[llength $axi_slave] != 1} {
     puts ">>> Expected exactly one AXI-MM slave interface on mirage,"
-    puts ">>> found [llength $axi_slave]. Port-name inference did not"
-    puts ">>> produce a usable AXI4-Lite interface; package mirage_axi_top"
-    puts ">>> as IP instead of using it as a module reference."
+    puts ">>> found [llength $axi_slave]. The packaged core declared"
+    puts ">>> '$if_axi' -- if that is missing here the core in $ip_repo"
+    puts ">>> is stale; delete build_cora and re-run."
     exit 1
 }
 puts ">>> AXI4-Lite slave: $axi_slave"
@@ -249,10 +365,24 @@ if {[llength $axis_slave] == 1} {
 }
 
 # ---------------------------------------------------------------------
-# Address map. 64 KB is the smallest aperture the tools will assign; the
-# register file needs 0x6C bytes of it.
+# Address map.
+#
+# The base is pinned rather than left to assign_bd_address. The
+# bare-metal driver hardcodes it, and a base that moves when an
+# unrelated peripheral is added is a bug that presents as the
+# accelerator having stopped working. 0x43C00000 is the conventional
+# first custom-IP slot on Zynq GP0.
 # ---------------------------------------------------------------------
+set MIRAGE_BASE 0x43C00000
+
 assign_bd_address
+foreach s [get_bd_addr_segs -of_objects [get_bd_addr_spaces ps7/Data]] {
+    if {[string match *mirage* $s]} {
+        set_property offset $MIRAGE_BASE $s
+        set_property range  4K           $s
+    }
+}
+
 set seg [get_bd_addr_segs -of_objects [get_bd_addr_spaces ps7/Data]]
 puts ">>> address segments:"
 foreach s $seg {
@@ -269,22 +399,39 @@ save_bd_design
 # ---------------------------------------------------------------------
 set bd_file [get_files ${design}.bd]
 make_wrapper -files $bd_file -top
-add_files -norecurse [file join $outdir ${design}.gen sources_1 bd ${design} \
-                                hdl ${design}_wrapper.vhd]
+
+# make_wrapper writes under .gen in 2020.2+ and under .srcs before that.
+# Take whichever exists rather than guessing at the Vivado version.
+set wrap ""
+foreach d [list ${design}.gen ${design}.srcs] {
+    set c [file join $bd_proj $d sources_1 bd ${design} hdl ${design}_wrapper.vhd]
+    if {[file exists $c]} { set wrap $c ; break }
+}
+if {$wrap eq ""} {
+    set found [glob -nocomplain $bd_proj/*/sources_1/bd/${design}/hdl/*_wrapper.vhd]
+    if {[llength $found] == 1} { set wrap [lindex $found 0] }
+}
+if {$wrap eq ""} {
+    puts ">>> make_wrapper ran but the wrapper is not where it was expected."
+    puts ">>> Looked under $bd_proj/{${design}.gen,${design}.srcs}/..."
+    exit 1
+}
+puts ">>> wrapper: $wrap"
+add_files -norecurse $wrap
 set_property top ${design}_wrapper [current_fileset]
 update_compile_order -fileset sources_1
 
 launch_runs synth_1 -jobs 8
 wait_on_run synth_1
 if {[get_property PROGRESS [get_runs synth_1]] != "100%"} {
-    puts ">>> SYNTHESIS FAILED -- see $outdir/${design}.runs/synth_1"
+    puts ">>> SYNTHESIS FAILED -- see $bd_proj/${design}.runs/synth_1"
     exit 1
 }
 
 launch_runs impl_1 -to_step write_bitstream -jobs 8
 wait_on_run impl_1
 if {[get_property PROGRESS [get_runs impl_1]] != "100%"} {
-    puts ">>> IMPLEMENTATION FAILED -- see $outdir/${design}.runs/impl_1"
+    puts ">>> IMPLEMENTATION FAILED -- see $bd_proj/${design}.runs/impl_1"
     exit 1
 }
 
@@ -302,8 +449,10 @@ report_timing_summary -file $root/reports_v2/cora_timing_summary.rpt
 report_timing -sort_by group -max_paths 5 -unique_pins \
     -path_type full_clock_expanded -file $root/reports_v2/cora_timing_worst5.rpt
 
-set bit [glob -nocomplain $outdir/${design}.runs/impl_1/*.bit]
+set bit [glob -nocomplain $bd_proj/${design}.runs/impl_1/*.bit]
 puts ">>> bitstream: $bit"
 puts ">>> XSA for Vitis: writing $outdir/${design}.xsa"
 write_hw_platform -fixed -include_bit -force $outdir/${design}.xsa
+puts ""
+puts ">>> mirage register base for the driver: $MIRAGE_BASE (4K)"
 puts ">>> done"
