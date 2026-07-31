@@ -229,23 +229,102 @@
     .split{grid-template-columns:1fr}
     .split > div:first-child{border-right:0; border-bottom:1px solid var(--rule)}
   }
+  /* ---- architecture map ------------------------------------------
+     Own namespace. Nothing here reuses .split/.rung/.tw, so the two
+     cascades cannot fight over padding the way sibling section styles
+     otherwise do. ------------------------------------------------- */
+  .mapsec{margin:0 0 54px}
+  .legend{
+    display:flex; flex-wrap:wrap; gap:9px 20px; margin:0 0 16px;
+    font-family:var(--mono); font-size:.68rem; letter-spacing:.06em;
+    color:var(--ink-3); text-transform:uppercase;
+  }
+  .legend i{display:inline-flex; align-items:center; gap:7px; font-style:normal}
+  .dot{width:9px; height:9px; border-radius:50%; flex:none}
+  .d-new{background:var(--accent)}
+  .d-rew{background:var(--warn)}
+  .d-keep{background:var(--rule-strong)}
+  .d-plan{background:transparent; border:1.5px dashed var(--ink-3)}
+
+  .flow{overflow-x:auto; border:1px solid var(--rule); background:var(--panel)}
+  .flow-in{min-width:1040px; display:grid;
+           grid-template-columns:118px repeat(7,minmax(122px,1fr));}
+  .flow-in > *{border-bottom:1px solid var(--rule); padding:11px 12px}
+  .rowlab{
+    font-family:var(--mono); font-size:.63rem; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--ink-3);
+    background:var(--panel-2); border-right:1px solid var(--rule);
+    display:flex; align-items:center;
+  }
+  .ps-cell{font-family:var(--sans); font-size:.78rem; color:var(--ink-2);
+           background:var(--accent-soft); line-height:1.4}
+  .ps-cell.none{background:transparent; color:var(--ink-3)}
+  .job-cell{position:relative; font-family:var(--sans)}
+  .job-cell .jn{font-family:var(--mono); font-size:.6rem; color:var(--accent);
+                letter-spacing:.1em; display:block; margin-bottom:3px}
+  .job-cell .jt{font-weight:650; font-size:.9rem; color:var(--ink); display:block}
+  .job-cell .jd{font-family:var(--mono); font-size:.66rem; color:var(--ink-3);
+                display:block; margin-top:3px}
+  .job-cell::after{
+    content:"›"; position:absolute; right:-6px; top:50%;
+    transform:translateY(-50%); color:var(--rule-strong);
+    font-size:1.1rem; z-index:1;
+  }
+  .job-cell:last-child::after{content:""}
+  .shared{
+    grid-column:2 / -1; border-bottom:0;
+    background:var(--panel-2); display:flex; flex-wrap:wrap;
+    align-items:center; gap:8px 10px;
+  }
+  .shared .lbl{font-family:var(--sans); font-size:.8rem; color:var(--ink-2);
+               font-weight:650; margin-right:4px}
+  .mod{
+    font-family:var(--mono); font-size:.68rem; padding:3px 8px;
+    border:1px solid var(--rule-strong); border-radius:2px;
+    color:var(--ink-2); background:var(--panel); white-space:nowrap;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .flow-in > .rowlab.last{border-bottom:0}
+
+  /* ---- strata ---- */
+  .strata{display:grid; gap:10px; margin:24px 0 0}
+  .stratum{
+    display:grid; grid-template-columns:104px 1fr auto; gap:16px;
+    align-items:center; background:var(--panel);
+    border:1px solid var(--rule); border-left:3px solid var(--rule-strong);
+    padding:13px 16px;
+  }
+  .stratum.now{border-left-color:var(--accent); background:var(--accent-soft)}
+  .stratum .sid{font-family:var(--mono); font-size:.68rem; letter-spacing:.09em;
+                color:var(--ink-3); text-transform:uppercase}
+  .stratum .sid b{display:block; color:var(--ink); font-size:.95rem;
+                  letter-spacing:-.01em; font-family:var(--sans)}
+  .stratum .sbody{font-family:var(--sans); font-size:.85rem; color:var(--ink-2);
+                  line-height:1.45}
+  .stratum .sbody em{color:var(--ink); font-style:normal; font-weight:650}
+  @media (max-width:640px){
+    .stratum{grid-template-columns:1fr; gap:7px}
+  }
 </style>
 
 <div class="wrap">
 
 <header class="mast">
   <div>
-    <p class="eyebrow">Mirage&nbsp;v2 · Zynq-7007S · verification plan</p>
+    <p class="eyebrow">Mirage&nbsp;v2 · Zynq-7007S · verification plan &amp; design record</p>
     <h1>Proving the accelerator computes<br>the right numbers</h1>
     <p class="sub">Run&nbsp;9 met every resource and timing target and still produced
     wrong results. Synthesis and static timing analysis cannot see a numerical
-    error. This is the plan that closes that gap, and what it found.</p>
+    error. This is the plan that closed that gap, what it found, and where the
+    design now stands.</p>
   </div>
   <div class="stamp">
     <b>target</b> xc7z007sclg400-1<br>
+    <b>board</b> Cora Z7-07S<br>
     <b>model</b> opus-mt-en-ar<br>
     <b>sim</b> GHDL 4.1.0 · VHDL-2008<br>
-    <b>date</b> 2026-07-31
+    <b>silicon</b> run 11 · WNS +0.252 ns<br>
+    <b>revised</b> 2026-07-31
   </div>
 </header>
 
@@ -256,9 +335,110 @@
     the job interface as 13,584 jobs, produce <b>token ids identical to the
     float32 reference</b>. Encoder cosine 0.985. The decoder needed no RTL
     change: the causal mask is one existing config field.</p>
+    <p class="lead" style="margin-top:14px">Since then the fixed design has been
+    back through Vivado to routing: <b>WNS +0.252&nbsp;ns</b> at 100&nbsp;MHz,
+    0 failing endpoints of 6,409, 15% of the LUTs and 52% of the DSPs. Both
+    halves are now closed — it computes the right answer, and it fits and runs.</p>
   </div>
   <div class="arabic">مرحبا<small>token 1466 · "Hello"</small></div>
 </div>
+
+<!-- ============================================================ -->
+<!-- Orientation map. Deliberately unnumbered: the numbered sections
+     are the steps of the verification plan, and this is not a step --
+     it is the picture you need before reading them. -->
+<section class="mapsec">
+  <h2>The design as it stands</h2>
+  <p class="deck">One encoder layer, seven job stages, and a single compute path
+  that serves all of them. The reuse is the architecture — it is why a 14,400-LUT
+  part can run a 512-wide transformer at all.</p>
+
+  <div class="legend">
+    <i><span class="dot d-new"></span>new in v2</i>
+    <i><span class="dot d-rew"></span>rewritten for correctness</i>
+    <i><span class="dot d-keep"></span>carried unchanged</i>
+    <i><span class="dot d-plan"></span>planned</i>
+  </div>
+
+  <div class="flow"><div class="flow-in">
+    <div class="rowlab">PS · elementwise</div>
+    <div class="ps-cell">embed × √512, quantise</div>
+    <div class="ps-cell none">—</div>
+    <div class="ps-cell none">—</div>
+    <div class="ps-cell none">—</div>
+    <div class="ps-cell">residual + LayerNorm₁</div>
+    <div class="ps-cell">bias + swish</div>
+    <div class="ps-cell">residual + LayerNorm₂</div>
+
+    <div class="rowlab">PL · job</div>
+    <div class="job-cell"><span class="jn">job 1</span><span class="jt">Q · K · V</span><span class="jd">512→512 ×3</span></div>
+    <div class="job-cell"><span class="jn">job 2</span><span class="jt">QK<sup>T</sup></span><span class="jd">8 heads × 64</span></div>
+    <div class="job-cell"><span class="jn">job 3</span><span class="jt">softmax</span><span class="jd">Q12, no divider</span></div>
+    <div class="job-cell"><span class="jn">job 4</span><span class="jt">attn × V</span><span class="jd">recip scale</span></div>
+    <div class="job-cell"><span class="jn">job 5</span><span class="jt">W<sub>O</sub> proj</span><span class="jd">512→512</span></div>
+    <div class="job-cell"><span class="jn">job 6</span><span class="jt">FFN₁</span><span class="jd">512→2048</span></div>
+    <div class="job-cell"><span class="jn">job 7</span><span class="jt">FFN₂</span><span class="jd">2048→512</span></div>
+
+    <div class="rowlab last">PL · fabric</div>
+    <div class="shared">
+      <span class="lbl">one compute path, reused every stage —</span>
+      <span class="mod"><span class="dot d-rew"></span>stage_engine</span>
+      <span class="mod"><span class="dot d-new"></span>mac_array · 32 lanes</span>
+      <span class="mod"><span class="dot d-rew"></span>gemm_sequencer</span>
+      <span class="mod"><span class="dot d-rew"></span>softmax_unit</span>
+      <span class="mod"><span class="dot d-new"></span>weight_window · 8 banks</span>
+      <span class="mod"><span class="dot d-new"></span>exp_rom · recip_rom</span>
+      <span class="mod"><span class="dot d-rew"></span>layer_ctrl · job dispatcher</span>
+      <span class="mod"><span class="dot d-plan"></span>axi_wrapper</span>
+    </div>
+  </div></div>
+
+  <p style="margin-top:18px">Every stage above is the same silicon: 32 MAC lanes,
+  one weight window, one requantiser. The PS never computes a matmul — it does
+  the 0.4% of arithmetic that is elementwise, and it streams the weights, which
+  is the actual bottleneck at roughly 4.5 : 1 against compute.</p>
+
+  <h3 style="font-family:var(--sans);font-size:1.05rem;margin:34px 0 4px">
+    Everything that changed from the code as received</h3>
+  <p class="deck" style="margin-bottom:0">Four strata, each with a different
+  failure it was fixing. They are separated because they are separately
+  reviewable — and because only the first two were ever visible to a tool.</p>
+
+  <div class="strata">
+    <div class="stratum">
+      <div class="sid">Layer A<b>Make it build</b></div>
+      <div class="sbody">Five files, ~237 lines. Readable <code>out</code> ports,
+      a double cast, a missing type alias, a latched accumulator. <em>The received
+      code did not synthesise;</em> these are the minimum patches that made it
+      measurable — and what they measured was 126% LUT, 0 BRAM, 2 DSP.</div>
+      <div><span class="pill p-pass">done</span></div>
+    </div>
+    <div class="stratum">
+      <div class="sid">Layer B<b>Make it fit</b></div>
+      <div class="sbody">The v2 re-architecture. Output-stationary MAC array,
+      <code>use_dsp</code> scoped per signal, one BRAM template, a softmax with no
+      divider, and a top level that actually exists. <em>18,182 LUT → 2,203;
+      2 DSP → 34; 0 BRAM → 35.5.</em></div>
+      <div><span class="pill p-pass">done</span></div>
+    </div>
+    <div class="stratum">
+      <div class="sid">Layer C<b>Make it correct</b></div>
+      <div class="sbody">Thirteen defects — eight of them a strobe misaligned
+      against the data it labels, so nothing warned. Two structural: the op walker
+      became a job dispatcher, and the sequencer gained reduction chunking.
+      <em>Run 9 met every target and still computed the wrong answer.</em></div>
+      <div><span class="pill p-pass">done</span></div>
+    </div>
+    <div class="stratum now">
+      <div class="sid">Layer D<b>Make it reachable</b></div>
+      <div class="sbody">The block has 24 raw ports and nothing attached. AXI4-Lite
+      over the config register file, a streaming path for weights, a Cora Z7-07S
+      block design, then bring-up. <em>Everything above is measured out of
+      context;</em> none of it survives integration unexamined.</div>
+      <div><span class="pill p-info">in progress</span></div>
+    </div>
+  </div>
+</section>
 
 <!-- ============================================================ -->
 <section>
@@ -562,7 +742,8 @@
   <div class="tw"><table>
     <thead><tr><th>Item</th><th>Status</th><th>Note</th></tr></thead>
     <tbody>
-      <tr><td>Vivado re-run after the fixes</td><td><span class="pill p-fail">required</span></td><td>resource and timing claims are arguments until measured</td></tr>
+      <tr><td>Vivado re-run after the fixes</td><td><span class="pill p-pass">measured</span></td><td>run 11: WNS +0.252 ns, 0 failing endpoints of 6,409, hold +0.046. The <code>mac_scale</code> mux flagged as the risk measures 0.149 ns</td></tr>
+      <tr><td>Timing in context</td><td><span class="pill p-fail">required</span></td><td>run 11 is out-of-context; the PS-side ports pick up interconnect delay the run does not model</td></tr>
       <tr><td>Decoder through GHDL</td><td><span class="pill p-warn">model only</span></td><td>runs on the Fabric model, which the layer run measures to be bit-identical to the RTL; a GHDL pass over 12 layers × 3 steps would take hours and test nothing new</td></tr>
       <tr><td>Round-to-nearest requantisation</td><td><span class="pill p-warn">identified</span></td><td>one adder in the writeback; removes a half-LSB bias per stage</td></tr>
       <tr><td>Bias and swish in fabric</td><td><span class="pill p-info">optional</span></td><td>a 256-entry host-loaded table and one adder; saves three PS round trips per layer</td></tr>
@@ -570,6 +751,63 @@
       <tr><td>Context beyond 7 tokens</td><td><span class="pill p-warn">bounded</span></td><td>FFN hidden region holds 7 tokens; longer inputs need token grouping</td></tr>
     </tbody>
   </table></div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="num">09</span>What comes next</h2>
+  <p class="deck">Four steps to a board that translates. They are ordered by what
+  each one can prove, not by how much work it is.</p>
+
+  <div class="ladder">
+    <div class="rung">
+      <div class="rl">step 1 · rtl</div>
+      <div class="rt">An AXI wrapper, so the PS can reach the block</div>
+      <p>AXI4-Lite slave over the config register file that already exists — the
+      map is close to 1:1 with <code>cfg_addr</code> / <code>cfg_data</code> /
+      <code>cfg_we</code>, <code>job_start</code>, <code>busy</code>,
+      <code>done</code>. A separate streaming path on a PS HP port carries the
+      weights, because that is the bandwidth-critical direction.
+      <b>Constraint: <code>encoder_layer</code> is not modified.</b> It is
+      bit-exact verified; wrapping it must not put that in question.</p>
+    </div>
+    <div class="rung">
+      <div class="rl">step 2 · sim</div>
+      <div class="rt">Verify the wrapper against the vectors that already exist</div>
+      <p>A GHDL testbench issuing real AXI4-Lite transactions, replaying part of
+      the 2,352-job stream that is already proven bit-exact. This is the step that
+      makes the rest cheap: after it, a mismatch on hardware localises to the
+      wrapper or the clocking, never to the datapath.</p>
+    </div>
+    <div class="rung">
+      <div class="rl">step 3 · vivado</div>
+      <div class="rt">Block design for the Cora Z7-07S, and timing in context</div>
+      <p>PS7 with the Digilent board preset, <code>FCLK_CLK0</code> at 100 MHz,
+      one HP port enabled, scripted in Tcl so it is reproducible rather than
+      clicked. Re-measure WNS with the interconnect present — run 11's +0.252 ns
+      does not carry over unexamined.</p>
+    </div>
+    <div class="rung">
+      <div class="rl">step 4 · board</div>
+      <div class="rt">Bare-metal bring-up, then PetaLinux</div>
+      <p>Bare-metal first: one <code>.elf</code>, JTAG, printf over USB-UART, and
+      the golden vectors compared byte-for-byte. Debug iterations in seconds
+      rather than a kernel rebuild. PetaLinux comes after, when the goal shifts
+      from <em>is it correct</em> to <em>run the whole translation</em> —
+      tokeniser, the 62,802 × 512 embedding table, file I/O, the outer layer loop
+      in userspace.</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>The two decisions that shape all of it.</b> First, sustained bandwidth:
+    the fabric needs ~400 MB/s (32 b/cycle at 100 MHz) to stay fed, and it is
+    already weight-bound about 4.5 : 1 — so DDR configuration sets real
+    throughput, not DSP count. Second, cache policy: if the PS does the
+    elementwise work from cacheable DDR, every job needs a flush or invalidate
+    around it, and that choice belongs in the wrapper's memory map rather than in
+    software later.
+  </div>
 </section>
 
 <footer>
