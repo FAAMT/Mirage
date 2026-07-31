@@ -234,8 +234,14 @@ if {[catch {
                                       [get_property BUS_TYPE_VLNV $bi]]
     }
 
-    set if_axi  [busif_matching $core *:aximm_rtl:*]
-    set if_axis [busif_matching $core *:axis_rtl:*]
+    # NOTE the missing _rtl. A packaged core's BUS_TYPE_VLNV is the bus
+    # type -- xilinx.com:interface:aximm:1.0. The _rtl form is the
+    # ABSTRACTION vlnv, which is what turns up later on a block-design
+    # interface PIN. Matching *:aximm_rtl:* here found nothing on a core
+    # that had been packaged perfectly well, and sent run 14 down the
+    # fallback for no reason. The glob deliberately covers both.
+    set if_axi  [busif_matching $core *:aximm*]
+    set if_axis [busif_matching $core *:axis*]
 
     # error, not exit: this is recoverable by the module route, which
     # runs the same inference from the same port names but is willing
@@ -288,10 +294,12 @@ if {[catch {
     puts ">>> $pkg_err"
     puts ">>>"
     puts ">>> This is not fatal. mirage_axi_wrap is VHDL-93, so"
-    puts ">>> create_bd_cell -type module accepts it, and the block"
-    puts ">>> design comes out equivalent. What is lost is the explicit"
-    puts ">>> 4K address block -- the range then comes from whatever"
-    puts ">>> assign_bd_address infers, and is reported below."
+    puts ">>> create_bd_cell -type module accepts it, and run 14"
+    puts ">>> confirmed the resulting design is equivalent down to the"
+    puts ">>> address map -- SEG_mirage_reg0 came out at 0x43C00000"
+    puts ">>> +0x1000, the same as the packaged core would have given."
+    puts ">>> What the IP route is still worth having for is the stable"
+    puts ">>> VLNV the device tree wants at the PetaLinux stage."
     puts ">>> ================================================================"
     puts ""
     catch {close_project}
@@ -351,21 +359,52 @@ apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
 
 set_property -dict [list \
     CONFIG.PCW_USE_M_AXI_GP0    {1}   \
-    CONFIG.PCW_USE_S_AXI_HP0    {1}   \
+    CONFIG.PCW_USE_S_AXI_HP0    {0}   \
     CONFIG.PCW_USE_FABRIC_INTERRUPT {1} \
     CONFIG.PCW_IRQ_F2P_INTR     {1}   \
     CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {100} \
 ] [get_bd_cells ps7]
 
-# HP0 is enabled but left unconnected on purpose: it is the port the
-# weight DMA will use, and enabling it now means adding the DMA later
-# does not re-run PS configuration and re-time the whole design.
+# HP0 is OFF, and this is a correction rather than a preference.
+#
+# It was enabled here from the start, unconnected, on the theory that
+# turning the port on now meant adding the weight DMA later would not
+# re-run PS configuration and re-time the design. That theory cost run
+# 14 the build:
+#
+#   ERROR: [BD 41-758] The following clock pins are not connected to a
+#   valid clock source: /ps7/S_AXI_HP0_ACLK
+#
+# Enabling an HP port exposes its ACLK, and a clock pin with no source
+# is an error, not a warning -- validate_bd_design refuses the design.
+# The saving was imaginary anyway: adding a DMA re-times the design far
+# more than enabling a PS port does. Turn HP0 on in the same change that
+# adds the DMA and connects it, which is also when the header note above
+# about debugging one thing at a time stops applying.
 
 # --- the accelerator --------------------------------------------------
+#
+# Placing the cell is guarded the same way packaging is. Stage 1's catch
+# ends at save_core, so without this a core that packaged cleanly but
+# would not instantiate took the whole run down with it -- past the point
+# where the fallback could still have salvaged a bitstream.
 if {$use_ip} {
     puts ">>> adding mirage from the IP catalogue ($ip_vlnv)"
-    create_bd_cell -type ip -vlnv $ip_vlnv mirage
-} else {
+    if {[catch {create_bd_cell -type ip -vlnv $ip_vlnv mirage} cell_err]} {
+        puts ">>> could not instantiate $ip_vlnv: $cell_err"
+        puts ">>> falling back to the module reference"
+        catch {delete_bd_objs [get_bd_cells -quiet mirage]}
+        set use_ip 0
+    }
+}
+if {!$use_ip} {
+    # The sources are only in this project if stage 1 fell back before
+    # stage 2 opened it; if the fallback happened here they are not.
+    if {[llength [get_files -quiet $shim]] == 0} {
+        add_files -norecurse $all_srcs
+        set_source_types $srcs $shim
+        update_compile_order -fileset sources_1
+    }
     puts ">>> adding mirage as a module reference (mirage_axi_wrap)"
     create_bd_cell -type module -reference mirage_axi_wrap mirage
 }
