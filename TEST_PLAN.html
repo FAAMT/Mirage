@@ -670,18 +670,48 @@
     </tbody>
   </table></div>
 
-  <p>Two muxes were added. Both sit between a block RAM output and a register
-  input, on paths with most of a 10&nbsp;ns period spare — not on the writeback
-  or softmax cones where run 8's critical paths lived. The programmable requant
-  multiplier replaced a hardwired constant on a net that already fed the
-  reciprocal multiplier, so it changes the source of a value rather than the
-  depth of any cone.</p>
+  <p>Two muxes were added. The programmable requant multiplier replaced a
+  hardwired constant on a net that already fed the reciprocal multiplier, so it
+  changes the source of a value rather than the depth of any cone.</p>
+
+  <!-- max-width lifted: .note is sized for prose at 68ch, and this one
+       carries a six-row table that would otherwise be squeezed. -->
+  <div class="note" style="max-width:none">
+    <b>Now measured — and one prediction was wrong.</b> Run 11 reports
+    <b>WNS +0.252&nbsp;ns</b>, better than run 9's +0.058 despite the added job
+    interface. But the claim that both muxes sat “on paths with most of a
+    10&nbsp;ns period spare” was <em>false for one of them</em>: the
+    <code>mac_scale</code> mux is on the critical path, and always has been.
+    What saved it is that the mux is not new — run 9 had the same 2:1 there
+    against a constant — and a LUT3 is cheap:
+
+    <div class="tw" style="margin:14px 0 0"><table>
+      <thead><tr><th>Stage of the critical path</th><th>Delay</th><th>Share</th></tr></thead>
+      <tbody>
+        <tr><td>RAMB36E1 clk→<code>DOPADOP</code></td><td class="n">2.454 ns</td><td class="n">30%</td></tr>
+        <tr><td>route <code>rc_dout[16]</code></td><td class="n">0.778 ns</td><td class="n">—</td></tr>
+        <tr><td><strong>LUT3 — the <code>mac_scale</code> mux</strong></td><td class="n">0.149 ns</td><td class="n">2%</td></tr>
+        <tr><td>route <code>seq/scale[16]</code></td><td class="n">0.637 ns</td><td class="n">—</td></tr>
+        <tr><td>DSP48E1 <code>A[16]</code>→<code>PCOUT</code></td><td class="n">4.244 ns</td><td class="n">51%</td></tr>
+        <tr><td>DSP48E1 setup on <code>PCIN</code></td><td class="n">1.400 ns</td><td class="n">17%</td></tr>
+      </tbody>
+    </table></div>
+
+    <p style="margin:14px 0 0">81% of this path is two hard-block propagation
+    delays — a BRAM read and a 32×19 multiply crossing a DSP cascade — which no
+    RTL restructuring reduces. Reaching 200&nbsp;MHz needs the DSP
+    <code>MREG</code> and the <code>recip_rom</code> output register, roughly
+    2&nbsp;ns each, at a pipeline cycle apiece.</p>
+
+    <p style="margin:10px 0 0">Two variables moved between runs 9 and 11 — the
+    RTL and the out-of-context flag — so the +194&nbsp;ps gain cannot be
+    attributed cleanly to either.</p>
+  </div>
 
   <div class="note alert">
-    <b>Not yet re-measured.</b> These are arguments, not results. The design has
-    not been back through Vivado since the fixes. Every claim in this section is
-    an expectation until a run reports WNS, and at +58&nbsp;ps of starting margin
-    the expectation is worth exactly what a re-run costs.
+    <b>Still out of context.</b> Run 11 has no interconnect and no PS in it. The
+    number that governs the board comes from the block design, and does not
+    exist yet.
   </div>
 </section>
 
