@@ -5,9 +5,14 @@
 #
 # Produces a bitstream for a PS + mirage_axi_top system:
 #
-#   ZYNQ7 PS ---- M_AXI_GP0 ----> AXI Interconnect ----> mirage_axi_top
-#            <--- IRQ_F2P -------------------------------- irq
-#            ---- FCLK_CLK0 100 MHz ---------------------> aclk
+#   ZYNQ7 PS ---- M_AXI_GP0 ----> AXI Interconnect ----> mirage_axi_wrap
+#            <--- IRQ_F2P -------------------------------- irq             |
+#            ---- FCLK_CLK0 100 MHz ---------------------> aclk            v
+#                                                              mirage_axi_top
+#
+# mirage_axi_wrap is a VHDL-93 port map and nothing else; it exists
+# because Vivado will not take a VHDL-2008 file as the top of either a
+# module reference or a packaged core. See its header.
 #
 # DELIBERATELY NO DMA IN THIS BUILD. The weight stream belongs on one --
 # it is the bandwidth-critical path at roughly 4.5 : 1 against compute --
@@ -152,54 +157,42 @@ set srcs [list \
     $root/rtl_v2/axi/wgt_stream.vhd \
     $root/rtl_v2/top/mirage_axi_top.vhd ]
 
+# ... except this one, which is deliberately VHDL-93. Both routes into a
+# block design object to a VHDL-2008 top file -- create_bd_cell -type
+# module refuses outright ([filemgmt 56-195]) and the IP packager warns
+# that it is "not fully supported" ([IP_Flow 19-5655]). The shim is a
+# bare port map with literal widths and no logic; see its header.
+set shim $root/rtl_v2/top/mirage_axi_wrap.vhd
+set all_srcs [concat $srcs [list $shim]]
+
+proc set_source_types {srcs shim} {
+    set_property file_type {VHDL 2008} [get_files $srcs]
+    set_property file_type {VHDL}      [get_files $shim]
+}
+
 set ip_proj $outdir/ip_proj
 set ip_repo $outdir/ip_repo
 set bd_proj $outdir/bd_proj
-set ip_vlnv mirage:user:mirage_axi_top:1.0
+set ip_vlnv mirage:user:mirage_axi_wrap:1.0
 
 file mkdir $outdir
 
 # =====================================================================
-# STAGE 1 -- package mirage_axi_top as IP
+# STAGE 1 -- package the accelerator as IP
 #
-# This used to be a module reference (create_bd_cell -type module).
-# Vivado 2022.2 refuses:
+# Packaging is preferred over a module reference: it declares the AXI
+# interfaces and the memory map explicitly instead of hoping port-name
+# inference fires in the block design, it lets the address block be
+# sized here rather than argued with at assign_bd_address time, and it
+# gives the core a stable VLNV for the device tree later.
 #
-#   [filemgmt 56-195] Reference 'mirage_axi_top' contains top file
-#   'mirage_axi_top.vhd' of type VHDL 2008. This type is not allowed
-#   as the top file in the reference.
-#
-# Module references require a VHDL-93 or Verilog top file. This design
-# is VHDL-2008 throughout and is not going to stop being; the IP
-# packager has no such restriction.
-#
-# Packaging is the better shape anyway. It declares the AXI interfaces
-# and the memory map explicitly instead of hoping port-name inference
-# fires in the block design, and it lets the address block be sized
-# here rather than argued with at assign_bd_address time.
+# It is an ATTEMPT, not a precondition. With a VHDL-93 top available
+# (the shim) the module-reference route works too, so a packaging
+# failure falls through to it rather than ending the run. Both routes
+# converge on the same block design and the same address map; only the
+# provenance of the `mirage` cell differs. Reaching a bitstream on the
+# second-choice route beats reporting a Tcl error and building nothing.
 # =====================================================================
-file delete -force $ip_repo
-file mkdir $ip_repo
-
-create_project mirage_ip $ip_proj -part $part -force
-add_files -norecurse $srcs
-set_property file_type {VHDL 2008} [get_files $srcs]
-set_property top mirage_axi_top [current_fileset]
-update_compile_order -fileset sources_1
-
-ipx::package_project -root_dir $ip_repo -vendor mirage -library user \
-    -taxonomy /UserIP -import_files -force
-
-set core [ipx::current_core]
-set_property name          mirage_axi_top $core
-set_property version       1.0            $core
-set_property display_name  "Mirage int8 encoder layer" $core
-set_property description \
-    "int8 transformer encoder layer; AXI4-Lite control, AXI4-Stream weights" \
-    $core
-set_property core_revision 1 $core
-
-# --- what did the packager actually infer? ---------------------------
 proc busif_matching {core pat} {
     foreach bi [ipx::get_bus_interfaces -of_objects $core] {
         if {[string match $pat [get_property BUS_TYPE_VLNV $bi]]} {
@@ -209,67 +202,116 @@ proc busif_matching {core pat} {
     return ""
 }
 
-puts ">>> bus interfaces inferred by the packager:"
-foreach bi [ipx::get_bus_interfaces -of_objects $core] {
-    puts [format ">>>   %-14s %s" [get_property NAME $bi] \
-                                  [get_property BUS_TYPE_VLNV $bi]]
-}
+set use_ip 0
+set pkg_err ""
 
-set if_axi  [busif_matching $core *:aximm_rtl:*]
-set if_axis [busif_matching $core *:axis_rtl:*]
+if {[catch {
+    file delete -force $ip_repo
+    file mkdir $ip_repo
 
-if {$if_axi eq ""} {
-    puts ">>> The packager did not infer an AXI4-Lite slave interface."
-    puts ">>> Port names on mirage_axi_top must follow the s_axi_* "
-    puts ">>> convention for inference to fire. Nothing downstream can"
-    puts ">>> work without it, so stopping here rather than failing"
-    puts ">>> later inside the block design."
-    exit 1
-}
-puts ">>> AXI4-Lite interface : $if_axi"
-puts ">>> AXI-Stream interface: [expr {$if_axis eq "" ? "(none inferred)" : $if_axis}]"
+    create_project mirage_ip $ip_proj -part $part -force
+    add_files -norecurse $all_srcs
+    set_source_types $srcs $shim
+    set_property top mirage_axi_wrap [current_fileset]
+    update_compile_order -fileset sources_1
 
-# Associate the clock with each interface. BD automation can usually
-# work this out by itself, so a failure here is a warning, not a stop.
-foreach b [list $if_axi $if_axis] {
-    if {$b eq ""} { continue }
-    if {[catch {ipx::associate_bus_interfaces -busif $b -clock aclk $core} e]} {
-        puts ">>> note: could not associate aclk with $b ($e)"
-        puts ">>> continuing -- axi4 automation connects clocks anyway"
+    ipx::package_project -root_dir $ip_repo -vendor mirage -library user \
+        -taxonomy /UserIP -import_files -force
+
+    set core [ipx::current_core]
+    set_property name          mirage_axi_wrap $core
+    set_property version       1.0             $core
+    set_property display_name  "Mirage int8 encoder layer" $core
+    set_property description \
+        "int8 transformer encoder layer; AXI4-Lite control, AXI4-Stream weights" \
+        $core
+    set_property core_revision 1 $core
+
+    # --- what did the packager actually infer? -----------------------
+    puts ">>> bus interfaces inferred by the packager:"
+    foreach bi [ipx::get_bus_interfaces -of_objects $core] {
+        puts [format ">>>   %-14s %s" [get_property NAME $bi] \
+                                      [get_property BUS_TYPE_VLNV $bi]]
     }
-}
 
-# ---------------------------------------------------------------------
-# Address block size. The register file decodes 8 address bits = 256
-# bytes, but a Zynq GP0 segment cannot be smaller than 4K, and
-# assign_bd_address will not hand out more than the memory map declares.
-# Declaring 4K here settles it at package time. 0x100..0xFFF alias back
-# onto the registers, which is ordinary for a small AXI4-Lite slave and
-# is invisible to a driver that addresses off one base pointer.
-# ---------------------------------------------------------------------
-foreach m [ipx::get_memory_maps -of_objects $core] {
-    foreach ab [ipx::get_address_blocks -of_objects $m] {
-        set_property range 4096 $ab
-        puts ">>> address block [get_property NAME $ab] range -> 4096 B"
+    set if_axi  [busif_matching $core *:aximm_rtl:*]
+    set if_axis [busif_matching $core *:axis_rtl:*]
+
+    # error, not exit: this is recoverable by the module route, which
+    # runs the same inference from the same port names but is willing
+    # to proceed with discrete pins.
+    if {$if_axi eq ""} {
+        error "packager inferred no AXI4-Lite slave interface"
     }
+    puts ">>> AXI4-Lite interface : $if_axi"
+    puts ">>> AXI-Stream interface: [expr {$if_axis eq "" ? "(none inferred)" : $if_axis}]"
+
+    # Associate the clock with each interface. BD automation can usually
+    # work this out by itself, so a failure here is a note, not a stop.
+    foreach b [list $if_axi $if_axis] {
+        if {$b eq ""} { continue }
+        if {[catch {ipx::associate_bus_interfaces -busif $b -clock aclk $core} e]} {
+            puts ">>> note: could not associate aclk with $b ($e)"
+            puts ">>> continuing -- axi4 automation connects clocks anyway"
+        }
+    }
+
+    # -----------------------------------------------------------------
+    # Address block size. The register file decodes 8 address bits = 256
+    # bytes, but a Zynq GP0 segment cannot be smaller than 4K, and
+    # assign_bd_address will not hand out more than the memory map
+    # declares. Declaring 4K here settles it at package time.
+    # 0x100..0xFFF alias back onto the registers, which is ordinary for
+    # a small AXI4-Lite slave and is invisible to a driver that
+    # addresses off one base pointer.
+    # -----------------------------------------------------------------
+    foreach m [ipx::get_memory_maps -of_objects $core] {
+        foreach ab [ipx::get_address_blocks -of_objects $m] {
+            set_property range 4096 $ab
+            puts ">>> address block [get_property NAME $ab] range -> 4096 B"
+        }
+    }
+
+    ipx::create_xgui_files $core
+    ipx::update_checksums $core
+    if {[catch {ipx::check_integrity $core} e]} {
+        puts ">>> ipx::check_integrity reported: $e"
+    }
+    ipx::save_core $core
+    close_project
+    set use_ip 1
+} pkg_err]} {
+    puts ""
+    puts ">>> ================================================================"
+    puts ">>> IP PACKAGING FAILED -- falling back to a module reference"
+    puts ">>>"
+    puts ">>> $pkg_err"
+    puts ">>>"
+    puts ">>> This is not fatal. mirage_axi_wrap is VHDL-93, so"
+    puts ">>> create_bd_cell -type module accepts it, and the block"
+    puts ">>> design comes out equivalent. What is lost is the explicit"
+    puts ">>> 4K address block -- the range then comes from whatever"
+    puts ">>> assign_bd_address infers, and is reported below."
+    puts ">>> ================================================================"
+    puts ""
+    catch {close_project}
 }
 
-ipx::create_xgui_files $core
-ipx::update_checksums $core
-if {[catch {ipx::check_integrity $core} e]} {
-    puts ">>> ipx::check_integrity reported: $e"
+if {$use_ip} {
+    puts ">>> packaged $ip_vlnv into $ip_repo"
 }
-ipx::save_core $core
-close_project
-puts ">>> packaged $ip_vlnv into $ip_repo"
 
 # =====================================================================
 # STAGE 2 -- the block design
 #
-# A separate project from the packaging one. The IP carries its own
-# imported copies of every source, so the raw rtl_v2 files are
-# deliberately NOT added here: two copies of the same entities in one
-# project is an elaboration conflict waiting to happen.
+# A separate project from the packaging one.
+#
+# On the IP route the core carries its own imported copies of every
+# source, so the raw rtl_v2 files are deliberately NOT added here: two
+# copies of the same entities in one project is an elaboration conflict
+# waiting to happen. On the module route there is no core, so the raw
+# sources are exactly what the reference resolves against and they DO
+# get added. The two are mutually exclusive.
 # =====================================================================
 create_project ${design} $bd_proj -part $part -force
 
@@ -281,13 +323,22 @@ if {[llength $repo_found]} {
 }
 set_property board_part $board [current_project]
 
-set_property ip_repo_paths $ip_repo [current_project]
-update_ip_catalog -rebuild
-if {[llength [get_ipdefs -quiet $ip_vlnv]] == 0} {
-    puts ">>> $ip_vlnv is not in the catalogue after update_ip_catalog."
-    puts ">>> Packaging reported success, so this is a repo path problem:"
-    puts ">>>   $ip_repo"
-    exit 1
+if {$use_ip} {
+    set_property ip_repo_paths $ip_repo [current_project]
+    update_ip_catalog -rebuild
+    if {[llength [get_ipdefs -quiet $ip_vlnv]] == 0} {
+        puts ">>> $ip_vlnv is not in the catalogue after update_ip_catalog."
+        puts ">>> Packaging reported success, so this is a repo path"
+        puts ">>> problem: $ip_repo"
+        puts ">>> Taking the module route instead."
+        set use_ip 0
+    }
+}
+
+if {!$use_ip} {
+    add_files -norecurse $all_srcs
+    set_source_types $srcs $shim
+    update_compile_order -fileset sources_1
 }
 
 create_bd_design $design
@@ -310,8 +361,14 @@ set_property -dict [list \
 # weight DMA will use, and enabling it now means adding the DMA later
 # does not re-run PS configuration and re-time the whole design.
 
-# --- the accelerator, from the IP catalogue ---------------------------
-create_bd_cell -type ip -vlnv $ip_vlnv mirage
+# --- the accelerator --------------------------------------------------
+if {$use_ip} {
+    puts ">>> adding mirage from the IP catalogue ($ip_vlnv)"
+    create_bd_cell -type ip -vlnv $ip_vlnv mirage
+} else {
+    puts ">>> adding mirage as a module reference (mirage_axi_wrap)"
+    create_bd_cell -type module -reference mirage_axi_wrap mirage
+}
 
 # ---------------------------------------------------------------------
 # Connections. The interface names come from the packaged core, so they
@@ -329,9 +386,15 @@ set axi_slave [get_bd_intf_pins -quiet -of_objects [get_bd_cells mirage] \
                  -filter {MODE == Slave && VLNV =~ *:aximm_rtl:*}]
 if {[llength $axi_slave] != 1} {
     puts ">>> Expected exactly one AXI-MM slave interface on mirage,"
-    puts ">>> found [llength $axi_slave]. The packaged core declared"
-    puts ">>> '$if_axi' -- if that is missing here the core in $ip_repo"
-    puts ">>> is stale; delete build_cora and re-run."
+    puts ">>> found [llength $axi_slave]."
+    if {$use_ip} {
+        puts ">>> The packaged core declared '$if_axi'; if that is"
+        puts ">>> missing here the core in $ip_repo is stale."
+    } else {
+        puts ">>> On the module route this means port-name inference did"
+        puts ">>> not group the s_axi_* pins into an interface."
+    }
+    puts ">>> Delete build_cora and re-run."
     exit 1
 }
 puts ">>> AXI4-Lite slave: $axi_slave"
@@ -390,11 +453,36 @@ if {[llength $axis_slave] == 1} {
 set MIRAGE_BASE 0x43C00000
 
 assign_bd_address
+
+set pinned [list]
 foreach s [get_bd_addr_segs -of_objects [get_bd_addr_spaces ps7/Data]] {
     if {[string match *mirage* $s]} {
+        # Offset is not negotiable -- the driver hardcodes it, so a
+        # failure here must stop the build rather than produce a
+        # bitstream whose base address is a surprise.
         set_property offset $MIRAGE_BASE $s
-        set_property range  4K           $s
+        # Range is. 4K is the Zynq minimum, so anything assign_bd_address
+        # chose is already >= it and a larger window only widens the
+        # aliasing, which is harmless.
+        if {[catch {set_property range 4K $s} e]} {
+            puts ">>> note: could not set range 4K on $s"
+            puts ">>>       ($e); leaving [get_property RANGE $s]"
+        }
+        lappend pinned $s
     }
+}
+
+# Without this the run can reach a bitstream with the accelerator at
+# whatever address assign_bd_address felt like, while the driver reads
+# 0x43C00000 and sees nothing. Silent, and expensive to debug on a board.
+if {[llength $pinned] != 1} {
+    puts ">>> Expected exactly one mirage address segment, found [llength $pinned]."
+    puts ">>> Segments visible from ps7/Data:"
+    foreach s [get_bd_addr_segs -of_objects [get_bd_addr_spaces ps7/Data]] {
+        puts ">>>   $s"
+    }
+    puts ">>> Refusing to build: the driver's base address would be a guess."
+    exit 1
 }
 
 set seg [get_bd_addr_segs -of_objects [get_bd_addr_spaces ps7/Data]]
@@ -468,5 +556,8 @@ puts ">>> bitstream: $bit"
 puts ">>> XSA for Vitis: writing $outdir/${design}.xsa"
 write_hw_platform -fixed -include_bit -force $outdir/${design}.xsa
 puts ""
-puts ">>> mirage register base for the driver: $MIRAGE_BASE (4K)"
+puts ">>> mirage register base for the driver: $MIRAGE_BASE"
+puts ">>>   segment: [lindex $pinned 0]"
+puts ">>>   range  : [get_property RANGE [lindex $pinned 0]]"
+puts ">>>   route  : [expr {$use_ip ? "packaged IP ($ip_vlnv)" : "module reference (mirage_axi_wrap)"}]"
 puts ">>> done"

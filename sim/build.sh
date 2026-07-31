@@ -27,6 +27,11 @@ RTL=(
   ../rtl_v2/axi/mirage_axi_lite.vhd
   ../rtl_v2/axi/wgt_stream.vhd
   ../rtl_v2/top/mirage_axi_top.vhd
+  # Nothing simulates the shim -- it is here so a port-map mistake in it
+  # is caught by GHDL on this machine rather than by Vivado five hours
+  # later on the machine that has Vivado. It is VHDL-93 but legal 2008,
+  # so analysing it under --std=08 with everything else is fine.
+  ../rtl_v2/top/mirage_axi_wrap.vhd
 )
 
 TB=(

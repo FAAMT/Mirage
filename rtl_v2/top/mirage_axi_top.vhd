@@ -58,10 +58,23 @@ entity mirage_axi_top is
         s_axi_rvalid  : out std_logic;
         s_axi_rready  : in  std_logic;
 
-        -- AXI4-Stream weight input
+        -- AXI4-Stream weight input.
+        --
+        -- tdata is written 31 downto 0 rather than BANK_W - 1 downto 0
+        -- even though it IS BANK_W wide. The IP packager resolves port
+        -- widths from the component's own generics or from literals, and
+        -- a package constant is neither:
+        --
+        --   [IP_Flow 19-627] Port 's_axis_tdata': XPath expression failed:
+        --   Undefined parameter "BANK_W" used in expression "(BANK_W - 1)".
+        --
+        -- The coupling to BANK_W is real, so it is asserted in the body
+        -- rather than dropped -- change the package and elaboration stops
+        -- here instead of the port width silently disagreeing with the
+        -- bank layout it is supposed to feed.
         s_axis_tvalid : in  std_logic;
         s_axis_tready : out std_logic;
-        s_axis_tdata  : in  std_logic_vector(BANK_W - 1 downto 0);
+        s_axis_tdata  : in  std_logic_vector(31 downto 0);
         s_axis_tlast  : in  std_logic;
 
         irq : out std_logic
@@ -109,6 +122,14 @@ architecture rtl of mirage_axi_top is
     signal wgt_tdata : std_logic_vector(BANK_W - 1 downto 0);
 
 begin
+
+    -- The literal width on s_axis_tdata is only correct while BANK_W is
+    -- 32. This is the guard for that; see the port declaration.
+    assert BANK_W = 32
+        report "mirage_axi_top: s_axis_tdata is declared 32 bits but "
+             & "BANK_W is not 32. Update the port and the AXI-Stream "
+             & "data width together."
+        severity failure;
 
     -- Two producers, one sink. PIO wins when both present, which cannot
     -- happen in practice: bring-up uses PIO with no DMA configured, and
