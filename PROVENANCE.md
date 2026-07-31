@@ -299,16 +299,44 @@ OR-reduce and an AND-reduce, about two LUT levels.
 
 Vivado 2022.2, `xc7z007sclg400-1`, full flow to routing.
 
-| | v1 | run 6 | run 8 | **run 9** | Budget |
-|---|---|---|---|---|---|
-| LUT | 18,182 (**126%**) | 1,969 | 2,303 | **2,203** (15%) | 12,960 |
-| FF | 385 | 466 | 1,570 | **1,570** | 28,800 |
-| DSP48E1 | 2 | **66** (100%) | 34 | **34** (52%) | 59 |
-| RAMB36 | **0** | 35.5 | 35.5 | **35.5** (71%) | 47 |
-| WNS | — | −9.485 | −6.226 | **+0.058 ns** | ≥ 0 |
+| | v1 | run 6 | run 8 | run 9 | run 10 | **run 11** | Budget |
+|---|---|---|---|---|---|---|---|
+| LUT | 18,182 (**126%**) | 1,969 | 2,303 | 2,203 (15%) | 2,337 | **2,150** (15%) | 12,960 |
+| FF | 385 | 466 | 1,570 | 1,570 | 1,796 | **1,803** | 28,800 |
+| DSP48E1 | 2 | **66** (100%) | 34 | 34 (52%) | 34 | **34** (52%) | 59 |
+| RAMB36 | **0** | 35.5 | 35.5 | 35.5 (71%) | 36.5 | **36.5** (73%) | 47 |
+| WNS | — | −9.485 | −6.226 | +0.058 ns | *n/a* | **+0.252 ns** | ≥ 0 |
 
-Run 9: *"All user specified timing constraints are met."* 0 failing endpoints
-of 6,271. 0 errors, 0 critical warnings.
+Runs 9 and 11: *"All user specified timing constraints are met."* Run 11 has 0
+failing endpoints of 6,409, hold met at +0.046 ns, 0 errors.
+
+Run 10 is the Layer C RTL and reports no WNS because implementation never ran:
+`synth_design` had never been given `-mode out_of_context`, so Vivado treated
+`encoder_layer` as a whole chip and demanded a package pin per port bit. The
+job interface takes the top level from 16 ports to 24, or 171 bits, against
+100 sites on `clg400` — `[Place 30-58] IO placement is infeasible`. A flow
+defect, not a design defect: this block is an AXI slave inside a Zynq block
+design, where those ports are internal nets. Run 11 is the same netlist with
+the flag set.
+
+Run 11's critical path is unchanged from run 9 — `recip/q_reg` →
+`seq/wb2_prod_reg/PCIN`, 8.264 ns of data path, 82.9% logic and 17.1% route
+over two logic levels:
+
+| stage | delay | share |
+|---|---|---|
+| RAMB36E1 clk→`DOPADOP` | 2.454 ns | 30% |
+| route `rc_dout[16]` | 0.778 ns | |
+| LUT3 — the `mac_scale` mux | **0.149 ns** | 2% |
+| route `seq/scale[16]` | 0.637 ns | |
+| DSP48E1 `A[16]`→`PCOUT` | 4.244 ns | 51% |
+| DSP48E1 setup on `PCIN` | 1.400 ns | 17% |
+
+The `mac_scale` mux was the change flagged as the timing risk of Layer C. It
+costs 0.149 ns. **81% of this path is two hard-block propagation delays** — a
+BRAM read and a 32×19 multiply crossing a DSP cascade — which no RTL
+restructuring reduces. 200 MHz would need the DSP `MREG` and the `recip_rom`
+output register, roughly 2 ns each, at a pipeline cycle apiece.
 
 Per-module numbers confirm the intent rather than just the totals:
 `mac_array` = 1,024 LUT (exactly 32 lanes × 32-bit fabric accumulators);
@@ -330,6 +358,8 @@ Per-module numbers confirm the intent rather than just the totals:
 | `b8409ef` | Scope `use_dsp` per signal: the attribute was the bug, not the pipeline |
 | `5cc6fed` | Cut the softmax exp-index path; all three resource targets met |
 | `ba8c15a` | Run 9: all user specified timing constraints are met |
+| `670be3c` | Layer C — 13 defects fixed, four verification rungs added |
+| `e8abe50` | Run the block out of context, so the placer stops asking for pins |
 
 ---
 
@@ -370,6 +400,32 @@ the model, decoding to token 1466 مرحبا — identical to the float32 refere
 With the decoder on the fabric too, all 12 layers and 13,584 jobs, the output
 ids match the reference exactly.
 
-**Still not done:** the design has **not** been back through Vivado since these
-fixes, and run 9 closed at +58 ps. Every timing claim in Layer C is an
-argument, not a measurement.
+**Timing, now measured.** Layer C's timing claims were arguments when written.
+Run 11 settled them: **WNS +0.252 ns**, better than run 9's +0.058 despite the
+added job interface. Two variables moved at once — the RTL and the
+out-of-context flag — so the gain cannot be attributed cleanly to either; the
+critical path is the identical net in both runs and its logic is unchanged,
+which makes placement freedom the likely source. The `mac_scale` mux singled
+out as the risk measures 0.149 ns.
+
+---
+
+## Layer D — the PS interface (in progress, 2026-07-31)
+
+Everything above characterises `encoder_layer` **out of context**: a block
+with 24 raw ports and nothing attached. Layer D attaches it.
+
+**Not yet started at the time of writing.** Scope, in order: an AXI4-Lite
+slave over the existing config register file; an AXI-Stream path on a PS HP
+port for the weight stream; a Cora Z7-07S block design; bare-metal bring-up
+replaying the verified job stream over JTAG; then a PetaLinux image for the
+full translation loop.
+
+The bring-up asset that matters already exists: `sim/` holds a 2,352-job
+command stream that GHDL proved bit-exact. Replaying it on hardware and
+comparing byte-for-byte means any hardware mismatch localises to the wrapper
+or the clocking, never to the datapath.
+
+Out-of-context numbers do not survive integration unchanged. Run 11's +0.252 ns
+excludes the interconnect delay the PS-side ports will pick up, so timing must
+be re-measured in context once the block design exists.
