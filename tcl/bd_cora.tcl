@@ -49,30 +49,44 @@ puts "Board (glob)   : $board_glob"
 # Matching is a glob, not an exact string: the board part carries a
 # revision suffix (:1.0, :1.1, ...) that changes between repo versions,
 # and pinning it exactly turns a cosmetic bump into a build failure.
+# That pin was the original defect -- Vivado 2022.2 ships cora-z7-07s
+# at 1.1, the script asked for exactly 1.0, and the board looked absent
+# when it was installed all along.
+#
+# So: try the install's own catalogue FIRST and only fall back to a
+# local checkout if the board really is missing. Xilinx warns
+# (Board 49-151) when a local repo shadows an install board of equal or
+# newer version, and it is right to -- the install copy is the one the
+# IP catalogue was built against.
 # ---------------------------------------------------------------------
-set repo_paths [list]
-if {[info exists ::env(MIRAGE_BOARD_REPO)]} {
-    lappend repo_paths $::env(MIRAGE_BOARD_REPO)
-}
-foreach c [list $root/boards \
-                ~/vivado-boards/new/board_files \
-                ~/.Xilinx/Vivado/board_files] {
-    lappend repo_paths $c
-}
+set matches [lsearch -all -inline [get_board_parts -quiet] $board_glob]
 
 set repo_found [list]
-foreach c $repo_paths {
-    set c [file normalize $c]
-    if {[file isdirectory $c] && [lsearch -exact $repo_found $c] < 0} {
-        lappend repo_found $c
+if {[llength $matches] == 0} {
+    set repo_paths [list]
+    if {[info exists ::env(MIRAGE_BOARD_REPO)]} {
+        lappend repo_paths $::env(MIRAGE_BOARD_REPO)
     }
-}
-if {[llength $repo_found]} {
-    puts ">>> board repo paths: $repo_found"
-    set_param board.repoPaths $repo_found
-}
+    foreach c [list $root/boards \
+                    ~/vivado-boards/new/board_files \
+                    ~/.Xilinx/Vivado/board_files] {
+        lappend repo_paths $c
+    }
 
-set matches [lsearch -all -inline [get_board_parts -quiet] $board_glob]
+    foreach c $repo_paths {
+        set c [file normalize $c]
+        if {[file isdirectory $c] && [lsearch -exact $repo_found $c] < 0} {
+            lappend repo_found $c
+        }
+    }
+    if {[llength $repo_found]} {
+        puts ">>> not in the Vivado install; adding repo paths: $repo_found"
+        set_param board.repoPaths $repo_found
+        set matches [lsearch -all -inline [get_board_parts -quiet] $board_glob]
+    }
+} else {
+    puts ">>> board found in the Vivado install -- no local repo needed"
+}
 if {[llength $matches] == 0} {
     puts ""
     puts ">>> No board part matches $board_glob"
