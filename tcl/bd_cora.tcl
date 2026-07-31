@@ -23,41 +23,108 @@
 # =====================================================================
 
 set part       xc7z007sclg400-1
-set board      digilentinc.com:cora-z7-07s:part0:1.0
+set board_glob digilentinc.com:cora-z7-07s:*
 set design     mirage_cora
 set root       [file normalize [file dirname [info script]]/..]
 set outdir     $root/build_cora
 
 puts "Vivado version : [version -short]"
 puts "Target part    : $part"
-puts "Board          : $board"
+puts "Board (glob)   : $board_glob"
 
 # ---------------------------------------------------------------------
-# The board file carries the DDR3 and MIO configuration for this exact
-# board. Without it the PS comes up with a default memory controller that
-# does not match the parts fitted, which produces a bitstream that loads
-# and then fails in ways that look like logic bugs. Refusing to build is
-# the honest outcome; guessing is not.
+# FINDING THE BOARD FILES
+#
+# Do not copy anything into the Vivado install. <Vivado>/data/boards/
+# board_files/ was the 2019-era location and newer releases no longer
+# ship that directory at all -- boards now arrive through the Vivado
+# Store into data/xhub/. Writing into the toolchain also needs root on
+# most installs and is silently lost when Vivado is upgraded.
+#
+# Instead point board.repoPaths at a checkout anywhere on disk. Set
+# MIRAGE_BOARD_REPO to the directory that CONTAINS the board folders --
+# for the Digilent repo that is <clone>/new/board_files, the level with
+# cora-z7-07s/ inside it, not the clone root.
+#
+# Matching is a glob, not an exact string: the board part carries a
+# revision suffix (:1.0, :1.1, ...) that changes between repo versions,
+# and pinning it exactly turns a cosmetic bump into a build failure.
 # ---------------------------------------------------------------------
-if {[lsearch -exact [get_board_parts -quiet] $board] < 0} {
+set repo_paths [list]
+if {[info exists ::env(MIRAGE_BOARD_REPO)]} {
+    lappend repo_paths $::env(MIRAGE_BOARD_REPO)
+}
+foreach c [list $root/boards \
+                ~/vivado-boards/new/board_files \
+                ~/.Xilinx/Vivado/board_files] {
+    lappend repo_paths $c
+}
+
+set repo_found [list]
+foreach c $repo_paths {
+    set c [file normalize $c]
+    if {[file isdirectory $c] && [lsearch -exact $repo_found $c] < 0} {
+        lappend repo_found $c
+    }
+}
+if {[llength $repo_found]} {
+    puts ">>> board repo paths: $repo_found"
+    set_param board.repoPaths $repo_found
+}
+
+set matches [lsearch -all -inline [get_board_parts -quiet] $board_glob]
+if {[llength $matches] == 0} {
     puts ""
-    puts ">>> Board files for the Cora Z7-07S are not installed."
-    puts ">>> get_board_parts does not list: $board"
+    puts ">>> No board part matches $board_glob"
     puts ">>>"
-    puts ">>> Install them, then re-run:"
-    puts ">>>   git clone https://github.com/Digilent/vivado-boards"
-    puts ">>>   cp -r vivado-boards/new/board_files/* \\"
-    puts ">>>       <Vivado>/data/boards/board_files/"
+    puts ">>> The board file carries the DDR3 and MIO configuration for"
+    puts ">>> this exact board. Without it the PS comes up with a memory"
+    puts ">>> controller that does not match the parts fitted, which"
+    puts ">>> produces a bitstream that loads and then misbehaves in ways"
+    puts ">>> that look like logic defects. So this stops instead of"
+    puts ">>> guessing at DDR timings."
     puts ">>>"
-    puts ">>> Building without the board preset would give the PS a DDR"
-    puts ">>> configuration that does not match the fitted memory. That"
-    puts ">>> bitstream loads and then misbehaves in ways that look like"
-    puts ">>> logic defects, so this script stops instead of guessing."
+    puts ">>> Either route works:"
+    puts ">>>"
+    puts ">>> (a) clone it anywhere, no root needed --"
+    puts ">>>       git clone https://github.com/Digilent/vivado-boards ~/vivado-boards"
+    puts ">>>       export MIRAGE_BOARD_REPO=~/vivado-boards/new/board_files"
+    puts ">>>     (or drop the board folders in $root/boards, which this"
+    puts ">>>      script checks with no environment variable at all)"
+    puts ">>>"
+    puts ">>> (b) Vivado GUI: Tools > Vivado Store > Boards, install the"
+    puts ">>>     Cora Z7-07S, then re-run this script."
+    puts ">>>"
+    if {[llength $repo_found] == 0} {
+        puts ">>> No candidate repo directory exists yet. Checked:"
+        foreach c $repo_paths { puts ">>>   [file normalize $c]" }
+    } else {
+        puts ">>> Searched these repo paths and found no cora-z7-07s:"
+        foreach c $repo_found { puts ">>>   $c" }
+        puts ">>> If the clone is there, the path is probably one level"
+        puts ">>> off -- it must contain cora-z7-07s/, not new/."
+    }
+    set any [get_board_parts -quiet]
+    puts ">>> ([llength $any] board parts visible in total)"
     exit 1
 }
 
+# Highest revision wins if several are visible.
+set board [lindex [lsort -dictionary $matches] end]
+if {[llength $matches] > 1} {
+    puts ">>> several revisions visible: $matches"
+}
+puts ">>> using board part: $board"
+
 file mkdir $outdir
 create_project ${design} $outdir -part $part -force
+
+# Record the repo on the project too. set_param is a session setting, so
+# without this the project reopens in the GUI unable to resolve its own
+# board_part and quietly drops the preset.
+if {[llength $repo_found]} {
+    set_property board_part_repo_paths $repo_found [current_project]
+}
 set_property board_part $board [current_project]
 
 # ---------------------------------------------------------------------

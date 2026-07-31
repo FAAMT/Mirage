@@ -25,3 +25,8 @@ sim/work/
 sim/*_cmd.txt
 sim/*_res.txt
 sim/*.log
+
+# Vivado board-file checkout (third-party, see tcl/bd_cora.tcl) and the
+# block-design build tree.
+boards/
+build_cora/
