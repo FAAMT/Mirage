@@ -379,3 +379,58 @@ already succeeded. Two changes:
   (`qkv_proj_bram`, `qkv_score_calc`) last
 - `reports/summary.csv` is flushed after every module, so a stall or a kill
   leaves everything completed up to that point
+
+---
+
+## 9. `weight_window`'s double buffer cannot double-buffer — v2, OPEN 2026-07-31
+
+Found while writing `sim/axi_lite_tb.vhd`, which loaded weights with
+`bufsel = 0` and then computed with `bufsel = 1` — the sequence the entity's
+own comment describes. Every output byte came back `-128`, the sat8-of-
+undefined signature: the job had read a buffer nothing ever wrote.
+
+`rtl_v2/core/weight_window.vhd` declares:
+
+```
+-- load side: one 32-bit bank word per cycle, from the DDR stream.
+-- Writes go to the buffer NOT selected by rd_buf.
+```
+
+and then implements:
+
+```vhdl
+we_a <= wr_en and (not rd_buf) when unsigned(wr_bank) = b else '0';
+we_b <= wr_en and rd_buf       when unsigned(wr_bank) = b else '0';
+...
+w_bus(...) <= rd_a(b) when rd_buf_q = '0' else rd_b(b);
+```
+
+`rd_buf = '0'` selects buffer A for reading **and** enables the write port of
+buffer A. Writes land in the buffer being read, not the other one. The two
+buffers are selectable, not double-buffered.
+
+**Why nothing caught it.** The bit-exact run compares RTL against
+`model_ref/mirage_int8.py`, and the model was written to match the RTL. Both
+load and then compute from the same buffer, serially, so both agree. The
+property that fails is not "the arithmetic is right" — it is "load can overlap
+compute", which no existing test asserts.
+
+**What it costs.** The window is 8 banks × 2 buffers = 16 RAMB36, roughly
+44% of the design's 36.5. Half of that buys a buffer that cannot be filled
+while the other is in use. Since the design is weight-bandwidth bound at about
+4.5 : 1, overlapping the load is the single largest speedup available, and it
+is exactly what this prevents.
+
+**The fix is one line**, swapping the two write-enable qualifiers:
+
+```vhdl
+we_a <= wr_en and rd_buf       when unsigned(wr_bank) = b else '0';
+we_b <= wr_en and (not rd_buf) when unsigned(wr_bank) = b else '0';
+```
+
+**Not applied.** It inverts the meaning of `bufsel` for every caller, so
+`model_ref/`, the generated job scripts and any PS driver written against the
+current behaviour all change together. That is a coordinated change across the
+verified stack and belongs in its own commit with its own re-run, not folded
+into the AXI work. `sim/axi_lite_tb.vhd` uses the current semantics and is
+correct against the RTL as it stands.

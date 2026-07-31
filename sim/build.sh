@@ -24,6 +24,9 @@ RTL=(
   ../rtl_v2/core/gemm_sequencer.vhd
   ../rtl_v2/ctrl/layer_ctrl.vhd
   ../rtl_v2/top/encoder_layer.vhd
+  ../rtl_v2/axi/mirage_axi_lite.vhd
+  ../rtl_v2/axi/wgt_stream.vhd
+  ../rtl_v2/top/mirage_axi_top.vhd
 )
 
 TB=(
@@ -34,6 +37,7 @@ TB=(
   stage_engine_tb.vhd
   softmax_unit_tb.vhd
   encoder_layer_tb.vhd
+  axi_lite_tb.vhd
 )
 
 A="ghdl -a --std=08 --workdir=work"
