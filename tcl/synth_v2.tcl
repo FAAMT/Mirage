@@ -81,7 +81,15 @@ if {[catch { synth_design -rtl -name rtl_v2 -top encoder_layer -part $part } err
 
 # =========================== PHASE 1 =================================
 puts "\n=============== \[phase 1\] synth_design ==============="
-if {[catch { synth_design -top encoder_layer -part $part -flatten_hierarchy none } err]} {
+# -mode out_of_context. encoder_layer is never the top of a chip: it is an
+# AXI-attached slave inside a Zynq block design, where every one of its
+# ports becomes an internal net to the PS interconnect. Without this flag
+# Vivado buffers each port bit and asks the placer for a package pin, and
+# xc7z007sclg400 has 100 -- so the 171 port bits of the job interface fail
+# IO placement before timing is ever reported. This is also what xdc/
+# encoder_layer.xdc has always claimed the flow was doing.
+if {[catch { synth_design -top encoder_layer -part $part -mode out_of_context \
+                 -flatten_hierarchy none } err]} {
     puts ">>> SYNTHESIS FAILED:\n$err"
     exit 1
 }
@@ -118,8 +126,17 @@ puts "\n=============== \[phase 3\] timing + utilisation ==============="
 catch { report_utilization -file $rpt/impl_utilization.rpt }
 catch { report_timing_summary -delay_type min_max -max_paths 10 \
             -file $rpt/impl_timing_summary.rpt }
-catch { report_timing -sort_by group -max_paths 20 -path_type summary \
-            -file $rpt/impl_timing_paths.rpt }
+# -unique_pins, because without it all 20 "paths" are 20 bits of the same
+# bus and the report shows one net twice over. With it, the 20 are 20
+# distinct startpoint/endpoint pairs, so the second-worst path -- the one
+# that matters when the worst gets fixed -- is actually visible. full_clock
+# on the worst 5 so the slack can be attributed to BRAM clk-to-out vs LUT
+# vs route vs DSP setup, which -path_type summary cannot show.
+catch { report_timing -sort_by group -max_paths 20 -unique_pins \
+            -path_type summary -file $rpt/impl_timing_paths.rpt }
+catch { report_timing -sort_by group -max_paths 5 -unique_pins \
+            -path_type full_clock_expanded \
+            -file $rpt/impl_timing_worst5.rpt }
 if {$routed} { catch { write_checkpoint -force $rpt/post_route.dcp } }
 
 set wns "n/a"
