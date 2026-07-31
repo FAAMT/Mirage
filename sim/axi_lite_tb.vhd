@@ -126,6 +126,8 @@ architecture sim of axi_lite_tb is
     signal ref_out : byte_arr(0 to N_OUT - 1) := (others => 0);
     signal dut_out : byte_arr(0 to N_OUT - 1) := (others => 0);
     signal pio_out : byte_arr(0 to N_OUT - 1) := (others => 0);
+    signal keep_out : byte_arr(0 to N_OUT - 1) := (others => 0);
+    signal alt_out  : byte_arr(0 to N_OUT - 1) := (others => 0);
 
     signal errors : natural := 0;
 
@@ -140,6 +142,13 @@ architecture sim of axi_lite_tb is
     function wgt_val (row : natural; lane : natural) return integer is
     begin
         return ((row * 5 + lane * 3 + 1) mod 16) - 8;
+    end function;
+
+    -- A second, unmistakably different window, used to prove that filling
+    -- one buffer leaves the other alone.
+    function wgt_alt (row : natural; lane : natural) return integer is
+    begin
+        return 7 - ((row * 3 + lane * 5) mod 15);
     end function;
 
 begin
@@ -276,8 +285,9 @@ begin
         end loop;
         r_host_we <= '0';
 
-        -- bufsel 0 => the load side writes the OTHER buffer, buffer 1
-        ref_cfg(8, x"00000000");
+        -- Fill buffer A: writes go to the buffer NOT selected, so loading
+        -- A means rd_buf = 1 while the stream runs.
+        ref_cfg(8, x"00000001");
 
         for row in 0 to K_LEN - 1 loop
             for bank in 0 to W_BANKS - 1 loop
@@ -300,10 +310,7 @@ begin
         ref_cfg(2, std_logic_vector(to_unsigned(ACT_BASE, 32)));
         ref_cfg(3, std_logic_vector(to_unsigned(OUT_BASE, 32)));
         ref_cfg(10, std_logic_vector(to_unsigned(2 ** RECIP_FRAC, 32)));
-        -- Buffer A for both load and compute. weight_window qualifies its
-        -- write enable with `not rd_buf`, so the written buffer IS the read
-        -- buffer -- see the note in this testbench's header.
-        ref_cfg(8, x"00000000");
+        ref_cfg(8, x"00000000");   -- now compute from A
 
         r_job_op    <= "00";       -- JOB_GEMM
         r_job_start <= '1';
@@ -345,7 +352,7 @@ begin
                        to_signed(act_val(i), 32)));
         end loop;
 
-        axi_wr(A_CFG0 + 4 * 8, x"00000000");   -- bufsel 0: load buffer 1
+        axi_wr(A_CFG0 + 4 * 8, x"00000001");   -- fill buffer A
 
         -- the stream carries no address; wgt_stream must rebuild the exact
         -- (row, bank) order phase 1 stated explicitly
@@ -372,7 +379,7 @@ begin
         axi_wr(A_CFG0 + 4 * 2,  std_logic_vector(to_unsigned(ACT_BASE, 32)));
         axi_wr(A_CFG0 + 4 * 3,  std_logic_vector(to_unsigned(OUT_BASE, 32)));
         axi_wr(A_CFG0 + 4 * 10, std_logic_vector(to_unsigned(2 ** RECIP_FRAC, 32)));
-        axi_wr(A_CFG0 + 4 * 8,  x"00000000");
+        axi_wr(A_CFG0 + 4 * 8,  x"00000000");   -- compute from A
 
         -- clear any stale done, then start
         axi_wr(A_ISR, x"00000003");
@@ -445,7 +452,7 @@ begin
         ---------------------------------------------------------------
         report "phase 3b: PIO weight path";
 
-        axi_wr(A_CFG0 + 4 * 8, x"00000000");
+        axi_wr(A_CFG0 + 4 * 8, x"00000001");   -- fill buffer A
 
         for row in 0 to K_LEN - 1 loop
             for bank in 0 to W_BANKS - 1 loop
@@ -461,6 +468,7 @@ begin
                 end if;
             end loop;
         end loop;
+        axi_wr(A_CFG0 + 4 * 8, x"00000000");   -- compute from A
 
         axi_wr(A_ISR, x"00000003");
         axi_wr(A_CTRL, x"00000001");
@@ -473,6 +481,65 @@ begin
         for i in 0 to N_OUT - 1 loop
             axi_rd(A_ACT_DAT, rv);
             pio_out(i) <= to_integer(signed(rv));
+            wait for 1 ns;
+        end loop;
+
+        ---------------------------------------------------------------
+        -- PHASE 3c -- the property the double buffer exists for
+        --
+        -- Everything above would still pass if the two buffers were one.
+        -- This is the check that would have caught the original defect:
+        -- with compute pointed at A, fill B with a DIFFERENT window and
+        -- confirm (a) A is undisturbed, and (b) B really received it.
+        --
+        -- Before the fix, writes landed in the buffer being read, so the
+        -- first job here would have returned the ALT result instead of the
+        -- reference and the second would have returned zeros.
+        ---------------------------------------------------------------
+        report "phase 3c: loading one buffer does not disturb the other";
+
+        -- bufsel is 0 (reading A). These writes must therefore land in B.
+        for row in 0 to K_LEN - 1 loop
+            for bank in 0 to W_BANKS - 1 loop
+                for b in 0 to BANK_BYTES - 1 loop
+                    word((b + 1) * 8 - 1 downto b * 8) :=
+                        std_logic_vector(to_signed(
+                            wgt_alt(row, bank * BANK_BYTES + b), 8));
+                end loop;
+                if row = K_LEN - 1 and bank = W_BANKS - 1 then
+                    axi_wr(A_WGT_LST, word);
+                else
+                    axi_wr(A_WGT_DAT, word);
+                end if;
+            end loop;
+        end loop;
+
+        -- (a) still reading A: must reproduce the reference exactly
+        axi_wr(A_ISR, x"00000003");
+        axi_wr(A_CTRL, x"00000001");
+        loop
+            axi_rd(A_ISR, rv);
+            exit when rv(0) = '1';
+        end loop;
+        axi_wr(A_ACT_PTR, std_logic_vector(to_unsigned(OUT_BASE, 32)));
+        for i in 0 to N_OUT - 1 loop
+            axi_rd(A_ACT_DAT, rv);
+            keep_out(i) <= to_integer(signed(rv));
+            wait for 1 ns;
+        end loop;
+
+        -- (b) now read B: must produce the ALT window's result
+        axi_wr(A_CFG0 + 4 * 8, x"00000001");
+        axi_wr(A_ISR, x"00000003");
+        axi_wr(A_CTRL, x"00000001");
+        loop
+            axi_rd(A_ISR, rv);
+            exit when rv(0) = '1';
+        end loop;
+        axi_wr(A_ACT_PTR, std_logic_vector(to_unsigned(OUT_BASE, 32)));
+        for i in 0 to N_OUT - 1 loop
+            axi_rd(A_ACT_DAT, rv);
+            alt_out(i) <= to_integer(signed(rv));
             wait for 1 ns;
         end loop;
 
@@ -512,6 +579,32 @@ begin
         -- BOTH instances, so they agreed perfectly on garbage. Any constant
         -- output is the signature of a job that did not really run, so the
         -- check is for variation, not for a particular wrong value.
+        -- (a) filling B left A untouched
+        for i in 0 to N_OUT - 1 loop
+            if keep_out(i) /= ref_out(i) then
+                report "MISMATCH byte " & integer'image(i)
+                     & ": filling buffer B changed buffer A's result ("
+                     & integer'image(ref_out(i)) & " -> "
+                     & integer'image(keep_out(i)) & ")" severity error;
+                nerr := nerr + 1;
+            end if;
+        end loop;
+
+        -- (b) B actually received the alternate window. If B were never
+        -- written, this would read an untouched buffer and the two would
+        -- not differ -- so equality here is a failure, not a pass.
+        uniform := true;
+        for i in 0 to N_OUT - 1 loop
+            if alt_out(i) /= ref_out(i) then
+                uniform := false;
+            end if;
+        end loop;
+        if uniform then
+            report "FAIL: buffer B produced the same result as buffer A "
+                 & "-- the alternate window never landed" severity error;
+            nerr := nerr + 1;
+        end if;
+
         uniform := true;
         for i in 1 to N_OUT - 1 loop
             if ref_out(i) /= ref_out(0) then
@@ -530,7 +623,7 @@ begin
         if nerr = 0 then
             write(lo, string'("PASS  axi wrapper transparent over "));
             write(lo, N_OUT);
-            write(lo, string'(" bytes x2 paths (stream, pio) + 5 contract checks"));
+            write(lo, string'(" bytes x2 paths + buffer isolation + 5 contract checks"));
         else
             write(lo, string'("FAIL  "));
             write(lo, nerr);

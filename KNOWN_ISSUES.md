@@ -382,7 +382,7 @@ already succeeded. Two changes:
 
 ---
 
-## 9. `weight_window`'s double buffer cannot double-buffer — v2, OPEN 2026-07-31
+## 9. `weight_window`'s double buffer cannot double-buffer — v2, FIXED 2026-07-31
 
 Found while writing `sim/axi_lite_tb.vhd`, which loaded weights with
 `bufsel = 0` and then computed with `bufsel = 1` — the sequence the entity's
@@ -421,16 +421,34 @@ while the other is in use. Since the design is weight-bandwidth bound at about
 4.5 : 1, overlapping the load is the single largest speedup available, and it
 is exactly what this prevents.
 
-**The fix is one line**, swapping the two write-enable qualifiers:
+**The RTL fix is one line**, swapping the two write-enable qualifiers:
 
 ```vhdl
 we_a <= wr_en and rd_buf       when unsigned(wr_bank) = b else '0';
 we_b <= wr_en and (not rd_buf) when unsigned(wr_bank) = b else '0';
 ```
 
-**Not applied.** It inverts the meaning of `bufsel` for every caller, so
-`model_ref/`, the generated job scripts and any PS driver written against the
-current behaviour all change together. That is a coordinated change across the
-verified stack and belongs in its own commit with its own re-run, not folded
-into the AXI work. `sim/axi_lite_tb.vhd` uses the current semantics and is
-correct against the RTL as it stands.
+**The protocol change is not.** Calling it a one-line fix was wrong. `bufsel`
+inverts for every writer, and there are **two**, not one: `encoder_layer` muxes
+`stage_engine` and the DDR stream onto a single write port with `stage_busy`.
+Fixing only the DMA path left `JOB_STAGE` writing the buffer the following GEMM
+did not read, and `test_ops.py` went from clean to **292 mismatches** on the
+QK^T case. Both writers now flip `bufsel` around the write:
+
+| writer | loads with | computes with |
+|---|---|---|
+| DDR stream (`Mirage.load_window`) | `bufsel = 1` | `bufsel = 0` |
+| `stage_engine` (`Mirage.stage`) | `bufsel = 1` | `bufsel = 0` |
+
+A staged window and the job consuming it are strictly sequential, so that pair
+can never overlap. The ping-pong the corrected hardware allows is for the DDR
+stream only — and taking it needs a scheduler that knows which half of the layer
+it is on, which is a PS-driver change, not an RTL one. **This commit restores
+the mechanism; it does not by itself make anything faster.**
+
+**Verified.** `test_ops.py` 1,449 values across 8 blocks, and `axi_lite_tb`
+gained phase 3c, which asserts the property the buffer exists for: with compute
+pointed at A, fill B and confirm A is undisturbed *and* that B really received
+the data. Reverting the RTL fix makes phase 3c produce 34 failures, so the check
+would have caught the original defect. Nothing before it could — every prior
+test used one buffer serially, and `model_ref` does not model buffering at all.

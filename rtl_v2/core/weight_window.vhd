@@ -56,7 +56,10 @@ entity weight_window is
         w_bus   : out wgt_bus_t;
 
         -- load side: one 32-bit bank word per cycle, from the DDR stream.
-        -- Writes go to the buffer NOT selected by rd_buf.
+        -- Writes go to the buffer NOT selected by rd_buf, so a load can run
+        -- against the buffer compute is not reading. Callers that use one
+        -- buffer serially must therefore FLIP rd_buf between loading and
+        -- computing -- see the protocol note in the architecture.
         wr_en   : in std_logic;
         wr_row  : in std_logic_vector(BANK_AW - 1 downto 0);
         wr_bank : in std_logic_vector(2 downto 0);   -- 0 .. W_BANKS-1
@@ -89,14 +92,34 @@ begin
 
     ---------------------------------------------------------------------
     -- Buffer A and buffer B, W_BANKS each. Write enable is qualified by
-    -- the buffer NOT being read, so compute and load never touch the
-    -- same primitive.
+    -- the buffer NOT being read, so compute and load never touch the same
+    -- primitive.
+    --
+    -- PROTOCOL. rd_buf selects the READ buffer; writes always go to the
+    -- other one:
+    --
+    --     rd_buf = '0'  ->  compute reads A, load fills B
+    --     rd_buf = '1'  ->  compute reads B, load fills A
+    --
+    -- Ping-pong is therefore: fill B with rd_buf='0' while computing from
+    -- A, then flip. A caller that uses ONE buffer serially must flip
+    -- rd_buf between the load and the job -- load with rd_buf='1' to fill
+    -- A, then set rd_buf='0' to compute from A.
+    --
+    -- These two lines were previously inverted (`we_a` qualified by
+    -- `not rd_buf`), which put writes in the buffer being READ. That is
+    -- self-consistent for a serial caller -- load and compute both used A
+    -- and agreed -- so every existing test passed, and the bit-exact run
+    -- could not see it because model_ref does not model buffering at all.
+    -- What it silently removed was the ability to load and compute at the
+    -- same time, which on a design that is weight-bandwidth bound about
+    -- 4.5 : 1 is the single largest speedup available.
     ---------------------------------------------------------------------
     gen_banks : for b in 0 to W_BANKS - 1 generate
         signal we_a, we_b : std_logic;
     begin
-        we_a <= wr_en and (not rd_buf) when unsigned(wr_bank) = b else '0';
-        we_b <= wr_en and rd_buf       when unsigned(wr_bank) = b else '0';
+        we_a <= wr_en and rd_buf       when unsigned(wr_bank) = b else '0';
+        we_b <= wr_en and (not rd_buf) when unsigned(wr_bank) = b else '0';
 
         buf_a : entity work.bram_sdp
             generic map (DATA_W => BANK_W, ADDR_W => BANK_AW, DOUT_REG => false)

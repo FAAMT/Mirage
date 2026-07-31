@@ -275,11 +275,25 @@ class Mirage:
             self.scr.act(addr + i, v)
 
     def load_window(self, rows):
-        """rows[r] is a list of N_LANES int8 for window row r."""
+        """rows[r] is a list of N_LANES int8 for window row r.
+
+        weight_window writes to the buffer NOT selected by rd_buf, so a
+        serial caller -- load then compute from the same buffer -- must flip
+        bufsel around the load. Buffer A is filled with bufsel=1 and read
+        with bufsel=0.
+
+        This still serialises the load against the compute. Real ping-pong,
+        filling B while computing from A and then flipping, is what the
+        corrected hardware permits and what a PS driver should do; it needs
+        to know which half of the layer it is on, so it belongs in the
+        scheduling layer rather than here.
+        """
         import numpy as np
         arr = np.asarray(rows, dtype=np.int64)
         self.fab.load_block(arr)
+        self.scr.cfg(CFG_BUFSEL, 1)     # writes land in buffer A
         self.scr.wrows(arr)
+        self.scr.cfg(CFG_BUFSEL, 0)     # compute reads buffer A
 
     # -- jobs -------------------------------------------------------------
     def gemm(self, k_len, act_base, out_base, mult=None, rq_shift=None,
@@ -320,12 +334,26 @@ class Mirage:
                           eff_scale, rq, acc_clr, acc_wb, wb_score, sc_wbase)
 
     def stage(self, base, rows, lanes, stride, xpose, row_ofs=0):
+        """Stage K^T or V from activation memory into the weight window.
+
+        This is the OTHER writer to the window -- encoder_layer muxes
+        stage_engine and the DDR stream onto one write port with
+        `stage_busy` -- so it is subject to the same rule: writes go to the
+        buffer NOT selected by bufsel. Staging into A therefore runs with
+        bufsel=1, and the GEMM that consumes it reads A with bufsel=0.
+
+        A staged window and the job that consumes it are strictly
+        sequential, so this pair can never overlap. The ping-pong the
+        corrected hardware allows is for the DDR stream, not for staging.
+        """
         geo = ((rows & 0x7F) | ((lanes & 0x7F) << 8)
                | ((1 if xpose else 0) << 16) | ((row_ofs & 0x3FF) << 18))
         self.scr.cfg(CFG_STBASE, base)
         self.scr.cfg(CFG_STGEO, geo)
         self.scr.cfg(CFG_STSTRIDE, stride)
+        self.scr.cfg(CFG_BUFSEL, 1)     # stage writes land in buffer A
         self.scr.job(JOB_STAGE)
+        self.scr.cfg(CFG_BUFSEL, 0)     # compute reads buffer A
         self.fab.job_stage(base, rows, lanes, stride, xpose, row_ofs)
 
     def smax(self, sm_base, sm_len):
