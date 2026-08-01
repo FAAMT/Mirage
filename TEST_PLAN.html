@@ -12,7 +12,7 @@
     --ink-3:#6B7A7D;
     --rule:#D2D9D9;
     --rule-strong:#B4BFBF;
-    --accent:#0F6E6A;
+    --accent:#0F6E6A; --ok:#1F7A4D;
     --accent-soft:#DCEBEA;
     --pass:#2E6F45;
     --pass-soft:#DDEBE1;
@@ -37,7 +37,7 @@
       --ink-3:#7C8C8C;
       --rule:#2A3438;
       --rule-strong:#3C4A4E;
-      --accent:#4FB3AC;
+      --accent:#4FB3AC; --ok:#54B37E;
       --accent-soft:#14312F;
       --pass:#6FBE8B;
       --pass-soft:#16301F;
@@ -51,7 +51,7 @@
     --ground:#0F1417; --panel:#161D20; --panel-2:#1E2629;
     --ink:#E3E9E9; --ink-2:#AEBCBC; --ink-3:#7C8C8C;
     --rule:#2A3438; --rule-strong:#3C4A4E;
-    --accent:#4FB3AC; --accent-soft:#14312F;
+    --accent:#4FB3AC; --ok:#54B37E; --accent-soft:#14312F;
     --pass:#6FBE8B; --pass-soft:#16301F;
     --fail:#E08279; --fail-soft:#331A17;
     --warn:#D9AE55; --warn-soft:#2E2412;
@@ -60,7 +60,7 @@
     --ground:#F4F5F4; --panel:#FFFFFF; --panel-2:#EBEEEE;
     --ink:#12181A; --ink-2:#3D4A4D; --ink-3:#6B7A7D;
     --rule:#D2D9D9; --rule-strong:#B4BFBF;
-    --accent:#0F6E6A; --accent-soft:#DCEBEA;
+    --accent:#0F6E6A; --ok:#1F7A4D; --accent-soft:#DCEBEA;
     --pass:#2E6F45; --pass-soft:#DDEBE1;
     --fail:#A33128; --fail-soft:#F3DFDC;
     --warn:#8A6206; --warn-soft:#F2E7CC;
@@ -208,6 +208,17 @@
   }
   .rung .rt{font-family:var(--sans); font-weight:650; font-size:1.05rem; margin:1px 0 5px; color:var(--ink)}
   .rung p{font-size:.94rem; font-family:var(--sans); color:var(--ink-2); margin:0 0 8px}
+  /* Completed rungs are filled; the one in progress is a ring, so the
+     ladder shows where the work has reached without needing a legend. */
+  .rung.done::before{background:var(--ok, #2f8f5b)}
+  .rung.next::before{background:var(--ground); border-color:var(--accent)}
+  .rung .tick{
+    display:inline-block; margin-left:8px; padding:1px 6px; border-radius:3px;
+    font-size:.6rem; letter-spacing:.1em; background:var(--ok, #2f8f5b);
+    color:#fff; vertical-align:1px;
+  }
+  .rung .tick-next{background:transparent; color:var(--accent);
+    border:1px solid var(--accent)}
 
   .note{
     background:var(--panel-2); border-left:3px solid var(--rule-strong);
@@ -323,8 +334,8 @@
     <b>board</b> Cora Z7-07S<br>
     <b>model</b> opus-mt-en-ar<br>
     <b>sim</b> GHDL 4.1.0 · VHDL-2008<br>
-    <b>silicon</b> run 11 · WNS +0.252 ns<br>
-    <b>revised</b> 2026-07-31
+    <b>silicon</b> run 16 · WNS +0.214 ns in context<br>
+    <b>revised</b> 2026-08-01
   </div>
 </header>
 
@@ -335,10 +346,13 @@
     the job interface as 13,584 jobs, produce <b>token ids identical to the
     float32 reference</b>. Encoder cosine 0.985. The decoder needed no RTL
     change: the causal mask is one existing config field.</p>
-    <p class="lead" style="margin-top:14px">Since then the fixed design has been
-    back through Vivado to routing: <b>WNS +0.252&nbsp;ns</b> at 100&nbsp;MHz,
-    0 failing endpoints of 6,409, 15% of the LUTs and 52% of the DSPs. Both
-    halves are now closed — it computes the right answer, and it fits and runs.</p>
+    <p class="lead" style="margin-top:14px">It is now a bitstream. The
+    accelerator sits behind a Zynq PS in a Cora Z7-07S block design and closes
+    timing <em>with the interconnect present</em>: <b>WNS +0.214&nbsp;ns</b> and
+    hold +0.026&nbsp;ns at 100&nbsp;MHz, 0 failing endpoints of 8,803, 19% of
+    the LUTs, 73% of the block RAM and 52% of the DSPs. The out-of-context
+    +0.252&nbsp;ns lost 0.038&nbsp;ns to integration — a caveat that was right
+    to record and cost almost nothing.</p>
   </div>
   <div class="arabic">مرحبا<small>token 1466 · "Hello"</small></div>
 </div>
@@ -389,7 +403,7 @@
       <span class="mod"><span class="dot d-new"></span>weight_window · 8 banks</span>
       <span class="mod"><span class="dot d-new"></span>exp_rom · recip_rom</span>
       <span class="mod"><span class="dot d-rew"></span>layer_ctrl · job dispatcher</span>
-      <span class="mod"><span class="dot d-plan"></span>axi_wrapper</span>
+      <span class="mod"><span class="dot d-new"></span>mirage_axi_lite · wgt_stream</span>
     </div>
   </div></div>
 
@@ -431,11 +445,13 @@
     </div>
     <div class="stratum now">
       <div class="sid">Layer D<b>Make it reachable</b></div>
-      <div class="sbody">The block has 24 raw ports and nothing attached. AXI4-Lite
-      over the config register file, a streaming path for weights, a Cora Z7-07S
-      block design, then bring-up. <em>Everything above is measured out of
-      context;</em> none of it survives integration unexamined.</div>
-      <div><span class="pill p-info">in progress</span></div>
+      <div class="sbody">The block had 24 raw ports and nothing attached.
+      AXI4-Lite over the config register file, an AXI-Stream path for weights, a
+      Cora Z7-07S block design — all built, and the design now closes timing
+      <em>in context</em> at <b>+0.214 ns</b> rather than out of it. The driver
+      is written and diffed against the verified register sequence.
+      <b>What is left is running it on the board.</b></div>
+      <div><span class="pill p-info">bring-up</span></div>
     </div>
   </div>
 </section>
@@ -773,7 +789,8 @@
     <thead><tr><th>Item</th><th>Status</th><th>Note</th></tr></thead>
     <tbody>
       <tr><td>Vivado re-run after the fixes</td><td><span class="pill p-pass">measured</span></td><td>run 11: WNS +0.252 ns, 0 failing endpoints of 6,409, hold +0.046. The <code>mac_scale</code> mux flagged as the risk measures 0.149 ns</td></tr>
-      <tr><td>Timing in context</td><td><span class="pill p-fail">required</span></td><td>run 11 is out-of-context; the PS-side ports pick up interconnect delay the run does not model</td></tr>
+      <tr><td>Timing in context</td><td><span class="pill p-pass">measured</span></td><td>run 16, in the Cora block design with the interconnect and PS present: WNS +0.214 ns, hold +0.026, 0 failing endpoints of 8,803. Integration cost 0.038 ns against the out-of-context figure</td></tr>
+      <tr><td>Bring-up on silicon</td><td><span class="pill p-fail">required</span></td><td>bitstream and XSA exist and the driver is written and checked against the reference register sequence, but nothing has run on the board yet — <code>sw/board/smoke.c</code> compiles and has never executed</td></tr>
       <tr><td>Decoder through GHDL</td><td><span class="pill p-warn">model only</span></td><td>runs on the Fabric model, which the layer run measures to be bit-identical to the RTL; a GHDL pass over 12 layers × 3 steps would take hours and test nothing new</td></tr>
       <tr><td>Round-to-nearest requantisation</td><td><span class="pill p-warn">identified</span></td><td>one adder in the writeback; removes a half-LSB bias per stage</td></tr>
       <tr><td>Bias and swish in fabric</td><td><span class="pill p-info">optional</span></td><td>a 256-entry host-loaded table and one adder; saves three PS round trips per layer</td></tr>
@@ -786,63 +803,74 @@
 <!-- ============================================================ -->
 <section>
   <h2><span class="num">09</span>What comes next</h2>
-  <p class="deck">Four steps to a board that translates. They are ordered by what
-  each one can prove, not by how much work it is.</p>
+  <p class="deck">Three of the four steps below are done. They were ordered by
+  what each one could prove, not by how much work it was, and that ordering is
+  why the remaining one is cheap.</p>
 
   <div class="ladder">
-    <div class="rung">
-      <div class="rl">step 1 · rtl</div>
+    <div class="rung done">
+      <div class="rl">step 1 · rtl <span class="tick">done</span></div>
       <div class="rt">An AXI wrapper, so the PS can reach the block</div>
-      <p>AXI4-Lite slave over the config register file that already exists — the
-      map is close to 1:1 with <code>cfg_addr</code> / <code>cfg_data</code> /
+      <p>AXI4-Lite slave over the config register file that already existed, at
+      a map close to 1:1 with <code>cfg_addr</code> / <code>cfg_data</code> /
       <code>cfg_we</code>, <code>job_start</code>, <code>busy</code>,
-      <code>done</code>. A separate streaming path on a PS HP port carries the
-      weights, because that is the bandwidth-critical direction.
-      <b>Constraint: <code>encoder_layer</code> is not modified.</b> It is
-      bit-exact verified; wrapping it must not put that in question.</p>
+      <code>done</code>. A separate AXI-Stream path carries the weights, because
+      that is the bandwidth-critical direction.
+      <b><code>encoder_layer</code> was not modified</b> — its bit-exact result
+      is a property of that entity, and wrapping it must not put that in
+      question.</p>
     </div>
-    <div class="rung">
-      <div class="rl">step 2 · sim</div>
+    <div class="rung done">
+      <div class="rl">step 2 · sim <span class="tick">done</span></div>
       <div class="rt">Verify the wrapper against the vectors that already exist</div>
-      <p>A GHDL testbench issuing real AXI4-Lite transactions, replaying part of
-      the 2,352-job stream that is already proven bit-exact. This is the step that
-      makes the rest cheap: after it, a mismatch on hardware localises to the
-      wrapper or the clocking, never to the datapath.</p>
+      <p><code>sim/axi_lite_tb.vhd</code> issues real AXI4-Lite transactions and
+      compares the wrapped block against the direct one, byte for byte, plus
+      buffer isolation and five contract checks. This is the step that made the
+      rest cheap: a mismatch on hardware now localises to the clocking or the
+      board, never to the datapath.</p>
     </div>
-    <div class="rung">
-      <div class="rl">step 3 · vivado</div>
+    <div class="rung done">
+      <div class="rl">step 3 · vivado <span class="tick">done</span></div>
       <div class="rt">Block design for the Cora Z7-07S, and timing in context</div>
       <p>PS7 with the Digilent board preset, <code>FCLK_CLK0</code> at 100 MHz,
-      one HP port enabled, scripted in Tcl so it is reproducible rather than
-      clicked. Re-measure WNS with the interconnect present — run 11's +0.252 ns
-      does not carry over unexamined.</p>
+      scripted in Tcl so it is reproducible rather than clicked. WNS re-measured
+      with the interconnect present: <b>+0.214 ns</b>, hold +0.026 ns, 0 failing
+      endpoints of 8,803. The accelerator is pinned at <code>0x43C00000</code>
+      so the driver's base address is a fact about the design rather than
+      whatever the last block-design edit produced.</p>
     </div>
-    <div class="rung">
-      <div class="rl">step 4 · board</div>
+    <div class="rung next">
+      <div class="rl">step 4 · board <span class="tick tick-next">next</span></div>
       <div class="rt">Bare-metal bring-up, then PetaLinux</div>
-      <p>Bare-metal first: one <code>.elf</code>, JTAG, printf over USB-UART, and
-      the golden vectors compared byte-for-byte. Debug iterations in seconds
-      rather than a kernel rebuild. PetaLinux comes after, when the goal shifts
-      from <em>is it correct</em> to <em>run the whole translation</em> —
-      tokeniser, the 62,802 × 512 embedding table, file I/O, the outer layer loop
-      in userspace.</p>
+      <p>The driver is written and checked against the reference register
+      sequence without hardware — <code>sw/io_trace.c</code> decodes its
+      register writes back into the command-file format and diffs them against
+      the script GHDL already validates. What remains is running it: one
+      <code>.elf</code>, JTAG, printf over USB-UART, golden vectors compared
+      byte-for-byte. PetaLinux comes after, when the question shifts from
+      <em>is it correct</em> to <em>run the whole translation</em> — tokeniser,
+      the 62,802 × 512 embedding table, file I/O, the outer layer loop in
+      userspace.</p>
     </div>
   </div>
 
   <div class="note">
-    <b>The two decisions that shape all of it.</b> First, sustained bandwidth:
-    the fabric needs ~400 MB/s (32 b/cycle at 100 MHz) to stay fed, and it is
-    already weight-bound about 4.5 : 1 — so DDR configuration sets real
-    throughput, not DSP count. Second, cache policy: if the PS does the
-    elementwise work from cacheable DDR, every job needs a flush or invalidate
-    around it, and that choice belongs in the wrapper's memory map rather than in
-    software later.
+    <b>The two decisions that shape what is left.</b> First, sustained
+    bandwidth: the fabric needs ~400 MB/s (32 b/cycle at 100 MHz) to stay fed
+    and is already weight-bound about 4.5 : 1, so DDR configuration sets real
+    throughput, not DSP count. This build deliberately ships <em>no DMA</em> —
+    weights load over the control port, which is far too slow for production and
+    exactly right for a first board test that should debug one thing. Second,
+    cache policy: if the PS does the elementwise work from cacheable DDR, every
+    job needs a flush or invalidate around it, and that belongs in the memory
+    map rather than in software later.
   </div>
 </section>
 
 <footer>
-  mirage-vivado-2026-07-29 · rtl_v2 · sim/ · model_ref/<br>
+  mirage-vivado-2026-07-29 · rtl_v2 · sim/ · model_ref/ · sw/<br>
   reproduce: <code>sim/build.sh &lt;testbench&gt;</code> · <code>model_ref/test_ops.py</code> · <code>model_ref/translate_hw.py</code><br>
+  bitstream: <code>vivado -mode batch -source tcl/bd_cora.tcl</code> · driver: <code>cd sw &amp;&amp; make check</code><br>
   reference model: Helsinki-NLP/opus-mt-en-ar, float32, numpy, no torch
 </footer>
 

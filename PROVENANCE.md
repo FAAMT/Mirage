@@ -410,22 +410,135 @@ out as the risk measures 0.149 ns.
 
 ---
 
-## Layer D — the PS interface (in progress, 2026-07-31)
+## Layer D — the PS interface (2026-07-31 → 2026-08-01)
 
 Everything above characterises `encoder_layer` **out of context**: a block
 with 24 raw ports and nothing attached. Layer D attaches it.
 
-**Not yet started at the time of writing.** Scope, in order: an AXI4-Lite
-slave over the existing config register file; an AXI-Stream path on a PS HP
-port for the weight stream; a Cora Z7-07S block design; bare-metal bring-up
-replaying the verified job stream over JTAG; then a PetaLinux image for the
-full translation loop.
+Scope, in order: an AXI4-Lite slave over the existing config register file;
+an AXI-Stream path on a PS HP port for the weight stream; a Cora Z7-07S block
+design; bare-metal bring-up replaying the verified job stream; then a
+PetaLinux image for the full translation loop.
 
-The bring-up asset that matters already exists: `sim/` holds a 2,352-job
+**The first three are done. The bitstream closed timing on 2026-08-01.**
+
+The bring-up asset that matters already existed: `sim/` holds a 2,352-job
 command stream that GHDL proved bit-exact. Replaying it on hardware and
 comparing byte-for-byte means any hardware mismatch localises to the wrapper
 or the clocking, never to the datapath.
 
-Out-of-context numbers do not survive integration unchanged. Run 11's +0.252 ns
-excludes the interconnect delay the PS-side ports will pick up, so timing must
-be re-measured in context once the block design exists.
+### D.1 — the wrapper
+
+`rtl_v2/axi/mirage_axi_lite.vhd` (register file), `rtl_v2/axi/wgt_stream.vhd`
+(AXI-Stream sink), `rtl_v2/top/mirage_axi_top.vhd` (the block the PS sees).
+`encoder_layer` is instantiated unmodified: its 61,632 checked values are
+properties of that entity and stay properties of it only if wrapping does not
+touch it. `sim/axi_lite_tb.vhd` proves the wrapper transparent over 32 bytes
+on both the direct and AXI paths, plus buffer isolation and five contract
+checks.
+
+`rtl_v2/top/mirage_axi_wrap.vhd` was added on 2026-08-01: a VHDL-93 port map
+with no logic in it. Vivado rejects a VHDL-2008 top file on both routes into
+a block design — `[filemgmt 56-195]` for a module reference, `[IP_Flow
+19-5655]` for the IP packager — and the restriction is on the top file only,
+so everything below stays 2008 and stays as verified.
+
+### D.2 — the block design
+
+`tcl/bd_cora.tcl`. ZYNQ7 PS with the Cora Z7-07S board preset, M_AXI_GP0 to
+the accelerator, `irq` to IRQ_F2P, FCLK_CLK0 at 100 MHz. No DMA in this
+build, deliberately: the weight stream belongs on one, but including it here
+would mean the first board test debugs the accelerator, the DMA, the HP port
+and the cache policy simultaneously. `WGT_DATA`/`WGT_LAST` load weights over
+the control port instead — useless in production, sufficient to prove the
+datapath on silicon.
+
+The register base is **pinned at 0x43C00000** rather than left to
+`assign_bd_address`; the driver hardcodes it, and a base that moves when an
+unrelated peripheral is added is a defect that presents as the accelerator
+having stopped working. The segment is 4K because a Zynq GP0 segment cannot
+be smaller; the register file decodes 8 address bits, so 0x100–0xFFF alias
+back onto the same 64 words.
+
+Six runs were needed, and every failure was in the script rather than in the
+design: an over-precise board-part match (the board was installed all along,
+at 1.1 rather than 1.0); a VHDL-2008 top file; a package constant in a port
+width, which the IP packager cannot resolve; `BUS_TYPE_VLNV` matched against
+the `_rtl` abstraction form, which rejected a core that had packaged
+correctly; an enabled-but-unclocked `S_AXI_HP0`, which `validate_bd_design`
+treats as an error rather than a warning; and a wrapper searched for as
+`.vhd` when `make_wrapper` emits in the project's target language, which
+defaults to Verilog.
+
+### D.3 — in-context implementation, run 16, 2026-08-01
+
+Vivado 2022.2, `xc7z007sclg400-1`, board part
+`digilentinc.com:cora-z7-07s:part0:1.1`. Route taken: packaged IP,
+`mirage:user:mirage_axi_wrap:1.0`.
+
+| | measured | device | v1, for contrast |
+|---|---|---|---|
+| Slice LUT | 2,724 | 14,400 (18.9%) | 18,100 — **126%**, did not fit |
+| Slice register | 2,466 | 28,800 (8.6%) | — |
+| Block RAM tile | 36.5 | 50 (73.0%) | 0 |
+| DSP48E1 | 34 | 66 (51.5%) | 2 |
+
+Timing on `clk_fpga_0`, 100 MHz, 10.000 ns period:
+
+| | value | failing endpoints |
+|---|---|---|
+| WNS | **+0.214 ns** | 0 of 8,803 |
+| WHS | **+0.026 ns** | 0 of 8,803 |
+| WPWS | +4.020 ns | 0 of 2,652 |
+
+**Timing is met in context.** This section previously warned that
+out-of-context numbers do not survive integration unchanged. They very nearly
+did: run 11's +0.252 ns lost 0.038 ns to the interconnect and the PS. The
+caution was right to record and turned out to cost almost nothing, which is
+itself worth knowing for the next block characterised this way.
+
+Artefacts, not committed — `build_cora/` is regenerable and gitignored:
+
+| file | bytes | sha256 |
+|---|---|---|
+| `mirage_cora.xsa` | 441,606 | `ffb1db7e06dec11f2ff9df90eaa656e4ec86c0aba531a6cd838d0177b0696ed7` |
+| `mirage_cora_wrapper.bit` | 2,083,856 | `ae09f22bd6600d9b631af2ebcaa9359afe716ba6468d4f264b59e65a2094baf1` |
+
+Two critical warnings were accepted rather than fixed. `[PSU-1]`/`[PSU-2]`
+report negative DQS-to-clock skew (−0.009, −0.033) in the Digilent board
+preset — a property of the vendor's board file, not of this design.
+`[BD 41-759]` reports `/mirage/s_axis_tvalid` unconnected and tied to 0,
+which is the idle weight-stream port behaving as designed until the DMA is
+added.
+
+### D.4 — the bare-metal driver
+
+`sw/`. A transliteration of `model_ref/mirage_int8.py`'s `Mirage` class onto
+the register map: same operations, same order, same register writes, because
+that sequence is already proven bit-exact against the RTL and deviating from
+it to be more idiomatic would throw the proof away.
+
+Checked without hardware. `sw/io_trace.c` decodes register writes back into
+the reference command-file format, so the driver can be replayed through
+`model_ref/test_ops.py`'s call sequence and diffed against `sim/ops_cmd.txt`
+— the script GHDL already validates. 109 control lines match in full and in
+order, with 864 activation addresses and 256 weight-row indices. Decoding
+rather than instrumenting is the point: the driver calls `mirage_wr32` with
+an offset and a word exactly as it will on the board, so a wrong offset shows
+up as a diff instead of being agreed with by a hook sitting at the driver's
+own abstraction level.
+
+Each check was confirmed to fail on a deliberately mutated driver rather than
+assumed to work. One mutation exposed a genuine gap: swapping `nearbyint` for
+`floor(0.5 + x)` passed the entire ops trace, because every multiplier in
+`test_ops.py` is a power of two and the rounding mode never matters.
+`sw/test/check_scale.py` now cross-checks `mirage_split_scale` against the
+reference over 14 vectors including three exact halves.
+
+Not covered by any of it: the done-polling protocol and ISR handling produce
+no lines in the reference script. `sim/axi_lite_tb.vhd` covers those.
+
+### D.5 — what remains
+
+Bare-metal bring-up on the board — `sw/board/smoke.c` is written and compiles
+but has never run on silicon — then the weight DMA, then PetaLinux.

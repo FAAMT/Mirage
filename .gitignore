@@ -1,4 +1,6 @@
 # Vivado run state — regenerable, and embeds host identifiers
+vivado.log
+vivado.jou
 reports/*.rpt
 reports/*.log
 reports/*.jou
