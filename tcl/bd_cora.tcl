@@ -541,23 +541,52 @@ save_bd_design
 set bd_file [get_files ${design}.bd]
 make_wrapper -files $bd_file -top
 
-# make_wrapper writes under .gen in 2020.2+ and under .srcs before that.
-# Take whichever exists rather than guessing at the Vivado version.
+# Two things vary here and both have now bitten:
+#
+#   directory -- .gen in 2020.2+, .srcs before that
+#   EXTENSION -- make_wrapper emits in the project's target_language,
+#                which defaults to Verilog. Run 15 wrote
+#                mirage_cora_wrapper.v into exactly the directory this
+#                predicted, and the search missed it because .vhd was
+#                hardcoded in the fallback glob as well as the direct
+#                path -- one assumption in two places is one safety net,
+#                not two.
+#
+# A Verilog wrapper around a VHDL block design is completely ordinary in
+# Vivado and nothing downstream cares, so this takes whatever was
+# written rather than forcing target_language and regenerating every
+# output product to match a preference that does not matter.
 set wrap ""
-foreach d [list ${design}.gen ${design}.srcs] {
-    set c [file join $bd_proj $d sources_1 bd ${design} hdl ${design}_wrapper.vhd]
-    if {[file exists $c]} { set wrap $c ; break }
+set cand [glob -nocomplain \
+    $bd_proj/*/sources_1/bd/${design}/hdl/${design}_wrapper.vhd \
+    $bd_proj/*/sources_1/bd/${design}/hdl/${design}_wrapper.v \
+    $bd_proj/*/sources_1/bd/${design}/hdl/${design}_wrapper.sv]
+set cand [lsort -unique $cand]
+
+if {[llength $cand] == 1} {
+    set wrap [lindex $cand 0]
+} elseif {[llength $cand] > 1} {
+    # More than one language present means a stale tree; prefer the
+    # newest rather than picking arbitrarily.
+    set best ""
+    foreach c $cand {
+        if {$best eq "" || [file mtime $c] > [file mtime $best]} { set best $c }
+    }
+    set wrap $best
+    puts ">>> several wrappers present, taking the newest:"
+    foreach c $cand { puts ">>>   $c" }
 }
+
 if {$wrap eq ""} {
-    set found [glob -nocomplain $bd_proj/*/sources_1/bd/${design}/hdl/*_wrapper.vhd]
-    if {[llength $found] == 1} { set wrap [lindex $found 0] }
-}
-if {$wrap eq ""} {
-    puts ">>> make_wrapper ran but the wrapper is not where it was expected."
-    puts ">>> Looked under $bd_proj/{${design}.gen,${design}.srcs}/..."
+    puts ">>> make_wrapper ran but no wrapper was found."
+    puts ">>> Searched $bd_proj/*/sources_1/bd/${design}/hdl/ for"
+    puts ">>> ${design}_wrapper.{vhd,v,sv}. What is actually there:"
+    foreach f [glob -nocomplain $bd_proj/*/sources_1/bd/${design}/hdl/*] {
+        puts ">>>   $f"
+    }
     exit 1
 }
-puts ">>> wrapper: $wrap"
+puts ">>> wrapper: $wrap ([string trimleft [file extension $wrap] .])"
 add_files -norecurse $wrap
 set_property top ${design}_wrapper [current_fileset]
 update_compile_order -fileset sources_1
