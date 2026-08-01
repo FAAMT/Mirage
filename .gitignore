@@ -30,3 +30,10 @@ sim/*.log
 # block-design build tree.
 boards/
 build_cora/
+
+# sw/ host build artefacts
+sw/*.o
+sw/test/*.o
+sw/test/trace_ops
+sw/test/split_scale_dump
+sw/test/ops_trace.txt

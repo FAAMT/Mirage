@@ -1,0 +1,16 @@
+# multiplier vectors for split_scale, as exact hex floats so
+# the C and Python sides see bit-identical doubles.
+0x1.0000000000000p-12  # 1/4096, the plain GEMM in test_ops
+0x1.0000000000000p-10  # 1/1024, the tiled GEMM
+0x1.0000000000000p-13  # 1/8192, the chunked GEMM
+0x1.0000000000000p-4  # 1/16,   the QK^T GEMM
+0x1.0000800000000p+0  # exact half at rq=0  -- half-to-even keeps 65536
+0x1.0000800000000p-12  # exact half at rq=12 -- 65536.5 / 2**28
+0x1.0002800000000p-13  # exact half, odd     -- 65538.5 / 2**29
+0x1.ffff800000000p+1  # just under the 18-bit ceiling
+0x1.4000000000000p+3  # over the ceiling -- must be rejected
+0x1.ad7f29abcaf48p-24  # very small
+0x1.01f31f46ed246p-13  # not a power of two
+0x1.5555555555555p-2  # one third
+0x1.6666666666666p-1  # 0.7
+0x1.0000000000000p-40  # smallest positive normal-ish
