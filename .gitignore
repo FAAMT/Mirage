@@ -39,3 +39,9 @@ sw/test/*.o
 sw/test/trace_ops
 sw/test/split_scale_dump
 sw/test/ops_trace.txt
+
+# sw/board/bare/ board build artefacts. ps7_init_gpl.c lands here too:
+# 12,500 generated lines extracted from the XSA at build time, tracked
+# for the same reason build_cora/ is not -- regenerable from an input
+# that already exists.
+sw/board/bare/build/
