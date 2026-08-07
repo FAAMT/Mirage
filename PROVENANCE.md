@@ -346,20 +346,57 @@ Per-module numbers confirm the intent rather than just the totals:
 
 ## Commit index
 
-| Commit | What |
-|---|---|
-| `14c63b6` | v1 baseline — Layer A applied, measured state before v2 |
-| `8f03703` | v2: re-architect for DSP and BRAM utilisation |
-| `8fa8746` | Drop Vivado webtalk telemetry before publishing |
-| `0aa9aad` | Fix `layer_ctrl` address arithmetic and ROM inference (run 5) |
-| `3d1518c` | Fix DSP doubling and pipeline the writeback (run 6) |
-| `35de294` | Confirm the timing diagnosis, cut two paths, add a scrub gate |
-| `b1fb28c` | Remove a literal hostname from `scrub_check.sh`, close its blind spot |
-| `b8409ef` | Scope `use_dsp` per signal: the attribute was the bug, not the pipeline |
-| `5cc6fed` | Cut the softmax exp-index path; all three resource targets met |
-| `ba8c15a` | Run 9: all user specified timing constraints are met |
-| `670be3c` | Layer C — 13 defects fixed, four verification rungs added |
-| `e8abe50` | Run the block out of context, so the placer stops asking for pins |
+**These hashes were renumbered on 2026-08-06.** Two files were purged from the
+branch's history:
+
+- **`vivado.log`** — Vivado stamps the build machine's hostname and the invoking
+  user's home directory into every log header, and this one had reached three
+  commits.
+- **`runs/2026-07-29-vivado-2022.2/project.wdf`** — Vivado's webtalk record.
+  Decoded, it holds only project settings and a random UUID, with no hostname,
+  user or MAC in it. It was purged because it has no business in the repository,
+  not because it was dangerous; the commit below titled *"Drop Vivado webtalk
+  telemetry before publishing"* had already decided that, and only removed it
+  from the tree.
+
+And one **commit message** was rewritten. The message on run 6 ended with *"Also
+scrubs 260 occurrences of `/home/<user>` from the root vivado.log"* — with the
+real path spelled out. The commit describing the scrub was itself carrying the
+thing it scrubbed, and no amount of blob scanning would ever have found it,
+because a commit message is not a blob. That is why `--history` reads messages
+and author identities as well as file contents.
+
+All three had already been dealt with in the working tree. That is the trap: a
+deletion does not remove a blob from the commits that carried it, so the working
+tree was clean while the remote was not. Purging them took a history rewrite,
+which changed every hash from run 6 onward — the four commits before it are
+untouched, which is why their two columns match below.
+
+The pre-rewrite hash is kept beside each entry so that references in the run logs
+and in earlier reports still resolve. Nothing else about these commits changed —
+same order, same messages, same trees apart from the two removed files.
+
+The lesson is the one `b1fb28c` was already about, and it now has a check.
+`tools/scrub_check.sh` read the *working tree*, which is the right scope for "am
+I about to commit a secret" and the wrong one for "is a secret already in here".
+`--history` answers the second, across every blob and every commit message
+reachable from a ref. Run it before publishing a branch, while the fix is still a
+rebase rather than a renumbering.
+
+| Commit | Was | What |
+|---|---|---|
+| `253ec99` | `14c63b6` | v1 baseline — Layer A applied, measured state before v2 |
+| `b409569` | `8f03703` | v2: re-architect for DSP and BRAM utilisation |
+| `3023fdb` | `8fa8746` | Drop Vivado webtalk telemetry before publishing |
+| `deff8d6` | `0aa9aad` | Fix `layer_ctrl` address arithmetic and ROM inference (run 5) |
+| `85e7a7f` | `3d1518c` | Fix DSP doubling and pipeline the writeback (run 6) |
+| `b491e71` | `35de294` | Confirm the timing diagnosis, cut two paths, add a scrub gate |
+| `269d855` | `b1fb28c` | Remove a literal hostname from `scrub_check.sh`, close its blind spot |
+| `45d9be3` | `b8409ef` | Scope `use_dsp` per signal: the attribute was the bug, not the pipeline |
+| `07d4cdb` | `5cc6fed` | Cut the softmax exp-index path; all three resource targets met |
+| `b7479fd` | `ba8c15a` | Run 9: all user specified timing constraints are met |
+| `33aef8e` | `670be3c` | Layer C — 13 defects fixed, four verification rungs added |
+| `af3d749` | `e8abe50` | Run the block out of context, so the placer stops asking for pins |
 
 ---
 
