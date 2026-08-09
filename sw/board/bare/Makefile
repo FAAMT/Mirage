@@ -1,10 +1,16 @@
 # =====================================================================
-# sw/board/bare/Makefile -- build smoke.c for the Cora Z7 without Vitis
+# sw/board/bare/Makefile -- build sw/board/*.c for the Cora Z7, no Vitis
 #
-#   make            build build/mirage_smoke.elf
-#   make load       program the bitstream and run it over JTAG
-#   make console    open the UART at 115200 (needs the dialout group)
+#   make                 build build/mirage_smoke.elf
+#   make load            program the bitstream and run it over JTAG
+#   make console         open the UART at 115200 (needs the dialout group)
+#   make APP=vectors     build the vector replay rather than the smoke test
+#   make replay          build it, run it on the board, diff against sim/
+#   make hostcheck       validate the replay interpreter with no board
 #   make clean
+#
+# APP names a .c file in sw/board/. Nothing below is app-specific except
+# which source that is.
 #
 # WHY THIS EXISTS
 #
@@ -23,10 +29,24 @@
 
 # --- what to build against --------------------------------------------
 SW      := ../..
-XSA     ?= $(SW)/../build_cora/mirage_cora.xsa
-BIT     ?= $(SW)/../build_cora/mirage_cora_wrapper.bit
+REPO    := $(SW)/..
+XSA     ?= $(REPO)/build_cora/mirage_cora.xsa
+BIT     ?= $(REPO)/build_cora/mirage_cora_wrapper.bit
 BUILD   := build
-TARGET  := $(BUILD)/mirage_smoke.elf
+
+APP     ?= smoke
+TARGET  := $(BUILD)/mirage_$(APP).elf
+MAP     := $(BUILD)/mirage_$(APP).map
+BIN     := $(BUILD)/mirage_$(APP).bin
+
+# --- the vector replay -------------------------------------------------
+# Tape addresses must agree with sw/board/vectors.c. They are OCM, not
+# DDR, because DDR does not answer until ps7_init() has run and that
+# happens after openocd would have written the tape. See vectors.c.
+CMD_TAPE  ?= $(REPO)/sim/ops_cmd.txt
+RES_TAPE  ?= $(REPO)/sim/ops_res.txt
+CMD_BASE  ?= 0x00010000
+RES_BASE  ?= 0x00020000
 
 # --- where it runs -----------------------------------------------------
 # ocm: on-chip RAM, alive out of reset, no dependency on DDR training.
@@ -64,7 +84,7 @@ LDFLAGS := $(ARCH) -nostartfiles -specs=nosys.specs \
            -Wl,-T,zynq.ld \
            -Wl,--defsym=LOAD_BASE=$(LOAD_BASE) \
            -Wl,--defsym=STACK_SIZE=$(STACK_SIZE) \
-           -Wl,-Map,$(BUILD)/mirage_smoke.map \
+           -Wl,-Map,$(MAP) \
            -Wl,--gc-sections
 LDLIBS  := -lm
 
@@ -80,9 +100,9 @@ OBJS := $(BUILD)/crt0.o \
         $(BUILD)/ps7_init_gpl.o \
         $(BUILD)/mirage.o \
         $(BUILD)/io_mmio.o \
-        $(BUILD)/smoke.o
+        $(BUILD)/$(APP).o
 
-.PHONY: all load console clean size
+.PHONY: all load console clean size replay hostcheck
 all: $(TARGET) size
 
 # --- the XSA is the platform ------------------------------------------
@@ -109,9 +129,12 @@ $(BUILD)/%.o: %.S | $(BUILD)
 	@echo "  AS      $<"
 	@$(CC) $(ARCH) -c -o $@ $<
 
-$(BUILD)/smoke.o: ../smoke.c | $(BUILD)
+# The application, from sw/board/. Tape addresses are passed as macros so
+# the Makefile and vectors.c cannot drift apart: change them in one place.
+$(BUILD)/%.o: ../%.c | $(BUILD)
 	@echo "  CC      $<"
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -DMIRAGE_CMD_BASE=$(CMD_BASE)u \
+	       -DMIRAGE_RES_BASE=$(RES_BASE)u -c -o $@ $<
 
 $(BUILD)/mirage.o: $(SW)/mirage.c | $(BUILD)
 	@echo "  CC      $<"
@@ -127,7 +150,7 @@ $(BUILD):
 $(TARGET): $(OBJS) zynq.ld
 	@echo "  LD      $@   (REGION=$(REGION) @ $(LOAD_BASE))"
 	@$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
-	@$(OBJCOPY) -O binary $@ $(BUILD)/mirage_smoke.bin
+	@$(OBJCOPY) -O binary $@ $(BIN)
 
 size: $(TARGET)
 	@echo
@@ -152,6 +175,41 @@ load: $(TARGET)
 console:
 	@echo "115200 8N1 on /dev/ttyUSB1 -- ctrl-a k to quit screen"
 	@sg dialout -c 'screen /dev/ttyUSB1 115200'
+
+# --- the vector replay -------------------------------------------------
+# The console has to be captured BEFORE the CPU is resumed, because the
+# results are already on their way out of the UART by the time openocd
+# returns. That ordering is more than a recipe should carry, so it lives
+# in run_replay.sh; this target is here so the entry point is where
+# everything else is.
+replay:
+	@./run_replay.sh "$(CMD_TAPE)" "$(RES_TAPE)"
+
+# The same interpreter with no board: link vectors.c against the trace
+# backend instead of the MMIO one, replay the script into a trace, and
+# require that trace to be byte-identical to the script it came from.
+#
+# This is what makes a mismatch on hardware attributable to the hardware.
+# Without it, "the board disagrees with simulation" has two suspects and
+# the cheap one is never ruled out. The exit status is ignored on purpose:
+# io_trace.c reads back zero because there is no fabric behind it, so the
+# value comparison must fail and only the trace is evidence.
+HOSTCC ?= cc
+hostcheck: | $(BUILD)
+	@echo "  CC      ../vectors.c  (host build, trace backend)"
+	@$(HOSTCC) -DMIRAGE_HOST_BUILD -std=c99 -O1 -Wall -Wextra \
+	   -Wno-unused-parameter -I. -I$(SW) -o $(BUILD)/vectors_host \
+	   ../vectors.c $(SW)/mirage.c $(SW)/io_trace.c -lm
+	@$(BUILD)/vectors_host $(CMD_TAPE) $(RES_TAPE) $(BUILD)/roundtrip.txt \
+	   > $(BUILD)/hostcheck.log 2>&1 || true
+	@if diff -q $(CMD_TAPE) $(BUILD)/roundtrip.txt >/dev/null 2>&1; then \
+	   echo "HOSTCHECK PASS -- replay reproduces $(notdir $(CMD_TAPE))"\
+	        "exactly ($$(wc -l < $(CMD_TAPE)) lines)"; \
+	 else \
+	   echo "HOSTCHECK FAIL -- the interpreter does not reproduce the script:"; \
+	   diff -u $(CMD_TAPE) $(BUILD)/roundtrip.txt | head -40; \
+	   exit 1; \
+	 fi
 
 clean:
 	rm -rf $(BUILD)
