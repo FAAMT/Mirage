@@ -21,6 +21,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
+use STD.ENV.all;
 
 library work;
 use work.mirage_v2_pkg.all;
@@ -57,6 +58,12 @@ architecture tb of stage_engine_tb is
     signal rd_row : std_logic_vector(BANK_AW - 1 downto 0) := (others => '0');
     signal w_bus  : wgt_bus_t;
 
+    -- weight_window writes to the buffer NOT selected by rd_buf. A caller that
+    -- uses one buffer serially therefore has to flip it: load with '1' to fill
+    -- A, read back with '0' to see A. See the PROTOCOL note in
+    -- weight_window.vhd. Held at '1' so the first pass stages before any read.
+    signal rd_buf : std_logic := '1';
+
     -- injective over 0 .. 2**ACT_AW-1 modulo the int8 range: two addresses
     -- collide only 251 apart, and no check here spans 251 addresses.
     function act_of(a : natural) return integer is
@@ -87,7 +94,7 @@ begin
 
     win : entity work.weight_window
         port map (clk => clk,
-                  rd_en => rd_en, rd_row => rd_row, rd_buf => '0', w_bus => w_bus,
+                  rd_en => rd_en, rd_row => rd_row, rd_buf => rd_buf, w_bus => w_bus,
                   wr_en => w_we, wr_row => w_row, wr_bank => w_bank, wr_data => w_data);
 
     stim : process
@@ -98,6 +105,7 @@ begin
         procedure run_pass(b : natural; r : natural; l : natural;
                            st : natural; xp : std_logic; ro : natural) is
         begin
+            rd_buf  <= '1';                 -- stage into A (writes go to !rd_buf)
             base    <= std_logic_vector(to_unsigned(b, ACT_AW));
             rows    <= std_logic_vector(to_unsigned(r, 7));
             lanes   <= std_logic_vector(to_unsigned(l, 7));
@@ -109,6 +117,7 @@ begin
             wait until rising_edge(clk);
             go <= '0';
             wait until fin = '1' and rising_edge(clk);
+            rd_buf  <= '0';                 -- read back the buffer just filled
             wait until rising_edge(clk);
         end procedure;
 
@@ -202,7 +211,9 @@ begin
         else
             report integer'image(errs) & " staged bytes wrong" severity failure;
         end if;
-        wait;
+        -- finish, not `wait` -- the clock process runs forever, so a bare wait
+        -- leaves a PASSING run spinning and the suite unusable as a gate.
+        finish;
     end process;
 
 end architecture;

@@ -30,6 +30,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use IEEE.MATH_REAL.all;
+use STD.ENV.all;
 
 library work;
 use work.mirage_v2_pkg.all;
@@ -189,7 +190,9 @@ begin
         else
             report integer'image(errs) & " softmax mismatches" severity failure;
         end if;
-        wait;
+        -- finish, not `wait` -- see stage_engine_tb: a bare wait leaves a
+        -- passing run spinning against the free-running clock.
+        finish;
     end process;
 
 end architecture;

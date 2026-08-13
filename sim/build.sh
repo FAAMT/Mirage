@@ -43,11 +43,66 @@ TB=(
   softmax_unit_tb.vhd
   encoder_layer_tb.vhd
   axi_lite_tb.vhd
+  ww_probe_tb.vhd
+  # stage_engine_asis_tb.vhd is deliberately absent: it predates the
+  # stride/row_ofs ports Layer C added to stage_engine, so it no longer
+  # compiles, and the addressing contract it asserts (addr = base +
+  # row*lanes + lane) has been superseded by the strided one. Reviving it
+  # means deciding what contract it should assert now -- not a mechanical fix.
 )
 
 A="ghdl -a --std=08 --workdir=work"
 for f in "${RTL[@]}"; do $A "$f"; done
 for f in "${TB[@]}"; do [ -f "$f" ] && $A "$f"; done
+
+# --all: run every testbench and exit non-zero if any fails, so this can be a
+# gate rather than something driven by hand. Every TB calls std.env.finish, so
+# a pass terminates; the timeout is a backstop against a future one that does
+# not, since a hang and a slow run look identical to a caller.
+if [ "${1:-}" = "--all" ]; then
+  fail=0
+  for f in "${TB[@]}"; do
+    [ -f "$f" ] || continue
+    unit=$(basename "$f" .vhd)
+    printf '  %-22s ' "$unit"
+
+    # encoder_layer_tb is a command interpreter: it reads a script and writes a
+    # result. Both tapes are gitignored, so skip rather than fail when absent.
+    args=(); check_against=""
+    if [ "$unit" = "encoder_layer_tb" ]; then
+      if [ ! -f ops_cmd.txt ] || [ ! -f ops_res.txt ]; then
+        echo "SKIP  (needs sim/ops_cmd.txt + ops_res.txt, both gitignored)"
+        continue
+      fi
+      out_file=$(mktemp)
+      args=(-gSCRIPT=ops_cmd.txt "-gRESULT=$out_file")
+      check_against=ops_res.txt
+    fi
+
+    if log=$(ghdl -e --std=08 --workdir=work "$unit" 2>&1 &&
+             timeout "${TB_TIMEOUT:-900}" ghdl -r --std=08 --workdir=work \
+                     "$unit" "${args[@]}" 2>&1); then
+      if [ -n "$check_against" ] && ! diff -q "$check_against" "$out_file" >/dev/null 2>&1; then
+        echo "FAIL  (ran, but output differs from $check_against)"; fail=1
+      else
+        echo "PASS${check_against:+  (bit-exact vs $check_against)}"
+      fi
+    else
+      echo "FAIL"; fail=1
+      echo "$log" | grep -viE 'metavalue' | tail -6 | sed 's/^/        /'
+    fi
+    # plain `if`, not `[ ... ] && ...`: under `set -e` the latter's behaviour
+    # when the test fails depends on a subtle exemption. Do not make a reader
+    # reason about that to know whether the loop continues.
+    if [ -n "${out_file:-}" ]; then
+      rm -f "$out_file"
+      out_file=""
+    fi
+  done
+  echo
+  [ $fail -eq 0 ] && echo "SUITE PASS" || echo "SUITE FAIL"
+  exit $fail
+fi
 
 if [ $# -ge 1 ]; then
   unit="$1"; shift
