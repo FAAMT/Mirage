@@ -27,6 +27,9 @@ sim/work/
 sim/*_cmd.txt
 sim/*_res.txt
 sim/*.log
+# weight blobs split out of a command tape by tools/tape_split.py --
+# generated, 25 MB, and reproducible from the tape it came from
+sim/*.bin
 
 # Vivado board-file checkout (third-party, see tcl/bd_cora.tcl) and the
 # block-design build tree.

@@ -7,6 +7,7 @@
 #   make APP=vectors     build the vector replay rather than the smoke test
 #   make replay          build it, run it on the board, diff against sim/
 #   make hostcheck       validate the replay interpreter with no board
+#   make hostcheck-wblk  same, for a split (WBLK + weight blob) tape
 #   make clean
 #
 # APP names a .c file in sw/board/. Nothing below is app-specific except
@@ -47,6 +48,12 @@ CMD_TAPE  ?= $(REPO)/sim/ops_cmd.txt
 RES_TAPE  ?= $(REPO)/sim/ops_res.txt
 CMD_BASE  ?= 0x00010000
 RES_BASE  ?= 0x00020000
+# Ends default to the OCM map. A split tape (WBLK + blob) does not fit OCM, so
+# ddr_replay.sh overrides all six to place tapes and blob in DDR.
+CMD_END   ?= $(RES_BASE)
+RES_END   ?= 0x00030000
+WGT_BASE  ?= 0x01000000
+WGT_END   ?= 0x03000000
 
 # --- where it runs -----------------------------------------------------
 # ocm: on-chip RAM, alive out of reset, no dependency on DDR training.
@@ -102,7 +109,7 @@ OBJS := $(BUILD)/crt0.o \
         $(BUILD)/io_mmio.o \
         $(BUILD)/$(APP).o
 
-.PHONY: all load console clean size replay hostcheck
+.PHONY: all load console clean size replay hostcheck hostcheck-wblk
 all: $(TARGET) size
 
 # --- the XSA is the platform ------------------------------------------
@@ -134,7 +141,10 @@ $(BUILD)/%.o: %.S | $(BUILD)
 $(BUILD)/%.o: ../%.c | $(BUILD)
 	@echo "  CC      $<"
 	@$(CC) $(CFLAGS) -DMIRAGE_CMD_BASE=$(CMD_BASE)u \
-	       -DMIRAGE_RES_BASE=$(RES_BASE)u -c -o $@ $<
+	       -DMIRAGE_RES_BASE=$(RES_BASE)u \
+	       -DMIRAGE_CMD_END=$(CMD_END)u -DMIRAGE_RES_END=$(RES_END)u \
+	       -DMIRAGE_WGT_BASE=$(WGT_BASE)u -DMIRAGE_WGT_END=$(WGT_END)u \
+	       -c -o $@ $<
 
 $(BUILD)/mirage.o: $(SW)/mirage.c | $(BUILD)
 	@echo "  CC      $<"
@@ -195,11 +205,13 @@ replay:
 # io_trace.c reads back zero because there is no fabric behind it, so the
 # value comparison must fail and only the trace is evidence.
 HOSTCC ?= cc
-hostcheck: | $(BUILD)
+$(BUILD)/vectors_host: ../vectors.c $(SW)/mirage.c $(SW)/io_trace.c | $(BUILD)
 	@echo "  CC      ../vectors.c  (host build, trace backend)"
 	@$(HOSTCC) -DMIRAGE_HOST_BUILD -std=c99 -O1 -Wall -Wextra \
-	   -Wno-unused-parameter -I. -I$(SW) -o $(BUILD)/vectors_host \
+	   -Wno-unused-parameter -I. -I$(SW) -o $@ \
 	   ../vectors.c $(SW)/mirage.c $(SW)/io_trace.c -lm
+
+hostcheck: $(BUILD)/vectors_host
 	@$(BUILD)/vectors_host $(CMD_TAPE) $(RES_TAPE) $(BUILD)/roundtrip.txt \
 	   > $(BUILD)/hostcheck.log 2>&1 || true
 	@if diff -q $(CMD_TAPE) $(BUILD)/roundtrip.txt >/dev/null 2>&1; then \
@@ -208,6 +220,29 @@ hostcheck: | $(BUILD)
 	 else \
 	   echo "HOSTCHECK FAIL -- the interpreter does not reproduce the script:"; \
 	   diff -u $(CMD_TAPE) $(BUILD)/roundtrip.txt | head -40; \
+	   exit 1; \
+	 fi
+
+# The same check for a SPLIT tape. tools/tape_split.py moves the weight rows
+# out of the command stream into a blob, taking a translation tape from 64.3 MB
+# to 0.91 MB; this proves the substitution is lossless through the very C
+# interpreter that runs on the board -- WBLK commands plus the blob must replay
+# into the ORIGINAL inline-WROW script, byte for byte. Python round-tripping in
+# tape_split.py checks the file transform; this checks the thing that consumes it.
+WBLK_TAPE ?= $(BUILD)/wblk_cmd.txt
+WBLK_BLOB ?= $(BUILD)/wblk_wgt.bin
+
+hostcheck-wblk: $(BUILD)/vectors_host
+	@$(REPO)/tools/tape_split.py split $(CMD_TAPE) $(WBLK_TAPE) $(WBLK_BLOB) >/dev/null
+	@$(BUILD)/vectors_host $(WBLK_TAPE) $(RES_TAPE) $(BUILD)/wblk_roundtrip.txt \
+	   $(WBLK_BLOB) > $(BUILD)/hostcheck_wblk.log 2>&1 || true
+	@if cmp -s $(CMD_TAPE) $(BUILD)/wblk_roundtrip.txt; then \
+	   echo "HOSTCHECK-WBLK PASS -- $$(du -h $(WBLK_TAPE) | cut -f1) of commands"\
+	        "+ $$(du -h $(WBLK_BLOB) | cut -f1) of weights replay into"\
+	        "$(notdir $(CMD_TAPE)) exactly ($$(wc -l < $(CMD_TAPE)) records)"; \
+	 else \
+	   echo "HOSTCHECK-WBLK FAIL -- split tape does not reproduce the script:"; \
+	   cmp $(CMD_TAPE) $(BUILD)/wblk_roundtrip.txt | head -5; \
 	   exit 1; \
 	 fi
 

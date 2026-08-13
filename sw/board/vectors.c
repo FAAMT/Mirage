@@ -98,6 +98,33 @@
 #define MIRAGE_OCM_END    0x00030000u      /* 192 KB, top of OCM low */
 #endif
 
+/* The weight blob, for tapes that use WBLK instead of inline WROW.
+ *
+ * A translation tape is 98.6% weight rows -- 25 MB of payload written as 63 MB
+ * of ASCII -- and they are the same matrices every run. WBLK moves them out of
+ * the command stream into a blob loaded once, which takes the command tape
+ * from 64.3 MB to 0.91 MB (tools/tape_split.py). 25 MB cannot live in OCM, so
+ * these are DDR addresses and a WBLK tape implies DDR is up. A tape that uses
+ * WBLK without a blob loaded is refused by the bounds check in the handler
+ * rather than reading whatever DDR happens to contain. */
+/* Each tape's end defaults to the start of the next OCM region, which is right
+ * while everything lives in OCM. A split tape does not: the blob forces DDR,
+ * the tapes follow it there, and OCM_END would then sit BELOW the tape base and
+ * bound it to nothing. Overridable so the map moves in one place. */
+#ifndef MIRAGE_CMD_END
+#define MIRAGE_CMD_END    MIRAGE_RES_BASE
+#endif
+#ifndef MIRAGE_RES_END
+#define MIRAGE_RES_END    MIRAGE_OCM_END
+#endif
+
+#ifndef MIRAGE_WGT_BASE
+#define MIRAGE_WGT_BASE   0x01000000u      /* 16 MB into DDR */
+#endif
+#ifndef MIRAGE_WGT_END
+#define MIRAGE_WGT_END    0x03000000u      /* 32 MB of headroom for the blob */
+#endif
+
 /* Readback chunk. Chunking is invisible to a trace comparison: io_trace.c
  * does not close an open DUMP on an ACT_PTR write, so contiguous chunks
  * still decode as the one DUMP line the script contains. */
@@ -229,6 +256,22 @@ static void act_flush(void)
 static uint32_t wgt_pend;
 static int      wgt_pend_valid;
 
+/* The weight blob a WBLK tape indexes into. On the board this is a fixed DDR
+ * region; on the host it is a file. Null until set, so a WBLK tape without a
+ * blob fails with a message instead of dereferencing nothing. */
+static const uint8_t *wgt_blob;
+static const uint8_t *wgt_blob_end;
+
+/* Blob words are little-endian, assembled byte by byte rather than cast: the
+ * offsets in a tape are not guaranteed aligned, and an unaligned 32-bit load
+ * on Cortex-A9 is a data abort with the caches off -- which crt0.S has no
+ * handler for, so it would hang silently. */
+static uint32_t blob_word(const uint8_t *p)
+{
+    return (uint32_t)p[0]        | ((uint32_t)p[1] << 8) |
+          ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
 static void wgt_push(uint32_t word)
 {
     if (wgt_pend_valid)
@@ -342,6 +385,8 @@ static int replay(void)
 {
     char tok[80], label[64];
     uint32_t v, w, idx, addr, count, expect_row = 0u;
+    uint32_t nrows, off, r;
+    const uint8_t *row;
     int32_t njobs;
     int rc, desync = 0;
 
@@ -390,6 +435,42 @@ static int replay(void)
                 wgt_push(v);
             }
             n_wrow++;
+            continue;
+        }
+
+        /* ---- WBLK n_rows blob_offset -------------------------------- */
+        /* One record for a whole window load. Equivalent to n_rows WROW
+         * records: vectors.c already requires those indices to run 0..n-1, so
+         * the indices carry no information and the rows can come from the
+         * blob instead. tools/tape_split.py produces both forms and proves the
+         * substitution by round-tripping one into the other byte for byte. */
+        if (streq(tok, "WBLK")) {
+            act_flush();
+            if (!next_token(&cmd, tok, sizeof tok) || !parse_hex(tok, &nrows))
+                goto bad_record;
+            if (!next_token(&cmd, tok, sizeof tok) || !parse_hex(tok, &off))
+                goto bad_record;
+            if (wgt_blob == 0) {
+                PRINT("#SCRIPT: WBLK but no weight blob is loaded" NL);
+                return -1;
+            }
+            /* Bounds first, and in a form that cannot itself overflow: the
+             * product would wrap on a corrupt tape and pass a naive check. */
+            if (nrows > (uint32_t)(wgt_blob_end - wgt_blob) / MIRAGE_W_BANKS / 4u ||
+                off > (uint32_t)(wgt_blob_end - wgt_blob) -
+                      nrows * (uint32_t)MIRAGE_W_BANKS * 4u) {
+                PRINT("#SCRIPT: WBLK %u rows at 0x%x runs past the blob" NL,
+                      (unsigned)nrows, (unsigned)off);
+                return -1;
+            }
+            row = wgt_blob + off;
+            for (r = 0u; r < nrows; r++)
+                for (w = 0u; w < (uint32_t)MIRAGE_W_BANKS; w++, row += 4)
+                    wgt_push(blob_word(row));
+            /* counted as the rows it stands for, so the record tally still
+             * compares against a tape that spells them out */
+            n_wrow += nrows;
+            expect_row = 0u;
             continue;
         }
 
@@ -582,15 +663,46 @@ static char *slurp(const char *path, tape_t *t)
     return buf;
 }
 
+/* The blob is binary, so it does not go through slurp(): no NUL terminator and
+ * no tape_t cursor, just bytes and a length. */
+static uint8_t *slurp_blob(const char *path)
+{
+    long n;
+    uint8_t *buf;
+    FILE *f = fopen(path, "rb");
+
+    if (!f) {
+        fprintf(stderr, "vectors: cannot open %s\n", path);
+        return NULL;
+    }
+    fseek(f, 0, SEEK_END);
+    n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    buf = malloc((size_t)n);
+    if (!buf || fread(buf, 1u, (size_t)n, f) != (size_t)n) {
+        fprintf(stderr, "vectors: cannot read %s\n", path);
+        fclose(f);
+        free(buf);
+        return NULL;
+    }
+    fclose(f);
+    wgt_blob     = buf;
+    wgt_blob_end = buf + n;
+    return buf;
+}
+
 int main(int argc, char **argv)
 {
     const char *cmd_path = argc > 1 ? argv[1] : "../../sim/ops_cmd.txt";
     const char *res_path = argc > 2 ? argv[2] : "../../sim/ops_res.txt";
     const char *trc_path = argc > 3 ? argv[3] : "vectors_trace.txt";
+    const char *blb_path = argc > 4 ? argv[4] : NULL;
 
     quiet = 1;                 /* the trace is the output that matters */
 
     if (!slurp(cmd_path, &cmd) || !slurp(res_path, &res))
+        return 2;
+    if (blb_path && !slurp_blob(blb_path))
         return 2;
     if (mirage_trace_open(trc_path) != 0) {
         fprintf(stderr, "vectors: cannot write %s\n", trc_path);
@@ -610,10 +722,15 @@ extern char __stack_top[];
 int main(void)
 {
     cmd.base = cmd.p = (const char *)(uintptr_t)MIRAGE_CMD_BASE;
-    cmd.end  = (const char *)(uintptr_t)MIRAGE_RES_BASE;
+    cmd.end  = (const char *)(uintptr_t)MIRAGE_CMD_END;
 
     res.base = res.p = (const char *)(uintptr_t)MIRAGE_RES_BASE;
-    res.end  = (const char *)(uintptr_t)MIRAGE_OCM_END;
+    res.end  = (const char *)(uintptr_t)MIRAGE_RES_END;
+
+    /* Points at DDR whether or not a blob was loaded there; the WBLK handler
+     * bounds-checks against it, and a tape with no WBLK never reads it. */
+    wgt_blob     = (const uint8_t *)(uintptr_t)MIRAGE_WGT_BASE;
+    wgt_blob_end = (const uint8_t *)(uintptr_t)MIRAGE_WGT_END;
 
     /* The tapes and this program share OCM, and openocd will happily
      * write a tape straight over the stack. That failure looks like
