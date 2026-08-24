@@ -48,3 +48,9 @@ sw/test/ops_trace.txt
 # for the same reason build_cora/ is not -- regenerable from an input
 # that already exists.
 sw/board/bare/build/
+
+# sw/board/demo/ run artefacts. Two of these are large and both are derived:
+# a 64 MB corrupted copy of the command tape written by --negative, and a
+# 64 MB rescheduled job script. The board's console log lands here too --
+# evidence of a run, but reproducible by doing the run again.
+sw/board/demo/build/

@@ -36,10 +36,23 @@ cd "$(dirname "$0")"
 # Before argument parsing, because in this mode $1..$4 are the capture's own
 # arguments and not a tape pair.
 if [ "${1:-}" = "--capture" ]; then
-    stty -F "$2" 115200 raw -echo -crtscts
+    # Both guards below exist because of one incident: a previous run's
+    # capture was still holding the port, so stty and the exec redirect both
+    # failed with EBUSY. Without `exit`, a failed exec redirect does not stop
+    # the shell -- it falls through into the main path with $1 still set to
+    # "--capture", re-runs the split against a tape called "--capture", and
+    # leaves the PREVIOUS run's console log in place. The caller then greps a
+    # stale log and reports PASS for a run that never captured a byte. A false
+    # PASS is the one outcome this script must never produce, so a capture
+    # that cannot open the port dies here and takes the run down with it.
+    stty -F "$2" 115200 raw -echo -crtscts || {
+        echo "capture: cannot configure $2 -- another reader holds it" >&2
+        exit 3; }
     exec timeout "$4" sed -u -e '/^VECTOR REPLAY /q' \
                              -e '/^stopping:/q' \
                              -e '/^#SCRIPT/q' < "$2" > "$3"
+    echo "capture: cannot read $2 -- another reader holds it" >&2
+    exit 3
 fi
 
 CMD_TAPE=${1:?usage: ddr_replay.sh <cmd_tape> <res_tape>}
@@ -80,6 +93,10 @@ MAIN=$(arm-none-eabi-nm "$ELF" | awk '$3=="main"{print "0x"$1}')
 echo "   breakpoint at main() = $MAIN"
 
 echo "== capturing $PORT"
+# Truncate first. The log is the only evidence this run happened, so a run
+# that captures nothing must leave an empty file rather than the last run's
+# output -- see the note in the --capture branch above.
+: > "$LOG"
 sg dialout -c "$0 --capture $PORT $LOG $CAP_SECS" &
 CAPTURE=$!
 sleep 1

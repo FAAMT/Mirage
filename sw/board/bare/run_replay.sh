@@ -34,9 +34,17 @@ CAP_SECS=${CAP_SECS:-60}
 
 # --- capture mode: re-entry under sg, so the quoting stays readable ---
 if [ "${1:-}" = "--capture" ]; then
-    stty -F "$2" 115200 raw -echo -crtscts
+    # Exit rather than fall through if the port cannot be opened -- see the
+    # long note on the same branch in ddr_replay.sh. A failed exec redirect
+    # does not stop the shell, and the fall-through ends in a stale log being
+    # read as a fresh PASS.
+    stty -F "$2" 115200 raw -echo -crtscts || {
+        echo "capture: cannot configure $2 -- another reader holds it" >&2
+        exit 3; }
     exec timeout "$4" sed -u -e '/^VECTOR REPLAY /q' \
                              -e '/^stopping:/q' < "$2" > "$3"
+    echo "capture: cannot read $2 -- another reader holds it" >&2
+    exit 3
 fi
 
 CMD_TAPE=${1:-../../../sim/ops_cmd.txt}

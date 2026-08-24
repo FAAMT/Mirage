@@ -182,9 +182,20 @@ load: $(TARGET)
 	  -c "resume $(LOAD_BASE)" \
 	  -c "shutdown"
 
+# The UART is interface 1 of the FT2232H, and its ttyUSB number moves: it is
+# ttyUSB1 while ftdi_sio holds both interfaces and ttyUSB0 after openocd has
+# taken interface 0 for JTAG. `-if01-` names the interface instead of the
+# enumeration order, so it stays correct either way.
+#
+# picocom, not screen. screen detaches itself when it cannot take the
+# terminal -- under `make`, or over a non-interactive stdin -- which looks
+# exactly like it exited, while it goes on holding the port and starving
+# every later capture. picocom just fails.
+CONSOLE ?= $(firstword $(wildcard /dev/serial/by-id/*-if01-port0) /dev/ttyUSB1)
+
 console:
-	@echo "115200 8N1 on /dev/ttyUSB1 -- ctrl-a k to quit screen"
-	@sg dialout -c 'screen /dev/ttyUSB1 115200'
+	@echo "115200 8N1 on $(CONSOLE) -- ctrl-a ctrl-x to quit picocom"
+	@picocom -b 115200 $(CONSOLE)
 
 # --- the vector replay -------------------------------------------------
 # The console has to be captured BEFORE the CPU is resumed, because the
